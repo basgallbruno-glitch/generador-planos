@@ -714,16 +714,33 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
   var pMinX = 1e9, pMaxX = -1e9, pMinY = 1e9, pMaxY = -1e9;
   S.forEach(function (p) { pMinX = Math.min(pMinX, p.x); pMaxX = Math.max(pMaxX, p.x); pMinY = Math.min(pMinY, p.y); pMaxY = Math.max(pMaxY, p.y); });
   var gx = 0, gy = 0; S.forEach(function (p) { gx += p.x; gy += p.y; }); gx /= S.length; gy /= S.length;
-  // Colocación DETERMINÍSTICA: cada cota sale por la normal (hacia afuera del perfil) y
-  // se corre hacia el EXTREMO LIBRE de su tramo (el más lejano del centroide). Eso separa
-  // las cotas que comparten un vértice (p.ej. rebaje y escalón) sin líneas guía ni slides reactivos.
+  // apertura: distancia del midpoint al primer cruce con OTRO tramo, en la dirección (dirx,diry)
+  function apertura(mx, my, dirx, diry, self) {
+    var best = 1e9;
+    for (var j = 0; j < S.length - 1; j++) {
+      if (j === self) continue;
+      var x1 = S[j].x, y1 = S[j].y, ex = S[j + 1].x - x1, ey = S[j + 1].y - y1;
+      var den = dirx * ey - diry * ex;
+      if (Math.abs(den) < 1e-6) continue;
+      var t = ((x1 - mx) * ey - (y1 - my) * ex) / den;
+      var s = ((x1 - mx) * diry - (y1 - my) * dirx) / den;
+      if (t > 0.5 && s >= -0.02 && s <= 1.02) best = Math.min(best, t);
+    }
+    return best;
+  }
+  // Colocación DETERMINÍSTICA: la cota va al lado con MÁS espacio libre (test de rayos),
+  // y se corre hacia el extremo libre del tramo. Sin líneas guía ni slides reactivos.
   var placed = [];
   for (var i = 0; i < segs.length; i++) {
     var a = S[i], b = S[i + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     var dxs = b.x - a.x, dys = b.y - a.y, dl = Math.hypot(dxs, dys) || 1;
     var ux = dxs / dl, uy = dys / dl;                        // tangente (a lo largo del tramo)
     var nx = -dys / dl, ny = dxs / dl;                       // normal
-    if (nx * (mx - gx) + ny * (my - gy) < 0) { nx = -nx; ny = -ny; }   // hacia afuera
+    var o1 = apertura(mx, my, nx, ny, i), o2 = apertura(mx, my, -nx, -ny, i);
+    var usarPos;
+    if (Math.abs(o1 - o2) < 25) usarPos = (nx * (mx - gx) + ny * (my - gy) >= 0);  // empate -> centroide
+    else usarPos = o1 > o2;                                  // lado más abierto
+    if (!usarPos) { nx = -nx; ny = -ny; }
     var da = Math.hypot(a.x - gx, a.y - gy), db = Math.hypot(b.x - gx, b.y - gy);
     var sgn = db > da ? 1 : -1;                              // hacia el extremo más lejano del centroide
     var slide = sgn * dl * 0.35;                             // corrimiento hacia el extremo libre
