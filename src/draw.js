@@ -90,7 +90,9 @@ function tabla(ox, oy, colW, filas, P, headers) {
 /* --- Sección plegada (forma, fuera de escala). Cada medida sale con línea guía
        perpendicular al tramo, hacia afuera, para no pisar ninguna línea. --- */
 function seccion(segs, turns, h0, cx, cy, box, P) {
-  var vis = segs.map(function (s) { return 44 + Math.min(s, 190) * 0.86; });
+  // Fuera de escala: achica los tramos chicos (el escalón) y deja que los largos manden,
+  // así el codo queda compacto y las cotas no se amontonan.
+  var vis = segs.map(function (s) { return 22 + Math.min(s, 230) * 0.92; });
   var pts = turtlePts(vis, turns, h0);
   var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
   var minX = Math.min.apply(null, xs), minY = Math.min.apply(null, ys);
@@ -115,18 +117,18 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
     var nx = -dys / dl, ny = dxs / dl;                       // perpendicular al tramo
     if (nx * (mx - gx) + ny * (my - gy) < 0) { nx = -nx; ny = -ny; }   // hacia afuera
     // centrada y a distancia prudente; si choca, DESLIZA a lo largo del tramo (nunca hacia el perfil)
-    var off = 36, slide = 0, tx, ty, tries = 0;
+    var off = 34, slide = 0, tx, ty, tries = 0;
     do {
       tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide;
       var hit = null, mind = 1e9;
       for (var j = 0; j < placed.length; j++) {
         var d = Math.hypot(tx - placed[j].x, ty - placed[j].y);
-        if (d < 40 && d < mind) { mind = d; hit = placed[j]; }
+        if (d < 48 && d < mind) { mind = d; hit = placed[j]; }
       }
       if (!hit) break;
       var proj = (hit.x - (mx + nx * off)) * ux + (hit.y - (my + ny * off)) * uy;  // conflicto a lo largo del tramo
-      slide += (proj > 0 ? -30 : 30); off += 7; tries++;
-    } while (tries < 8);
+      slide += (proj > 0 ? -40 : 40); off += 9; tries++;
+    } while (tries < 10);
     placed.push({ x: tx, y: ty });
     g += txt(tx, ty + 9, String(segs[i]), F.num, 'middle', P, false, '600');
   }
