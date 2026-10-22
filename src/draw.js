@@ -122,9 +122,13 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
     }
     return best;
   }
-  // Colocación DETERMINÍSTICA: la cota va al lado con MÁS espacio libre (test de rayos),
-  // y se corre hacia el extremo libre del tramo. Sin líneas guía ni slides reactivos.
+  // Colocación: cota CENTRADA en su tramo (lado con más espacio libre). Solo si chocaría con
+  // otra cota se la corre hacia el extremo libre del tramo; si aún así toca, se la empuja afuera.
   var placed = [];
+  function choca(tx, ty) {
+    for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < 42) return true; }
+    return false;
+  }
   for (var i = 0; i < segs.length; i++) {
     var a = S[i], b = S[i + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     var dxs = b.x - a.x, dys = b.y - a.y, dl = Math.hypot(dxs, dys) || 1;
@@ -137,16 +141,10 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
     if (!usarPos) { nx = -nx; ny = -ny; }
     var da = Math.hypot(a.x - gx, a.y - gy), db = Math.hypot(b.x - gx, b.y - gy);
     var sgn = db > da ? 1 : -1;                              // hacia el extremo más lejano del centroide
-    var slide = sgn * dl * 0.35;                             // corrimiento hacia el extremo libre
-    var off = 32, tx = mx + nx * off + ux * slide, ty = my + ny * off + uy * slide;
-    // red de seguridad: si aún así tocara otra cota, la empuja un poco más afuera (no hacia el perfil)
+    var off = 32, slide = 0, tx = mx + nx * off, ty = my + ny * off;   // 1) intento CENTRADO
+    if (choca(tx, ty)) { slide = sgn * dl * 0.35; tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide; }  // 2) corre al extremo libre
     var safe = 0;
-    while (safe < 4) {
-      var hit = false;
-      for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < 42) { hit = true; break; } }
-      if (!hit) break;
-      off += 20; tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide; safe++;
-    }
+    while (choca(tx, ty) && safe < 4) { off += 20; tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide; safe++; }  // 3) empuja afuera
     placed.push({ x: tx, y: ty });
     g += txt(tx, ty + 8, String(segs[i]), F.num, 'middle', P, false, '600');
   }
