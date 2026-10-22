@@ -108,29 +108,30 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
   var pMinX = 1e9, pMaxX = -1e9, pMinY = 1e9, pMaxY = -1e9;
   S.forEach(function (p) { pMinX = Math.min(pMinX, p.x); pMaxX = Math.max(pMaxX, p.x); pMinY = Math.min(pMinY, p.y); pMaxY = Math.max(pMaxY, p.y); });
   var gx = 0, gy = 0; S.forEach(function (p) { gx += p.x; gy += p.y; }); gx /= S.length; gy /= S.length;
-  // Cada cota CENTRADA en su tramo, corrida hacia afuera una distancia prudente. Sin líneas guía.
+  // Colocación DETERMINÍSTICA: cada cota sale por la normal (hacia afuera del perfil) y
+  // se corre hacia el EXTREMO LIBRE de su tramo (el más lejano del centroide). Eso separa
+  // las cotas que comparten un vértice (p.ej. rebaje y escalón) sin líneas guía ni slides reactivos.
   var placed = [];
   for (var i = 0; i < segs.length; i++) {
     var a = S[i], b = S[i + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     var dxs = b.x - a.x, dys = b.y - a.y, dl = Math.hypot(dxs, dys) || 1;
     var ux = dxs / dl, uy = dys / dl;                        // tangente (a lo largo del tramo)
-    var nx = -dys / dl, ny = dxs / dl;                       // perpendicular al tramo
+    var nx = -dys / dl, ny = dxs / dl;                       // normal
     if (nx * (mx - gx) + ny * (my - gy) < 0) { nx = -nx; ny = -ny; }   // hacia afuera
-    // centrada y a distancia prudente; si choca, DESLIZA a lo largo del tramo (nunca hacia el perfil)
-    var off = 34, slide = 0, tx, ty, tries = 0;
-    do {
-      tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide;
-      var hit = null, mind = 1e9;
-      for (var j = 0; j < placed.length; j++) {
-        var d = Math.hypot(tx - placed[j].x, ty - placed[j].y);
-        if (d < 48 && d < mind) { mind = d; hit = placed[j]; }
-      }
+    var da = Math.hypot(a.x - gx, a.y - gy), db = Math.hypot(b.x - gx, b.y - gy);
+    var sgn = db > da ? 1 : -1;                              // hacia el extremo más lejano del centroide
+    var slide = sgn * dl * 0.35;                             // corrimiento hacia el extremo libre
+    var off = 32, tx = mx + nx * off + ux * slide, ty = my + ny * off + uy * slide;
+    // red de seguridad: si aún así tocara otra cota, la empuja un poco más afuera (no hacia el perfil)
+    var safe = 0;
+    while (safe < 4) {
+      var hit = false;
+      for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < 42) { hit = true; break; } }
       if (!hit) break;
-      var proj = (hit.x - (mx + nx * off)) * ux + (hit.y - (my + ny * off)) * uy;  // conflicto a lo largo del tramo
-      slide += (proj > 0 ? -40 : 40); off += 9; tries++;
-    } while (tries < 10);
+      off += 20; tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide; safe++;
+    }
     placed.push({ x: tx, y: ty });
-    g += txt(tx, ty + 9, String(segs[i]), F.num, 'middle', P, false, '600');
+    g += txt(tx, ty + 8, String(segs[i]), F.num, 'middle', P, false, '600');
   }
   return g;
 }
