@@ -3,7 +3,7 @@
    Depende de calcularDespiece/turtlePts del núcleo (mismo bundle).
    =========================================================================== */
 var PG = { w: 2100, h: 2970, m: 70 };
-var F = { h1: 40, h2: 30, lbl: 24, dim: 26, num: 30, sm: 22, ty: 19 };
+var F = { h1: 40, h2: 30, lbl: 24, dim: 26, num: 22, sm: 22, ty: 19 };
 var SW = { thick: 6, thin: 2.6, dim: 2.2, arrow: 22 };
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -111,16 +111,22 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
   for (var i = 0; i < segs.length; i++) {
     var a = S[i], b = S[i + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     var dxs = b.x - a.x, dys = b.y - a.y, dl = Math.hypot(dxs, dys) || 1;
+    var ux = dxs / dl, uy = dys / dl;                        // tangente (a lo largo del tramo)
     var nx = -dys / dl, ny = dxs / dl;                       // perpendicular al tramo
     if (nx * (mx - gx) + ny * (my - gy) < 0) { nx = -nx; ny = -ny; }   // hacia afuera
-    var off = 40, tx, ty, tries = 0;                         // distancia prudente afuera del tramo
+    // centrada y a distancia prudente; si choca, DESLIZA a lo largo del tramo (nunca hacia el perfil)
+    var off = 36, slide = 0, tx, ty, tries = 0;
     do {
-      tx = mx + nx * off; ty = my + ny * off;
-      var hit = false;
-      for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < 44) { hit = true; break; } }
+      tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide;
+      var hit = null, mind = 1e9;
+      for (var j = 0; j < placed.length; j++) {
+        var d = Math.hypot(tx - placed[j].x, ty - placed[j].y);
+        if (d < 40 && d < mind) { mind = d; hit = placed[j]; }
+      }
       if (!hit) break;
-      off += 26; tries++;
-    } while (tries < 5);
+      var proj = (hit.x - (mx + nx * off)) * ux + (hit.y - (my + ny * off)) * uy;  // conflicto a lo largo del tramo
+      slide += (proj > 0 ? -30 : 30); off += 7; tries++;
+    } while (tries < 8);
     placed.push({ x: tx, y: ty });
     g += txt(tx, ty + 9, String(segs[i]), F.num, 'middle', P, false, '600');
   }
