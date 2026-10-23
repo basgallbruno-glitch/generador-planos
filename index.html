@@ -889,8 +889,15 @@ function cajetin(r, ox, oy, w, h, P, logo) {
 /* --- Despiece (tabla) con material --- */
 function despieceTabla(r, ox, oy, P) {
   var mat = 'Chapa N°' + (r.chapa || 18);
+  var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo'];
   var filas = r.despiece.map(function (d) { return { c: [d.pieza, d.desc, String(d.cant), mat, d.ancho + '×' + d.largo] }; });
-  return tabla(ox, oy, [110, 380, 100, 220, 310], filas, P, ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo']);
+  // ancho de cada columna según el texto más largo (mono ≈ 0.6·fs por carácter + padding)
+  var fs = 21, colW = headers.map(function (h, i) {
+    var mx = h.length;
+    filas.forEach(function (f) { mx = Math.max(mx, String(f.c[i]).length); });
+    return Math.ceil(mx * fs * 0.6) + 34;
+  });
+  return tabla(ox, oy, colW, filas, P, headers);
 }
 
 /* --- Planilla de herrajes (lo que el usuario carga en el artefacto) --- */
