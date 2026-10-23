@@ -858,10 +858,11 @@ function lateral(r, ox, oy, P, k) {
   var w = r.marco.espesor * k, h = r.H * k, g = '';
   g += tsans(ox, oy - 18, 'LATERAL', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, w, h, SW.thick, P);
-  var bot = oy + h, cy = bot - 1020 * k, cx = ox + 50 * k;
+  var bot = oy + h, cy = bot - r.picaporte * k, cx = ox + w * 0.5;
+  // agujero de cerradura (en la jamba, a la altura de cerradero)
   g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="11" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   g += line(cx - 18, cy, cx + 18, cy, SW.thin, P) + line(cx, cy - 18, cx, cy + 18, SW.thin, P);
-  g += dimV(cy, bot, ox + w + 55, '1020', P, ox + w);
+  g += dimV(cy, bot, ox + w + 55, String(r.picaporte), P, ox + w);
   return g;
 }
 
@@ -975,12 +976,9 @@ function frenteMarco(r, ox, oy, P, k) {
   g += tsans(ox, oy - 18, 'FRENTE (marco)', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, W, H, SW.thick, P);
   g += rect(ox + 30 * k, oy + 30 * k, W - 60 * k, H - 30 * k, SW.thick, P);  // apertura (luz)
-  var floorY = oy + H, cerrY = floorY - r.picaporte * k, cerrX = ox + W - 30 * k - 12;
-  g += '<circle cx="' + cerrX.toFixed(1) + '" cy="' + cerrY.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-  g += line(cerrX - 16, cerrY, cerrX + 16, cerrY, SW.thin, P) + line(cerrX, cerrY - 16, cerrX, cerrY + 16, SW.thin, P);
+  var floorY = oy + H;
   g += dimH(ox, ox + W, floorY + 60, String(r.W), P, floorY);
   g += dimV(oy, floorY, ox - 60, String(r.H), P, ox);
-  g += dimV(cerrY, floorY, ox + W + 60, String(r.picaporte), P, ox + W);   // altura del cerradero (variable)
   return g;
 }
 
@@ -992,9 +990,11 @@ function generarMarco(params, P, logo) {
   r.tipoTexto = 'Marco · hoja ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica');
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  // frente del vano más grande (es lo que interesa de este plano)
-  var kf = Math.min(430 / r.W, 940 / r.H);
-  g += frenteMarco(r, M + 90, 330, P, kf);
+  // frente del vano + lateral del marco (con altura de cerradura)
+  var kf = Math.min(360 / r.W, 940 / r.H);
+  var fx = M + 90;
+  g += frenteMarco(r, fx, 330, P, kf);
+  g += lateral(r, fx + r.W * kf + 70, 330, P, kf);
   var dx = 760;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
