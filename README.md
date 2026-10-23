@@ -4,6 +4,8 @@ Generador paramétrico de planos de fabricación (puertas metálicas doble faz, 
 
 **En vivo:** https://basgallbruno-glitch.github.io/generador-planos/
 
+**Criterios de fabricación (instructivo):** https://basgallbruno-glitch.github.io/generador-planos/criterios.html
+
 ## Cómo se usa
 Se elige el tipo de plano, se cargan los parámetros (medidas, muro, mano, herrajes, etc.) y se descarga el PDF A4 listo para taller. El rótulo y los herrajes son editables.
 
