@@ -945,12 +945,12 @@ function generarPaginas(params, P, logo) {
   g += bloquePerfil(M, by, 560, 1500, '① Marco',
     'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
-  g += cruzExt(r, M + 580, by, 650, 960, P);
-  g += cruzInt(r, M + 1250, by, 660, 960, P);
-  g += bloquePerfil(M + 580, by + 980, 640, 520, '④ Refuerzo (U)',
+  g += cruzExt(r, M + 580, by, 650, 1090, P);
+  g += cruzInt(r, M + 1250, by, 660, 1090, P);
+  g += bloquePerfil(M + 580, by + 1110, 640, 390, '④ Refuerzo (U)',
     r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
     [reb, 25, reb], ['L', 'L'], [0, -1], P);
-  g += bloquePerfil(M + 1250, by + 980, 660, 520, '⑤ Perfil inferior (U)',
+  g += bloquePerfil(M + 1250, by + 1110, 660, 390, '⑤ Perfil inferior (U)',
     'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
     [20, reb, 20], ['L', 'L'], [0, -1], P);
 
