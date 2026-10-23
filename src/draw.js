@@ -406,7 +406,7 @@ var TIPOS = [
       { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: 150, step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400 },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Sin term. +30']] }
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
     calcular: function (p) { return calcularDespiece(p); },
     generar: function (p, P, logo) { return generarPaginas(p, P, logo); }
@@ -421,7 +421,7 @@ var TIPOS = [
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']] },
       { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: 150, step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400 },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Sin term. +30']] }
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
     calcular: function (p) { return calcularMarco(p); },
     generar: function (p, P, logo) { return generarMarco(p, P, logo); }

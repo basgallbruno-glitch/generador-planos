@@ -107,7 +107,7 @@ function calcularDespiece(p) {
 
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
-    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (+30 enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + enterrar },
+    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + enterrar },
     { pieza: 'P.2', desc: 'Tapa', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo },
     { pieza: 'P.3', desc: 'Bandeja', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo },
     { pieza: 'P.4', desc: 'Refuerzo vertical', cant: nRef, ancho: refAncho, largo: refLargo },
@@ -140,7 +140,7 @@ function calcularMarco(p) {
   var luz = W - 2 * C.alaMarco;
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cantUno: 1, ancho: marco.desarrollo, largo: luz },
-    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (+30 enterrar)' : ''), cantUno: 2, ancho: marco.desarrollo, largo: H + enterrar },
+    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cantUno: 2, ancho: marco.desarrollo, largo: H + enterrar },
   ];
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cantidad, ancho: d.ancho, largo: d.largo };
