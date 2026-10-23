@@ -277,7 +277,6 @@ function cajetin(r, ox, oy, w, h, P, logo) {
   g += cell(ox + col1, oy + 2 * rh, 'Tipo', r.tipoTexto || ('Doble faz · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica')));
   var lx = ox + col1 + col2, lw = w - col1 - col2;
   if (logo) { var iw = lw - 40, ih = iw * 344 / 1229, iy = oy + (h - ih) / 2 - 14; g += '<image x="' + (lx + 20).toFixed(1) + '" y="' + iy.toFixed(1) + '" width="' + iw.toFixed(1) + '" height="' + ih.toFixed(1) + '" href="' + logo + '"/>'; }
-  g += tsans(lx + lw / 2, oy + h - 12, 'Resp.: Ing. Basgall Bruno', F.ty, 'middle', P, 500);
   return g;
 }
 
@@ -334,21 +333,20 @@ function generarPaginas(params, P, logo) {
   g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P).svg;
 
-  // Fila B: prioridad a los difíciles. ② y ③ grandes (columnas); ① ④ ⑤ apilados a la izq.
-  var reb = r.rebajeHoja, by = 1300, bandH = 1460;
-  // Col izquierda: ① (más largo) + ④ + ⑤ (más abajo)
-  g += bloquePerfil(M, by, 450, 760, '① Marco',
+  // Fila B: ① GRANDE a la izquierda (escala alta -> cotas centradas y sin amontonarse).
+  // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
+  var reb = r.rebajeHoja, by = 1300;
+  g += bloquePerfil(M, by, 560, 1500, '① Marco',
     'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
-  g += bloquePerfil(M, by + 800, 450, 350, '④ Refuerzo (U)',
+  g += cruzExt(r, M + 580, by, 650, 960, P);
+  g += cruzInt(r, M + 1250, by, 660, 960, P);
+  g += bloquePerfil(M + 580, by + 980, 640, 520, '④ Refuerzo (U)',
     r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
     [reb, 25, reb], ['L', 'L'], [0, -1], P);
-  g += bloquePerfil(M, by + 1190, 450, 350, '⑤ Perfil inferior (U)',
+  g += bloquePerfil(M + 1250, by + 980, 660, 520, '⑤ Perfil inferior (U)',
     'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
     [20, reb, 20], ['L', 'L'], [0, -1], P);
-  // Col centro/derecha: ② y ③ grandes
-  g += cruzExt(r, M + 470, by, 700, bandH, P);
-  g += cruzInt(r, M + 1190, by, 770, bandH, P);
 
   return [pagina(g, P, 'Perfiles fuera de escala: las medidas son las longitudes de cada tramo (mm). Plana/desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
