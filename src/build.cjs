@@ -91,10 +91,10 @@ td.n{text-align:right;font-family:'IBM Plex Mono',monospace}
     </div>
     <div class="card">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Rótulo (editable)</div>
-      <div class="field"><label for="rPlano">Plano</label><input id="rPlano" type="text" value="Puertas tipo P3"></div>
-      <div class="field"><label for="rObra">Obra</label><input id="rObra" type="text" value="Complejo San Martín"></div>
-      <div class="field"><label for="rOt">OT</label><input id="rOt" type="text" value="Orden N° 1"></div>
-      <div class="field"><label for="rFecha">Fecha</label><input id="rFecha" type="text" value="05-10-2026"></div>
+      <div class="field"><label for="rPlano">Plano</label><input id="rPlano" type="text" value=""></div>
+      <div class="field"><label for="rObra">Obra</label><input id="rObra" type="text" value=""></div>
+      <div class="field"><label for="rOt">OT</label><input id="rOt" type="text" value=""></div>
+      <div class="field"><label for="rFecha">Fecha</label><input id="rFecha" type="text" value="" placeholder="dd-mm-aaaa"></div>
     </div>
     <div class="card">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Herrajes</div>

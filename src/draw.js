@@ -410,14 +410,14 @@ var TIPOS = [
   {
     id: 'puerta-doble-faz', nombre: 'Puerta metálica doble faz',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 850, step: 10, min: 400, max: 2000 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800 },
-      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: 1, step: 1, min: 0, max: 99 },
-      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: 0, step: 1, min: 0, max: 99 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 2000 },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 1500, max: 2800 },
+      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: '', step: 1, min: 0, max: 99 },
+      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: 150, step: 5, min: 60, max: 400 },
-      { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400 },
+      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
@@ -427,13 +427,13 @@ var TIPOS = [
   {
     id: 'marco', nombre: 'Marco de puerta (solo marco)',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 850, step: 10, min: 400, max: 2000 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800 },
-      { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: 1, step: 1, min: 1, max: 99 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 2000 },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 1500, max: 2800 },
+      { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: '', step: 1, min: 1, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: 150, step: 5, min: 60, max: 400 },
-      { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400 },
+      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
     calcular: function (p) { return calcularMarco(p); },
