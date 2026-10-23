@@ -10,7 +10,7 @@ const _draw = fs.readFileSync(path.join(D, 'draw.js'), 'utf8').replace(/if \(typ
 const bundle = _eng + '\n\n' + _draw;
 const logoB64 = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(D, 'logo.jpg')).toString('base64');
 
-const mkHtml = (DL) => `<title>Plano puerta doble faz</title>
+const mkHtml = (DL) => `<title>Generador de planos - Carpintería metálica</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
