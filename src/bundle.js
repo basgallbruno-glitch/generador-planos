@@ -108,8 +108,8 @@ function calcularDespiece(p) {
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
     { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (+30 enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + enterrar },
-    { pieza: 'P.2', desc: 'Hoja exterior', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo },
-    { pieza: 'P.3', desc: 'Hoja interior', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo },
+    { pieza: 'P.2', desc: 'Tapa', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo },
+    { pieza: 'P.3', desc: 'Bandeja', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo },
     { pieza: 'P.4', desc: 'Refuerzo vertical', cant: nRef, ancho: refAncho, largo: refLargo },
     { pieza: 'P.5', desc: 'Perfil interior', cant: 1, ancho: p5Ancho, largo: p5Largo },
   ];

@@ -175,7 +175,7 @@ function hook180(px, py, dx, dy, nx, ny, hl, gap, P, label) {
 /* --- ② Hoja exterior: cruz; pestañas 1,3,4 = ganchos a 180° (15 mm, punta redondeada) --- */
 function cruzExt(r, ox, oy, w, h, P) {
   var g = rect(ox, oy, w, h, SW.thin, P, P.card || 'none');
-  g += tituloNum(ox + 24, oy + 42, '② Hoja exterior (panel)', P);
+  g += tituloNum(ox + 24, oy + 42, '② Tapa (panel)', P);
   g += tsans(ox + 24, oy + 76, 'plana ' + r.despiece[2].ancho + ' × ' + r.despiece[2].largo + ' mm', F.ty, 'start', P, 500, P.muted || P.text);
   // intersección = centro del recuadro de dibujo
   var cx = ox + w * 0.50, cyBar = oy + 100 + (h - 100) / 2;
@@ -197,7 +197,7 @@ function cruzExt(r, ox, oy, w, h, P) {
 /* --- ③ Hoja interior: cruz con rebajes (90°), longitudes fuera de las líneas --- */
 function cruzInt(r, ox, oy, w, h, P) {
   var g = rect(ox, oy, w, h, SW.thin, P, P.card || 'none');
-  g += tituloNum(ox + 24, oy + 42, '③ Hoja interior (panel)', P);
+  g += tituloNum(ox + 24, oy + 42, '③ Bandeja (panel)', P);
   g += tsans(ox + 24, oy + 76, 'plana ' + r.despiece[3].ancho + ' × ' + r.despiece[3].largo + ' mm', F.ty, 'start', P, 500, P.muted || P.text);
   // intersección = centro del recuadro
   var cx = ox + w * 0.50, cyBar = oy + 100 + (h - 100) / 2;
