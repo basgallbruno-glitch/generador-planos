@@ -65,8 +65,9 @@ function dimV(y1, y2, xDim, label, P, xObj) {
 }
 
 /* --- Tabla simple --- */
-function tabla(ox, oy, colW, filas, P, headers) {
-  var g = '', rh = 56, fs = 21, w = colW.reduce(function (a, b) { return a + b; }, 0), y = oy, i, x;
+function tabla(ox, oy, colW, filas, P, headers, opt) {
+  opt = opt || {};
+  var g = '', rh = opt.rh || 56, fs = opt.fs || 21, w = colW.reduce(function (a, b) { return a + b; }, 0), y = oy, i, x;
   if (headers) {
     g += rect(ox, y, w, rh, SW.thin, P, P.head || 'none');
     x = ox; for (i = 0; i < headers.length; i++) { g += tsans(x + 14, y + rh - 20, headers[i], fs, 'start', P, 700, P.accent); x += colW[i]; }
@@ -281,21 +282,23 @@ function cajetin(r, ox, oy, w, h, P, logo) {
 }
 
 /* --- Despiece (tabla) con material --- */
-function despieceTabla(r, ox, oy, P) {
+function despieceTabla(r, ox, oy, P, tw) {
   var mat = 'Chapa N°' + (r.chapa || 18);
   var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo'];
   var filas = r.despiece.map(function (d) { return { c: [d.pieza, d.desc, String(d.cant), mat, d.ancho + '×' + d.largo] }; });
   // ancho de cada columna según el texto más largo (mono ≈ 0.6·fs por carácter + padding)
-  var fs = 21, colW = headers.map(function (h, i) {
+  var fs = 27, colW = headers.map(function (h, i) {
     var mx = h.length;
     filas.forEach(function (f) { mx = Math.max(mx, String(f.c[i]).length); });
-    return Math.ceil(mx * fs * 0.6) + 34;
+    return Math.ceil(mx * fs * 0.6) + 40;
   });
-  return tabla(ox, oy, colW, filas, P, headers);
+  // estira para ocupar el ancho disponible: el sobrante va a Descripción
+  if (tw) { var s = colW.reduce(function (a, b) { return a + b; }, 0); if (s < tw) colW[1] += tw - s; }
+  return tabla(ox, oy, colW, filas, P, headers, { fs: fs, rh: 68 });
 }
 
 /* --- Planilla de herrajes (lo que el usuario carga en el artefacto) --- */
-function herrajesTabla(r, ox, oy, P) {
+function herrajesTabla(r, ox, oy, P, tw) {
   var items = (r.herrajes || []).filter(function (s) { return s && s.trim(); });
   var filas;
   if (!items.length) {
@@ -306,7 +309,8 @@ function herrajesTabla(r, ox, oy, P) {
       return { c: m ? [m[1], m[2]] : ['', it.trim()] };
     });
   }
-  return tabla(ox, oy, [120, 770], filas, P, ['Cant', 'Herraje']);
+  var w = tw || 890, c0 = 150;
+  return tabla(ox, oy, [c0, w - c0], filas, P, ['Cant', 'Herraje'], { fs: 27, rh: 68 });
 }
 
 /* --- Envoltura de página A4 --- */
@@ -333,12 +337,13 @@ function generarPaginas(params, P, logo) {
   g += frente(r, M + 90, 330, P, mano, kf);
   var dx = 760;
   g += tsans(dx, 300, 'DESPIECE — ' + r.total + ' puertas (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, 320, P);
+  var TW = 2030 - dx;
+  var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   // Planilla de herrajes, debajo del despiece
   var hy = 320 + dt.h + 54;
   g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P).svg;
+  g += herrajesTabla(r, dx, hy, P, TW).svg;
 
   // Fila B: ① GRANDE a la izquierda (escala alta -> cotas centradas y sin amontonarse).
   // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
@@ -386,11 +391,12 @@ function generarMarco(params, P, logo) {
   g += frenteMarco(r, M + 90, 330, P, kf);
   var dx = 760;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, 320, P);
+  var TW = 2030 - dx;
+  var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   var hy = 320 + dt.h + 54;
   g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P).svg;
+  g += herrajesTabla(r, dx, hy, P, TW).svg;
   // ① Marco: perfil grande y legible (hay lugar de sobra)
   var bw = 880, bx = M + (full - bw) / 2;
   g += bloquePerfil(bx, 1300, bw, 1420, '① Marco',

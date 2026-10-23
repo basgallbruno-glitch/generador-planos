@@ -16,13 +16,13 @@ function restarDed(lens, ded) { return lens.map(function (l, i) { return l - ded
 
 /* ---- Constantes de taller (chapa 18), extraídas del plano ---- */
 var C = {
-  alaMarco: 30, solapeHoja: 11, pestanaExtHoja: 14,
+  alaMarco: 30, solapeHoja: 12, pestanaExtHoja: 14,
   pestanaIntHoja: 10, juegoIntLat: 4, juegoIntInf: 8,   // perfil ③ (hoja interior, panel)
   luzSuperior: 4, luzInferior: 7, solapeVertHoja: 15, pestanaHoja: 15,
   baseRefuerzo: 25, maxSepRefuerzo: 160,   // ④ refuerzo (U): paredes = rebaje; cada ≤160 mm
   paredPerfil5: 20, juegoPerfil5: 4,        // ⑤ perfil interior (U): base = rebaje; largo = ancho int − 4
   revealDintel: 30,   // = 'espesor del marco' que reduce el vano (cara/ala del marco)
-  margenRefuerzo: 57,
+  luzRefuerzoInf: 10,  // ④ refuerzo: luz libre respecto al perfil inferior ⑤
   distCerraduraFilo: 50,      // distancia del filo del marco al agujero de cerradura
   alturaCerradura: 1020,      // del plano
   // --- Perfil ① marco (muro de mampostería) ---
@@ -103,7 +103,7 @@ function calcularDespiece(p) {
 
   var caraAltoExt = H - C.revealDintel - C.luzSuperior - C.luzInferior + C.solapeVertHoja; // 2050-30-4-7+15=2024
   var hojaExtLargo = desarrollar([caraAltoExt, C.pestanaExtHoja], 1, chapa); // 2037
-  var refLargo = hojaExtLargo - C.margenRefuerzo;    // 1980
+  var refLargo = caraIntAlto - C.paredPerfil5 - C.luzRefuerzoInf;  // cara H (③) − pared ⑤ − 10 luz
 
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
