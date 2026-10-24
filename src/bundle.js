@@ -26,7 +26,7 @@ var C = {
   distCerraduraFilo: 50,      // distancia del filo del marco al agujero de cerradura
   alturaCerradura: 1020,      // del plano
   // --- Perfil ① marco (muro de mampostería) ---
-  margenMuro: 3,              // corte y pintura: espesor marco = muro + 3
+  margenMuro: 0,              // (provisorio) espesor marco = muro terminado; margen corte/pintura pendiente de afinar
   t3Metalica: 35, t3Madera: 31,  // tramo 3 según tipo de hoja
   marcoTurns: ['L', 'L', 'R', 'L', 'L', 'R', 'L', 'L'],
 };
@@ -54,7 +54,7 @@ function deduccionPliegues(lens, turns, h0, endVal) {
 }
 function perfilMarco(muro, tipoHoja) {
   var t3 = tipoHoja === 'madera' ? C.t3Madera : C.t3Metalica;
-  var espesor = muro + C.margenMuro;        // corte y pintura
+  var espesor = muro + C.margenMuro;        // = muro terminado (margenMuro provisorio = 0)
   var t7 = espesor - t3 - 15;               // espesor = t3 + 15 + t7
   var segs = [15, 30, t3, 15, 15, 15, t7, 30, 15];
   var ded = deduccionPliegues(segs, C.marcoTurns, [0, -1], 1);  // pestañas del marco descuentan 1

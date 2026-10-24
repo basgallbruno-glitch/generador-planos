@@ -133,7 +133,7 @@ var C = {
   distCerraduraFilo: 50,      // distancia del filo del marco al agujero de cerradura
   alturaCerradura: 1020,      // del plano
   // --- Perfil ① marco (muro de mampostería) ---
-  margenMuro: 3,              // corte y pintura: espesor marco = muro + 3
+  margenMuro: 0,              // (provisorio) espesor marco = muro terminado; margen corte/pintura pendiente de afinar
   t3Metalica: 35, t3Madera: 31,  // tramo 3 según tipo de hoja
   marcoTurns: ['L', 'L', 'R', 'L', 'L', 'R', 'L', 'L'],
 };
@@ -161,7 +161,7 @@ function deduccionPliegues(lens, turns, h0, endVal) {
 }
 function perfilMarco(muro, tipoHoja) {
   var t3 = tipoHoja === 'madera' ? C.t3Madera : C.t3Metalica;
-  var espesor = muro + C.margenMuro;        // corte y pintura
+  var espesor = muro + C.margenMuro;        // = muro terminado (margenMuro provisorio = 0)
   var t7 = espesor - t3 - 15;               // espesor = t3 + 15 + t7
   var segs = [15, 30, t3, 15, 15, 15, t7, 30, 15];
   var ded = deduccionPliegues(segs, C.marcoTurns, [0, -1], 1);  // pestañas del marco descuentan 1
@@ -956,7 +956,7 @@ function generarPaginas(params, P, logo) {
   // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
   var reb = r.rebajeHoja, by = 1300;
   g += bloquePerfil(M, by, 560, 1500, '① Marco',
-    'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   g += cruzExt(r, M + 580, by, 650, 1090, P);
   g += cruzInt(r, M + 1250, by, 660, 1090, P);
@@ -1006,7 +1006,7 @@ function generarMarco(params, P, logo) {
   // ① Marco: perfil grande y legible (hay lugar de sobra)
   var bw = 880, bx = M + (full - bw) / 2;
   g += bloquePerfil(bx, 1300, bw, 1420, '① Marco',
-    'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
@@ -1022,7 +1022,7 @@ var TIPOS = [
       { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
@@ -1038,7 +1038,7 @@ var TIPOS = [
       { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: '', step: 1, min: 1, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
@@ -1110,7 +1110,7 @@ function getParams(){
 function validarGen(p){
   if(!(p.W>0)||!(p.H>0)) return 'Completá ancho y alto.';
   if(p.W-60<=0) return 'El ancho es menor que el marco: no hay luz de paso.';
-  const t3=p.tipoHoja==='madera'?31:35, t7=((p.espesorMuro||0)+3)-t3-15;
+  const t3=p.tipoHoja==='madera'?31:35, t7=(p.espesorMuro||0)-t3-15;
   if(t7<=0) return 'El muro es muy chico para este marco (tramo 7 ≤ 0).';
   const msgs=[];
   if(p.W<700||p.W>1200) msgs.push('ancho fuera del rango piloto (700–1200)');

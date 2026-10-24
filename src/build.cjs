@@ -180,7 +180,7 @@ function getParams(){
 function validarGen(p){
   if(!(p.W>0)||!(p.H>0)) return 'Completá ancho y alto.';
   if(p.W-60<=0) return 'El ancho es menor que el marco: no hay luz de paso.';
-  const t3=p.tipoHoja==='madera'?31:35, t7=((p.espesorMuro||0)+3)-t3-15;
+  const t3=p.tipoHoja==='madera'?31:35, t7=(p.espesorMuro||0)-t3-15;
   if(t7<=0) return 'El muro es muy chico para este marco (tramo 7 ≤ 0).';
   const msgs=[];
   if(p.W<700||p.W>1200) msgs.push('ancho fuera del rango piloto (700–1200)');

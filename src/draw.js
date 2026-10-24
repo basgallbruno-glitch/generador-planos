@@ -350,7 +350,7 @@ function generarPaginas(params, P, logo) {
   // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
   var reb = r.rebajeHoja, by = 1300;
   g += bloquePerfil(M, by, 560, 1500, '① Marco',
-    'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   g += cruzExt(r, M + 580, by, 650, 1090, P);
   g += cruzInt(r, M + 1250, by, 660, 1090, P);
@@ -400,7 +400,7 @@ function generarMarco(params, P, logo) {
   // ① Marco: perfil grande y legible (hay lugar de sobra)
   var bw = 880, bx = M + (full - bw) / 2;
   g += bloquePerfil(bx, 1300, bw, 1420, '① Marco',
-    'muro ' + r.muro + '+3=' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
@@ -416,7 +416,7 @@ var TIPOS = [
       { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
@@ -432,7 +432,7 @@ var TIPOS = [
       { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: '', step: 1, min: 1, max: 99 },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']] },
-      { id: 'muro', label: 'Espesor de muro (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
