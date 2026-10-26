@@ -97,7 +97,7 @@ td.n{text-align:right;font-family:'IBM Plex Mono',monospace}
       <div class="field"><label for="rFecha">Fecha</label><input id="rFecha" type="text" value="" placeholder="dd-mm-aaaa"></div>
     </div>
     <div class="card">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Herrajes</div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Accesorios</div>
       <div class="field"><label for="herrajes">Uno por línea (ej.: <em>3 Bisagras reforzadas</em>)</label><textarea id="herrajes" rows="5" placeholder="1 Cerradura de seguridad&#10;3 Bisagras reforzadas&#10;1 Juego de manijas"></textarea></div>
       <button id="pdf" class="pdfbtn">Imprimir / Guardar PDF (A4)</button>
     </div>
@@ -107,7 +107,7 @@ td.n{text-align:right;font-family:'IBM Plex Mono',monospace}
     </div>
     <div class="card note">
       <b>Tipos disponibles</b>: puerta metálica doble faz y marco de puerta (solo marco). El motor se irá ampliando con otros tipos (tapas de cámara, etc.).<br><br>
-      <b>Alcance</b>: perfiles fuera de escala con sus desarrollos, cajetín y herrajes editables, y export a PDF A4.
+      <b>Alcance</b>: perfiles fuera de escala con sus desarrollos, cajetín y accesorios editables, y export a PDF A4.
     </div>
     <button id="theme" class="themebtn">Cambiar tema</button>
   </div>

@@ -39,7 +39,8 @@ var C = {
   // --- Cámara cloacal (marco ángulo + tapa bandeja) ---
   camAngLeg: 50.8, camAngEsp: 4.76,  // ángulo 2"×3/16"  (ala 2" · espesor 3/16")
   camBandAlto: 46,                   // alto de la bandeja (= ala − espesor; queda al ras)
-  camChapaUmbral: 1000,              // ≥1 m en algún lado de la tapa → N°14; si no, N°16
+  camChapaUmbral: 1000,              // ≥1 m en algún lado del marco → N°14; si no, N°16
+  camLuzFija: 3,                     // luz fija bandeja↔marco (mm); por lado se resta 2·esp + luz
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -218,7 +219,8 @@ function calcularCamara(p) {
   var extA, extB, intA, intB;
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
-  var bandA = extA - 4 * t, bandB = extB - 4 * t;
+  var porLado = 2 * t + C.camLuzFija;                  // por lado: 2 espesores + luz fija de 3 mm
+  var bandA = extA - 2 * porLado, bandB = extB - 2 * porLado;
   var chapa = (extA >= C.camChapaUmbral || extB >= C.camChapaUmbral) ? 14 : 16;  // umbral sobre el marco (ext)
   var ded = TABLA_DEDUCCION[chapa][90];
   // bandeja: por dirección [pared 46, base, pared 46] → Σ − 4·ded (base en U + 2 pestañas)

@@ -306,7 +306,7 @@ function herrajesTabla(r, ox, oy, P, tw) {
   var items = (r.herrajes || []).filter(function (s) { return s && s.trim(); });
   var filas;
   if (!items.length) {
-    filas = [{ c: ['—', '(cargá los herrajes en el panel)'] }];
+    filas = [{ c: ['—', '(cargá los accesorios en el panel)'] }];
   } else {
     filas = items.map(function (it) {
       var m = /^(\d+)\s*[x×]?\s+(.*)$/.exec(it.trim());
@@ -314,7 +314,7 @@ function herrajesTabla(r, ox, oy, P, tw) {
     });
   }
   var w = tw || 890, c0 = 150;
-  return tabla(ox, oy, [c0, w - c0], filas, P, ['Cant', 'Herraje'], { fs: 27, rh: 68 });
+  return tabla(ox, oy, [c0, w - c0], filas, P, ['Cant', 'Accesorio'], { fs: 27, rh: 68 });
 }
 
 /* --- Envoltura de página A4 --- */
@@ -346,7 +346,7 @@ function generarPaginas(params, P, logo) {
   g += dt.svg;
   // Planilla de herrajes, debajo del despiece
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P, TW).svg;
 
   // Fila B: ① GRANDE a la izquierda (escala alta -> cotas centradas y sin amontonarse).
@@ -398,7 +398,7 @@ function generarMarco(params, P, logo) {
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P, TW).svg;
   // ① Marco: perfil grande y legible (hay lugar de sobra)
   var bw = 880, bx = M + (full - bw) / 2;
@@ -498,7 +498,7 @@ function generarGabinete(params, P, logo) {
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P, TW).svg;
   // Perfiles: ② P1 y ③ P2 (el marco estructural es caño comprado, no se grafica)
   var by = 1500, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
@@ -541,28 +541,29 @@ function plantaCamara(r, ox, oy, P, k) {
 function corteCamara(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Corte de armado', 'ángulo 2"×3/16" + tapa (malla + hormigón) · fuera de escala', P);
   var cx = ox + w * 0.5, AW = w * 0.64, xL = cx - AW / 2, xR = cx + AW / 2;
-  var cy = oy + h * 0.42, t2 = 16, ledge = 95, legV = 135, luz = 16, bandH = 118;
-  function angL(x0, dir) {   // ala horizontal al tope (hacia adentro) + ala vertical hacia abajo
+  var t2 = 16, legH = 135, ledge = 95, luz = 16, bandH = 118;
+  var cyBot = oy + h * 0.74, cyTop = cyBot - legH, seat = cyBot - t2;   // ala vertical arriba, horizontal abajo
+  function angL(x0, dir) {   // ala vertical hacia arriba (borde) + ala horizontal hacia adentro (abajo)
     var xi = x0 + dir * t2, xt = x0 + dir * ledge;
-    return '<path d="M' + x0.toFixed(1) + ' ' + cy.toFixed(1) + ' L' + xt.toFixed(1) + ' ' + cy.toFixed(1) +
-      ' L' + xt.toFixed(1) + ' ' + (cy + t2).toFixed(1) + ' L' + xi.toFixed(1) + ' ' + (cy + t2).toFixed(1) +
-      ' L' + xi.toFixed(1) + ' ' + (cy + legV).toFixed(1) + ' L' + x0.toFixed(1) + ' ' + (cy + legV).toFixed(1) +
+    return '<path d="M' + x0.toFixed(1) + ' ' + cyTop.toFixed(1) + ' L' + xi.toFixed(1) + ' ' + cyTop.toFixed(1) +
+      ' L' + xi.toFixed(1) + ' ' + seat.toFixed(1) + ' L' + xt.toFixed(1) + ' ' + seat.toFixed(1) +
+      ' L' + xt.toFixed(1) + ' ' + cyBot.toFixed(1) + ' L' + x0.toFixed(1) + ' ' + cyBot.toFixed(1) +
       ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   }
   g += angL(xL, 1) + angL(xR, -1);
-  // tapa (bandeja abierta arriba) apoyada sobre las alas, con luz contra la cara vertical
-  var bXL = xL + t2 + luz, bXR = xR - t2 - luz, bBot = cy + bandH;
-  g += '<rect x="' + bXL.toFixed(1) + '" y="' + cy.toFixed(1) + '" width="' + (bXR - bXL).toFixed(1) + '" height="' + bandH.toFixed(1) + '" fill="' + (P.hatch || 'none') + '" stroke="none"/>';
-  var my = cy + bandH * 0.42, dd;                                   // malla: puntos en el corte
+  // tapa (bandeja abierta arriba) apoyada en el asiento; paredes hacia arriba
+  var bXL = xL + t2 + luz, bXR = xR - t2 - luz, bTop = seat - bandH;
+  g += '<rect x="' + bXL.toFixed(1) + '" y="' + bTop.toFixed(1) + '" width="' + (bXR - bXL).toFixed(1) + '" height="' + bandH.toFixed(1) + '" fill="' + (P.hatch || 'none') + '" stroke="none"/>';
+  var my = seat - bandH * 0.20, dd;                                 // malla: baja, cerca del fondo
   for (dd = bXL + 24; dd < bXR - 10; dd += 44) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
   g += line(bXL + 14, my, bXR - 14, my, SW.dim, P, 0, P.dim || P.line);
-  g += '<path d="M' + bXL.toFixed(1) + ' ' + cy.toFixed(1) + ' L' + bXL.toFixed(1) + ' ' + bBot.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + bBot.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + cy.toFixed(1) + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
-  g += txt(xL - 12, cy + legV / 2, '50,8', F.sm, 'end', P, true, '600');
-  g += txt(bXR + 16, cy + bandH / 2, '46', F.num, 'start', P, true, '600');
-  g += line(xL + t2, cy - 12, bXL, cy - 12, SW.dim, P, '8 6', P.dim || P.line);
-  g += txt((xL + t2 + bXL) / 2, cy - 20, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  g += txt(cx, bBot + 34, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  g += tsans(ox + 24, oy + h - 22, 'luz = espesor del ángulo por lado', F.ty, 'start', P, 500, P.muted || P.text);
+  g += '<path d="M' + bXL.toFixed(1) + ' ' + bTop.toFixed(1) + ' L' + bXL.toFixed(1) + ' ' + seat.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + seat.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + bTop.toFixed(1) + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
+  g += txt(xL - 12, (cyTop + cyBot) / 2, '50,8', F.sm, 'end', P, true, '600');
+  g += txt(bXR + 16, (bTop + seat) / 2, '46', F.num, 'start', P, true, '600');
+  g += line(xL + t2, cyTop - 12, bXL, cyTop - 12, SW.dim, P, '8 6', P.dim || P.line);
+  g += txt((xL + t2 + bXL) / 2, cyTop - 20, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += txt(cx, cyBot + 34, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += tsans(ox + 24, oy + h - 22, 'luz = 3 mm fija (bandeja ↔ marco)', F.ty, 'start', P, 500, P.muted || P.text);
   return g;
 }
 
@@ -571,17 +572,17 @@ function secBandeja(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Bandeja (tapa) — panel', 'chapa N°' + r.chapa + ' · paredes 46 · plana ' + r.devA + '×' + r.devB, P);
   var cx = ox + w * 0.47, cyBar = oy + 140 + (h - 170) / 2;
   var hw = w * 0.30, vUp = (h - 170) * 0.30, vDn = (h - 170) * 0.30, wall = 66;
-  // sección a lo ANCHO (barra horizontal; paredes hacia abajo)
+  // sección a lo ANCHO (barra horizontal; paredes hacia arriba)
   g += line(cx - hw, cyBar, cx + hw, cyBar, SW.thick, P);
-  g += line(cx - hw, cyBar, cx - hw, cyBar + wall, SW.thick, P);
-  g += line(cx + hw, cyBar, cx + hw, cyBar + wall, SW.thick, P);
+  g += line(cx - hw, cyBar, cx - hw, cyBar - wall, SW.thick, P);
+  g += line(cx + hw, cyBar, cx + hw, cyBar - wall, SW.thick, P);
   // sección a lo ALTO (barra vertical; paredes hacia la izquierda)
   g += line(cx, cyBar - vUp, cx, cyBar + vDn, SW.thick, P);
   g += line(cx, cyBar - vUp, cx - wall, cyBar - vUp, SW.thick, P);
   g += line(cx, cyBar + vDn, cx - wall, cyBar + vDn, SW.thick, P);
   // cotas
-  g += txt(cx + hw * 0.5, cyBar - 16, String(r.bandA), F.num, 'middle', P, false, '600');          // base ancho
-  g += txt(cx + hw + 14, cyBar + wall * 0.62, '46', F.sm, 'start', P, false, '600');                // pared ancho
+  g += txt(cx + hw * 0.5, cyBar + 30, String(r.bandA), F.num, 'middle', P, false, '600');           // base ancho
+  g += txt(cx + hw + 14, cyBar - wall * 0.5, '46', F.sm, 'start', P, false, '600');                  // pared ancho (arriba)
   g += txt(cx + 18, cyBar + vDn * 0.5, String(r.bandB), F.num, 'start', P, false, '600');           // base alto
   g += txt(cx - wall * 0.5, cyBar - vUp - 12, '46', F.sm, 'middle', P, false, '600');               // pared alto
   g += tsans(cx - hw, cyBar + vDn + 46, 'secciones ancho × alto · paredes 46', F.ty, 'start', P, 500, P.muted || P.text);
@@ -606,7 +607,7 @@ function generarCamara(params, P, logo) {
   var ny = 320 + dt.h + 40;
   g += tsans(dx, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
   var hy = ny + 56;
-  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P, TW).svg;
   var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += corteCamara(r, x0, by, bw, 820, P);
