@@ -482,8 +482,7 @@ function frenteGabinete(r, ox, oy, P, k, mano) {
   var floorY = oy + Hv;
   g += dimV(my, my + mh, ox - 72, String(r.altoMarco), P, mx);            // marco (interior)
   g += dimV(oy, floorY, ox - 162, String(r.H), P, ox);                    // vano (exterior)
-  g += dimH(mx, mx + mw, floorY + 60, String(r.anchoMarco), P, my + mh);  // marco (interior)
-  g += dimH(ox, ox + Wv, floorY + 150, String(r.W), P, floorY);           // vano (exterior)
+  g += dimH(mx, mx + mw, floorY + 60, String(r.anchoMarco), P, my + mh);  // ancho: solo marco (el vano queda para cálculo)
   g += tsans(ox - 72, my - 14, 'marco', 17, 'middle', P, 600, P.accent);
   g += tsans(ox - 162, oy - 14, 'vano', 17, 'middle', P, 600, P.accent);
   return g;
