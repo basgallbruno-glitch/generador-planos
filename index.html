@@ -1067,23 +1067,6 @@ function gabBox(ox, oy, w, h, titulo, caption, P) {
     (caption ? tsans(ox + 24, oy + 76, caption, F.ty, 'start', P, 500, P.muted || P.text) : '');
 }
 
-/* ① Caño estructural (sección del tubo; canto al frente = arriba) */
-function secGabCano(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '① Marco estructural', 'caño ' + r.cano + ' (comprado) · unión 45°', P);
-  var bw = r.estrB, bh = r.estrA;
-  var k = Math.min((w - 240) / bw, (h - 250) / bh); k = Math.min(k, 7);
-  var dw = bw * k, dh = bh * k;
-  var x0 = ox + w * 0.42 - dw / 2, y0 = oy + 130 + (h - 160 - dh) / 2;
-  g += rect(x0, y0, dw, dh, SW.thick, P);
-  var t = Math.max(3, r.estrEsp * k);
-  g += rect(x0 + t, y0 + t, dw - 2 * t, dh - 2 * t, SW.thin, P);
-  g += txt(x0 + dw / 2, y0 - 16, String(r.estrB), F.num, 'middle', P, false, '600');
-  g += txt(x0 - 20, y0 + dh / 2 + 8, String(r.estrA), F.num, 'end', P, false, '600');
-  g += txt(x0 + dw / 2, y0 + dh + 36, 'e = ' + String(r.estrEsp).replace('.', ',') + ' mm', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  g += tsans(ox + 24, oy + h - 22, 'canto (' + r.estrB + ') hacia el frente', F.ty, 'start', P, 500, P.muted || P.text);
-  return g;
-}
-
 /* ② Marco de la hoja (P1): canal con 2 ganchos a 180° */
 function secGabP1(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Marco hoja (P1)', 'canal c/ ganchos · tramos 15·30·32·30·15', P);
@@ -1133,21 +1116,26 @@ function secGabP2(r, ox, oy, w, h, P) {
 
 /* Frente del gabinete: estructural + hoja + tablillas + apertura */
 function frenteGabinete(r, ox, oy, P, k, mano) {
-  var W = r.anchoMarco * k, H = r.altoMarco * k, g = '';
+  var Wv = r.W * k, Hv = r.H * k, g = '';
   g += tsans(ox, oy - 18, 'FRENTE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, W, H, SW.thick, P);                                   // estructural
-  var ins = Math.max(10, (r.estrB + 6) * k);
-  var hx = ox + ins, hy = oy + ins, hw = W - 2 * ins, hh = H - 2 * ins;
-  g += rect(hx, hy, hw, hh, SW.thin, P);                                  // hoja
-  var innTop = hy + 10, innBot = hy + hh - 10, step = (innBot - innTop) / r.nTab;
-  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(hx + 8, yy, hx + hw - 8, yy, SW.dim, P, 0, P.dim || P.line); }
-  var mid = hy + hh / 2;
-  if (mano === 'der') { g += line(hx + hw, hy, hx, mid, SW.dim, P, '18 12', P.accent) + line(hx + hw, hy + hh, hx, mid, SW.dim, P, '18 12', P.accent); }
-  else { g += line(hx, hy, hx + hw, mid, SW.dim, P, '18 12', P.accent) + line(hx, hy + hh, hx + hw, mid, SW.dim, P, '18 12', P.accent); }
-  var cx = mano === 'der' ? hx + 16 : hx + hw - 16;
-  g += '<circle cx="' + cx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-  g += dimH(ox, ox + W, oy + H + 60, String(r.anchoMarco), P, oy + H);
-  g += dimV(oy, oy + H, ox - 60, String(r.altoMarco), P, ox);
+  g += rect(ox, oy, Wv, Hv, SW.thin, P);                                  // vano (exterior, fino)
+  var gL = (r.W - r.anchoMarco) / 2, gT = r.H - r.altoMarco;              // luces 5 izq/der/sup, 0 abajo
+  var mx = ox + gL * k, my = oy + gT * k, mw = r.anchoMarco * k, mh = r.altoMarco * k;
+  g += rect(mx, my, mw, mh, SW.thick, P);                                 // marco (interior, grueso)
+  var pad = Math.max(6, 12 * k), innTop = my + pad, innBot = my + mh - pad, step = (innBot - innTop) / r.nTab;
+  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(mx + pad, yy, mx + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
+  var mid = my + mh / 2;
+  if (mano === 'der') { g += line(mx + mw, my, mx, mid, SW.dim, P, '18 12', P.accent) + line(mx + mw, my + mh, mx, mid, SW.dim, P, '18 12', P.accent); }
+  else { g += line(mx, my, mx + mw, mid, SW.dim, P, '18 12', P.accent) + line(mx, my + mh, mx + mw, mid, SW.dim, P, '18 12', P.accent); }
+  var lcx = mano === 'der' ? mx + 14 : mx + mw - 14;
+  g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+  var floorY = oy + Hv;
+  g += dimV(my, my + mh, ox - 72, String(r.altoMarco), P, mx);            // marco (interior)
+  g += dimV(oy, floorY, ox - 162, String(r.H), P, ox);                    // vano (exterior)
+  g += dimH(mx, mx + mw, floorY + 60, String(r.anchoMarco), P, my + mh);  // marco (interior)
+  g += dimH(ox, ox + Wv, floorY + 150, String(r.W), P, floorY);           // vano (exterior)
+  g += tsans(ox - 72, my - 14, 'marco', 17, 'middle', P, 600, P.accent);
+  g += tsans(ox - 162, oy - 14, 'vano', 17, 'middle', P, 600, P.accent);
   return g;
 }
 
@@ -1159,8 +1147,8 @@ function generarGabinete(params, P, logo) {
   var mano = params.drawMano || 'izq';
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(380 / r.anchoMarco, 820 / r.altoMarco);
-  g += frenteGabinete(r, M + 90, 330, P, kf, mano);
+  var kf = Math.min(520 / r.W, 1000 / r.H);
+  g += frenteGabinete(r, M + 180, 330, P, kf, mano);
   var dx = 760;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
@@ -1169,11 +1157,11 @@ function generarGabinete(params, P, logo) {
   var hy = 320 + dt.h + 54;
   g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
   g += herrajesTabla(r, dx, hy, P, TW).svg;
-  var by = 1300, bw = 600, gap = 30;
-  g += secGabCano(r, M, by, bw, 900, P);
-  g += secGabP1(r, M + bw + gap, by, bw, 900, P);
-  g += secGabP2(r, M + 2 * (bw + gap), by, bw, 900, P);
-  return [pagina(g, P, 'Perfiles fuera de escala (cotas en mm). Plana = ancho de la chapa a cortar. Estructural = caño comprado (unión a 45°). Imprimir en A4.')];
+  // Perfiles: ② P1 y ③ P2 (el marco estructural es caño comprado, no se grafica)
+  var by = 1500, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
+  g += secGabP1(r, x0, by, bw, 900, P);
+  g += secGabP2(r, x0 + bw + gap, by, bw, 900, P);
+  return [pagina(g, P, 'Perfiles fuera de escala (cotas en mm). Plana = ancho de la chapa a cortar. El marco estructural es caño comprado (unión a 45°). Imprimir en A4.')];
 }
 
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
