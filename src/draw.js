@@ -507,6 +507,101 @@ function generarGabinete(params, P, logo) {
   return [pagina(g, P, 'Perfiles fuera de escala (cotas en mm). Plana = ancho de la chapa a cortar. El marco estructural es caño comprado (unión a 45°). Imprimir en A4.')];
 }
 
+/* ===========================================================================
+   CÁMARA CLOACAL — dibujo
+   =========================================================================== */
+/* Planta: marco ext + hueco int + tapa, cotas ext/int apiladas */
+function plantaCamara(r, ox, oy, P, k) {
+  var eA = r.extA * k, eB = r.extB * k, lw = r.leg * k, g = '';
+  g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
+  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // marco (exterior)
+  var ix = ox + lw, iy = oy + lw, iw = r.intA * k, ih = r.intB * k;
+  g += rect(ix, iy, iw, ih, SW.thin, P);                                  // hueco (interior)
+  // tapa (bandeja) centrada, punteada
+  var bA = r.bandA * k, bB = r.bandB * k, tx = ox + (eA - bA) / 2, ty = oy + (eB - bB) / 2;
+  g += '<rect x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" width="' + bA.toFixed(1) + '" height="' + bB.toFixed(1) + '" fill="none" stroke="' + P.accent + '" stroke-width="' + SW.dim + '" stroke-dasharray="16 10"/>';
+  // bulones sobre el ala + manija central
+  var cxm = ox + eA / 2, cym = oy + eB / 2;
+  var nb = 3, i, fx, fy;
+  for (i = 1; i <= nb; i++) {
+    fx = ox + eA * i / (nb + 1);
+    g += '<circle cx="' + fx.toFixed(1) + '" cy="' + (oy + lw / 2).toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+    g += '<circle cx="' + fx.toFixed(1) + '" cy="' + (oy + eB - lw / 2).toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+    fy = oy + eB * i / (nb + 1);
+    g += '<circle cx="' + (ox + lw / 2).toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+    g += '<circle cx="' + (ox + eA - lw / 2).toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+  }
+  g += '<circle cx="' + cxm.toFixed(1) + '" cy="' + cym.toFixed(1) + '" r="11" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';   // manija
+  g += line(cxm - 18, cym, cxm + 18, cym, SW.thin, P) + line(cxm, cym - 18, cxm, cym + 18, SW.thin, P);
+  // cotas apiladas: interior (cerca) y exterior (lejos)
+  var floorY = oy + eB;
+  g += dimH(ix, ix + iw, floorY + 60, String(Math.round(r.intA)), P, iy + ih);
+  g += dimH(ox, ox + eA, floorY + 150, String(Math.round(r.extA)), P, floorY);
+  g += dimV(iy, iy + ih, ox - 70, String(Math.round(r.intB)), P, ix);
+  g += dimV(oy, oy + eB, ox - 160, String(Math.round(r.extB)), P, ox);
+  g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  g += tsans(ox - 160, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
+  return g;
+}
+
+/* ① Corte de armado: ángulo (L) a cada lado + bandeja apoyada, luz y alto 46 (fuera de escala) */
+function corteCamara(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '① Corte de armado', 'ángulo 2"×3/16" + bandeja · fuera de escala', P);
+  var cx = ox + w * 0.5, cy = oy + h * 0.66, legH = 150, ledge = 130, span = w * 0.5, tt = 26;
+  var xL = cx - span / 2, xR = cx + span / 2;
+  // ángulos (vertical al borde + ala horizontal hacia adentro)
+  g += line(xL, cy - legH, xL, cy, SW.thick, P) + line(xL, cy, xL + ledge, cy, SW.thick, P);
+  g += line(xR, cy - legH, xR, cy, SW.thick, P) + line(xR, cy, xR - ledge, cy, SW.thick, P);
+  // bandeja apoyada sobre las alas, con luz = espesor respecto de la cara vertical
+  var bL = xL + tt, bR = xR - tt, bTop = cy - legH + tt;
+  g += line(bL, bTop, bL, cy, SW.thick, P) + line(bL, cy, bR, cy, SW.thick, P) + line(bR, cy, bR, bTop, SW.thick, P);
+  // cotas/labels
+  g += txt((bL + bR) / 2, bTop - 14, '46', F.num, 'middle', P, false, '600');                         // alto bandeja
+  g += txt(xL - 10, cy - legH / 2, '50,8', F.sm, 'end', P, true, '600');                               // ala vertical
+  g += line(xL, cy - legH - 8, bL, cy - legH - 8, SW.dim, P, '8 6', P.dim || P.line);
+  g += txt((xL + bL) / 2, cy - legH - 16, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);  // luz = esp
+  g += tsans(ox + 24, oy + h - 22, 'luz = espesor del ángulo (' + (Math.round(r.t * 10) / 10 + '').replace('.', ',') + ') por lado', F.ty, 'start', P, 500, P.muted || P.text);
+  return g;
+}
+
+/* ② Bandeja (tapa): sección en U (pared 46 · base · pared 46) + plana */
+function secBandeja(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '② Bandeja (tapa)', 'chapa N°' + r.chapa + ' · alto 46 · bandeja ' + r.bandA + '×' + r.bandB, P);
+  var baseW = w * 0.46, wallH = 150, cx = ox + w * 0.5, by = oy + h * 0.64;
+  var xL = cx - baseW / 2, xR = cx + baseW / 2;
+  g += line(xL, by - wallH, xL, by, SW.thick, P) + line(xL, by, xR, by, SW.thick, P) + line(xR, by, xR, by - wallH, SW.thick, P);
+  g += txt(xL - 22, by - wallH / 2, '46', F.num, 'end', P, true, '600');
+  g += txt(xR + 22, by - wallH / 2, '46', F.num, 'start', P, true, '600');
+  g += txt(cx, by + 36, 'base', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += tsans(ox + w - 30, oy + h - 22, 'plana ' + r.devA + ' × ' + r.devB, F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* Hoja A4: CÁMARA CLOACAL */
+function generarCamara(params, P, logo) {
+  var r = calcularCamara(params);
+  r.rotulo = params.rotulo;
+  r.herrajes = params.herrajes || [];
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var kf = Math.min(470 / r.extA, 900 / r.extB);
+  g += plantaCamara(r, M + 180, 360, P, kf);
+  var dx = 760;
+  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var TW = 2030 - dx;
+  var dt = despieceTabla(r, dx, 320, P, TW);
+  g += dt.svg;
+  var ny = 320 + dt.h + 40;
+  g += tsans(dx, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
+  var hy = ny + 56;
+  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
+  g += corteCamara(r, x0, by, bw, 820, P);
+  g += secBandeja(r, x0 + bw + gap, by, bw, 820, P);
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Ángulo comprado. Desarrollo = chapa a cortar (deducción = espesor redondeado al entero menor, por doblez). Imprimir en A4.')];
+}
+
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
 var TIPOS = [
   {
@@ -555,7 +650,18 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularGabinete(p); },
     generar: function (p, P, logo) { return generarGabinete(p, P, logo); }
+  },
+  {
+    id: 'camara', nombre: 'Cámara cloacal (marco + tapa)',
+    campos: [
+      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']] },
+      { id: 'W', label: 'Lado A (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
+      { id: 'H', label: 'Lado B (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 }
+    ],
+    calcular: function (p) { return calcularCamara(p); },
+    generar: function (p, P, logo) { return generarCamara(p, P, logo); }
   }
 ];
 
-if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, TIPOS: TIPOS, PG: PG };
+if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, generarCamara: generarCamara, TIPOS: TIPOS, PG: PG };

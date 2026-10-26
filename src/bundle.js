@@ -4,8 +4,10 @@
    Coordenadas del dibujo en MILÍMETROS reales.
    =========================================================================== */
 
-/* ---- Tabla de deducción por plegado (editable) ---- */
-var TABLA_DEDUCCION = { 18: { 90: 1 } };   // mm/pliegue hojas (chapa N° : ángulo)
+/* ---- Tabla de deducción por plegado (editable) ----
+   mm descontados por doblez = espesor de la chapa redondeado al entero menor
+   (N°18≈1,2→1 · N°16≈1,6→1 · N°14≈2,0→2). Mismo criterio U/Z para todos los plegados. */
+var TABLA_DEDUCCION = { 18: { 90: 1 }, 16: { 90: 1 }, 14: { 90: 2 } };   // mm/pliegue (chapa N° : ángulo)
 
 function desarrollar(tramos, nPliegues, chapa, ang) {
   var BD = TABLA_DEDUCCION[chapa][ang || 90];
@@ -34,6 +36,10 @@ var C = {
   gabLuzTab1: 40, gabLuzTab2: 10,  // luces de la tablilla (estr↔hoja, hoja↔tablilla)
   gabPasoTab: 70,                  // alto que abarca cada tablilla (mm)
   gabDesP1: 114, gabDesP2: 95,     // desarrollos fijos de los plegados (chapa 18)
+  // --- Cámara cloacal (marco ángulo + tapa bandeja) ---
+  camAngLeg: 50.8, camAngEsp: 4.76,  // ángulo 2"×3/16"  (ala 2" · espesor 3/16")
+  camBandAlto: 46,                   // alto de la bandeja (= ala − espesor; queda al ras)
+  camChapaUmbral: 1000,              // ≥1 m en algún lado de la tapa → N°14; si no, N°16
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -194,6 +200,46 @@ function calcularGabinete(p) {
     anchoMarco: anchoMarco, altoMarco: altoMarco, tabLargo: tabLargo, nTab: nTab,
     desP1: C.gabDesP1, desP2: C.gabDesP2,
     picaporte: p.picaporte == null ? 1020 : p.picaporte,
+    despiece: despiece,
+  };
+}
+
+/* ---- Motor CÁMARA CLOACAL: marco de ángulo (bastidor) + tapa (bandeja plegada) ----
+   Entradas: lado A, lado B y si la medida dada es exterior o interior.
+   - ext ↔ int: ext = int + 2·ala (hueco libre hasta la punta interior del ala horizontal).
+   - Tapa (bandeja): cae entre las alas verticales con luz = espesor del ángulo por lado
+     → lado bandeja = ext − 4·espesor ; alto 46.
+   - Chapa: N°16 si ambos lados < 1 m ; N°14 si alguno ≥ 1 m.
+   - Desarrollo: deducción = espesor de la chapa redondeado al entero menor, por doblez. */
+function calcularCamara(p) {
+  var A = p.W, B = p.H, modo = p.modo || 'ext';
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var leg = C.camAngLeg, t = C.camAngEsp, h = C.camBandAlto;
+  var extA, extB, intA, intB;
+  if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
+  else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
+  var bandA = extA - 4 * t, bandB = extB - 4 * t;
+  var chapa = (bandA >= C.camChapaUmbral || bandB >= C.camChapaUmbral) ? 14 : 16;
+  var ded = TABLA_DEDUCCION[chapa][90];
+  // bandeja: por dirección [pared 46, base, pared 46] → Σ − 4·ded (base en U + 2 pestañas)
+  var devA = Math.round(bandA + 2 * h - 4 * ded);
+  var devB = Math.round(bandB + 2 * h - 4 * ded);
+  var MAT_ANG = 'Áng. 2"×3/16"', MAT_CH = 'Chapa N°' + chapa;
+  var base = [
+    { pieza: 'M', desc: 'Marco ángulo — lado A', cantUno: 2, ancho: null, largo: Math.round(extA), mat: MAT_ANG },
+    { pieza: 'M', desc: 'Marco ángulo — lado B', cantUno: 2, ancho: null, largo: Math.round(extB), mat: MAT_ANG },
+    { pieza: 'T', desc: 'Tapa (bandeja)', cantUno: 1, ancho: devA, largo: devB, mat: MAT_CH },
+  ];
+  var despiece = base.map(function (d) {
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+  });
+  return {
+    tipoPlano: 'camara', W: A, H: B, modo: modo, cantidad: cant, total: cant,
+    cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
+    tipoTexto: 'Cámara cloacal · áng. 2"×3/16"',
+    extA: extA, extB: extB, intA: intA, intB: intB,
+    bandA: Math.round(bandA), bandB: Math.round(bandB),
+    h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t,
     despiece: despiece,
   };
 }
@@ -562,4 +608,4 @@ function generarSVG(params, P, logo) {
   return { svg: svg, r: r };
 }
 
-if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
+if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, calcularCamara: calcularCamara, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
