@@ -1081,8 +1081,8 @@ function secGabP1(r, ox, oy, w, h, P) {
   g += txt(x0 - 22, y0 + web * k / 2 + 8, '32', F.num, 'end', P, false, '600');
   g += txt(x0 + fl * k / 2, y0 - 16, '30', F.num, 'middle', P, false, '600');
   g += txt(x0 + fl * k / 2, y0 + web * k + 36, '30', F.num, 'middle', P, false, '600');
-  g += txt(x0 + fl * k + 34, y0 + 30, '15', F.sm, 'start', P, false, '600');
-  g += txt(x0 + fl * k + 34, y0 + web * k - 30, '15', F.sm, 'start', P, false, '600');
+  g += txt(x0 + fl * k - gh * k / 2, y0 + 11 + 30, '15', F.sm, 'middle', P, false, '600');            // gancho sup: adentro, centrado
+  g += txt(x0 + fl * k - gh * k / 2, y0 + web * k - 11 - 16, '15', F.sm, 'middle', P, false, '600');  // gancho inf: adentro, centrado
   g += tsans(ox + w - 30, oy + h - 22, 'desarrollo ' + r.desP1, F.ty, 'end', P, 700, P.accent);
   return g;
 }
