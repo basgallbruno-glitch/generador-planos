@@ -1011,7 +1011,7 @@ function herrajesTabla(r, ox, oy, P, tw) {
   } else {
     filas = items.map(function (it) {
       var m = /^(\d+)\s*[x×]?\s+(.*)$/.exec(it.trim());
-      return { c: m ? [m[1], m[2]] : ['', it.trim()] };
+      return { c: m ? [m[1], m[2]] : ['—', it.trim()] };
     });
   }
   var w = tw || 890, c0 = 150;
