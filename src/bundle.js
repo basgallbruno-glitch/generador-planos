@@ -226,11 +226,14 @@ function calcularCamara(p) {
   // bandeja: por dirección [pared 46, base, pared 46] → Σ − 4·ded (base en U + 2 pestañas)
   var devA = Math.round(bandA + 2 * h - 4 * ded);
   var devB = Math.round(bandB + 2 * h - 4 * ded);
+  // tirador (bulón para izar la tapa): 2 en los tercios si el marco > 1,2 m; si no, 1 centrado
+  var nTir = (Math.max(extA, extB) > 1200) ? 2 : 1;
   var MAT_ANG = 'Áng. 2"×3/16"', MAT_CH = 'Chapa N°' + chapa;
   var base = [
     { pieza: 'M', desc: 'Marco ángulo — lado A', cantUno: 2, ancho: null, largo: Math.round(extA), mat: MAT_ANG },
     { pieza: 'M', desc: 'Marco ángulo — lado B', cantUno: 2, ancho: null, largo: Math.round(extB), mat: MAT_ANG },
     { pieza: 'T', desc: 'Tapa (bandeja)', cantUno: 1, ancho: devA, largo: devB, mat: MAT_CH },
+    { pieza: 'A', desc: 'Tirador (bulón)', cantUno: nTir, ancho: null, largo: '—', mat: 'Bulón' },
   ];
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
@@ -241,7 +244,7 @@ function calcularCamara(p) {
     tipoTexto: 'Cámara cloacal · áng. 2"×3/16"',
     extA: extA, extB: extB, intA: intA, intB: intB,
     bandA: Math.round(bandA), bandB: Math.round(bandB),
-    h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t,
+    h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir,
     despiece: despiece,
   };
 }
