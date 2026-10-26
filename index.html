@@ -326,7 +326,7 @@ function calcularCamara(p) {
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
   var bandA = extA - 4 * t, bandB = extB - 4 * t;
-  var chapa = (bandA >= C.camChapaUmbral || bandB >= C.camChapaUmbral) ? 14 : 16;
+  var chapa = (extA >= C.camChapaUmbral || extB >= C.camChapaUmbral) ? 14 : 16;  // umbral sobre el marco (ext)
   var ded = TABLA_DEDUCCION[chapa][90];
   // bandeja: por dirección [pared 46, base, pared 46] → Σ − 4·ded (base en U + 2 pestañas)
   var devA = Math.round(bandA + 2 * h - 4 * ded);
@@ -1216,18 +1216,11 @@ function plantaCamara(r, ox, oy, P, k) {
   // tapa (bandeja) centrada, punteada
   var bA = r.bandA * k, bB = r.bandB * k, tx = ox + (eA - bA) / 2, ty = oy + (eB - bB) / 2;
   g += '<rect x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" width="' + bA.toFixed(1) + '" height="' + bB.toFixed(1) + '" fill="none" stroke="' + P.accent + '" stroke-width="' + SW.dim + '" stroke-dasharray="16 10"/>';
-  // bulones sobre el ala + manija central
-  var cxm = ox + eA / 2, cym = oy + eB / 2;
-  var nb = 3, i, fx, fy;
-  for (i = 1; i <= nb; i++) {
-    fx = ox + eA * i / (nb + 1);
-    g += '<circle cx="' + fx.toFixed(1) + '" cy="' + (oy + lw / 2).toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-    g += '<circle cx="' + fx.toFixed(1) + '" cy="' + (oy + eB - lw / 2).toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-    fy = oy + eB * i / (nb + 1);
-    g += '<circle cx="' + (ox + lw / 2).toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-    g += '<circle cx="' + (ox + eA - lw / 2).toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-  }
-  g += '<circle cx="' + cxm.toFixed(1) + '" cy="' + cym.toFixed(1) + '" r="11" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';   // manija
+  // malla electrosoldada sobre toda el área de la bandeja (grilla)
+  var cxm = ox + eA / 2, cym = oy + eB / 2, mstep = Math.max(26, 110 * k), xx, yy;
+  for (xx = tx + mstep; xx < tx + bA - 2; xx += mstep) g += line(xx, ty, xx, ty + bB, SW.dim, P, 0, P.muted || P.line);
+  for (yy = ty + mstep; yy < ty + bB - 2; yy += mstep) g += line(tx, yy, tx + bA, yy, SW.dim, P, 0, P.muted || P.line);
+  g += '<circle cx="' + cxm.toFixed(1) + '" cy="' + cym.toFixed(1) + '" r="11" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';   // manija de izar
   g += line(cxm - 18, cym, cxm + 18, cym, SW.thin, P) + line(cxm, cym - 18, cxm, cym + 18, SW.thin, P);
   // cotas apiladas: interior (cerca) y exterior (lejos)
   var floorY = oy + eB;
@@ -1242,33 +1235,52 @@ function plantaCamara(r, ox, oy, P, k) {
 
 /* ① Corte de armado: ángulo (L) a cada lado + bandeja apoyada, luz y alto 46 (fuera de escala) */
 function corteCamara(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '① Corte de armado', 'ángulo 2"×3/16" + bandeja · fuera de escala', P);
-  var cx = ox + w * 0.5, cy = oy + h * 0.66, legH = 150, ledge = 130, span = w * 0.5, tt = 26;
-  var xL = cx - span / 2, xR = cx + span / 2;
-  // ángulos (vertical al borde + ala horizontal hacia adentro)
-  g += line(xL, cy - legH, xL, cy, SW.thick, P) + line(xL, cy, xL + ledge, cy, SW.thick, P);
-  g += line(xR, cy - legH, xR, cy, SW.thick, P) + line(xR, cy, xR - ledge, cy, SW.thick, P);
-  // bandeja apoyada sobre las alas, con luz = espesor respecto de la cara vertical
-  var bL = xL + tt, bR = xR - tt, bTop = cy - legH + tt;
-  g += line(bL, bTop, bL, cy, SW.thick, P) + line(bL, cy, bR, cy, SW.thick, P) + line(bR, cy, bR, bTop, SW.thick, P);
-  // cotas/labels
-  g += txt((bL + bR) / 2, bTop - 14, '46', F.num, 'middle', P, false, '600');                         // alto bandeja
-  g += txt(xL - 10, cy - legH / 2, '50,8', F.sm, 'end', P, true, '600');                               // ala vertical
-  g += line(xL, cy - legH - 8, bL, cy - legH - 8, SW.dim, P, '8 6', P.dim || P.line);
-  g += txt((xL + bL) / 2, cy - legH - 16, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);  // luz = esp
-  g += tsans(ox + 24, oy + h - 22, 'luz = espesor del ángulo (' + (Math.round(r.t * 10) / 10 + '').replace('.', ',') + ') por lado', F.ty, 'start', P, 500, P.muted || P.text);
+  var g = gabBox(ox, oy, w, h, '① Corte de armado', 'ángulo 2"×3/16" + tapa (malla + hormigón) · fuera de escala', P);
+  var cx = ox + w * 0.5, AW = w * 0.64, xL = cx - AW / 2, xR = cx + AW / 2;
+  var cy = oy + h * 0.42, t2 = 16, ledge = 95, legV = 135, luz = 16, bandH = 118;
+  function angL(x0, dir) {   // ala horizontal al tope (hacia adentro) + ala vertical hacia abajo
+    var xi = x0 + dir * t2, xt = x0 + dir * ledge;
+    return '<path d="M' + x0.toFixed(1) + ' ' + cy.toFixed(1) + ' L' + xt.toFixed(1) + ' ' + cy.toFixed(1) +
+      ' L' + xt.toFixed(1) + ' ' + (cy + t2).toFixed(1) + ' L' + xi.toFixed(1) + ' ' + (cy + t2).toFixed(1) +
+      ' L' + xi.toFixed(1) + ' ' + (cy + legV).toFixed(1) + ' L' + x0.toFixed(1) + ' ' + (cy + legV).toFixed(1) +
+      ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+  }
+  g += angL(xL, 1) + angL(xR, -1);
+  // tapa (bandeja abierta arriba) apoyada sobre las alas, con luz contra la cara vertical
+  var bXL = xL + t2 + luz, bXR = xR - t2 - luz, bBot = cy + bandH;
+  g += '<rect x="' + bXL.toFixed(1) + '" y="' + cy.toFixed(1) + '" width="' + (bXR - bXL).toFixed(1) + '" height="' + bandH.toFixed(1) + '" fill="' + (P.hatch || 'none') + '" stroke="none"/>';
+  var my = cy + bandH * 0.42, dd;                                   // malla: puntos en el corte
+  for (dd = bXL + 24; dd < bXR - 10; dd += 44) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+  g += line(bXL + 14, my, bXR - 14, my, SW.dim, P, 0, P.dim || P.line);
+  g += '<path d="M' + bXL.toFixed(1) + ' ' + cy.toFixed(1) + ' L' + bXL.toFixed(1) + ' ' + bBot.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + bBot.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + cy.toFixed(1) + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
+  g += txt(xL - 12, cy + legV / 2, '50,8', F.sm, 'end', P, true, '600');
+  g += txt(bXR + 16, cy + bandH / 2, '46', F.num, 'start', P, true, '600');
+  g += line(xL + t2, cy - 12, bXL, cy - 12, SW.dim, P, '8 6', P.dim || P.line);
+  g += txt((xL + t2 + bXL) / 2, cy - 20, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += txt(cx, bBot + 34, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += tsans(ox + 24, oy + h - 22, 'luz = espesor del ángulo por lado', F.ty, 'start', P, 500, P.muted || P.text);
   return g;
 }
 
 /* ② Bandeja (tapa): sección en U (pared 46 · base · pared 46) + plana */
 function secBandeja(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '② Bandeja (tapa)', 'chapa N°' + r.chapa + ' · alto 46 · bandeja ' + r.bandA + '×' + r.bandB, P);
-  var baseW = w * 0.46, wallH = 150, cx = ox + w * 0.5, by = oy + h * 0.64;
-  var xL = cx - baseW / 2, xR = cx + baseW / 2;
-  g += line(xL, by - wallH, xL, by, SW.thick, P) + line(xL, by, xR, by, SW.thick, P) + line(xR, by, xR, by - wallH, SW.thick, P);
-  g += txt(xL - 22, by - wallH / 2, '46', F.num, 'end', P, true, '600');
-  g += txt(xR + 22, by - wallH / 2, '46', F.num, 'start', P, true, '600');
-  g += txt(cx, by + 36, 'base', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  var g = gabBox(ox, oy, w, h, '② Bandeja (tapa) — panel', 'chapa N°' + r.chapa + ' · paredes 46 · plana ' + r.devA + '×' + r.devB, P);
+  var cx = ox + w * 0.47, cyBar = oy + 140 + (h - 170) / 2;
+  var hw = w * 0.30, vUp = (h - 170) * 0.30, vDn = (h - 170) * 0.30, wall = 66;
+  // sección a lo ANCHO (barra horizontal; paredes hacia abajo)
+  g += line(cx - hw, cyBar, cx + hw, cyBar, SW.thick, P);
+  g += line(cx - hw, cyBar, cx - hw, cyBar + wall, SW.thick, P);
+  g += line(cx + hw, cyBar, cx + hw, cyBar + wall, SW.thick, P);
+  // sección a lo ALTO (barra vertical; paredes hacia la izquierda)
+  g += line(cx, cyBar - vUp, cx, cyBar + vDn, SW.thick, P);
+  g += line(cx, cyBar - vUp, cx - wall, cyBar - vUp, SW.thick, P);
+  g += line(cx, cyBar + vDn, cx - wall, cyBar + vDn, SW.thick, P);
+  // cotas
+  g += txt(cx + hw * 0.5, cyBar - 16, String(r.bandA), F.num, 'middle', P, false, '600');          // base ancho
+  g += txt(cx + hw + 14, cyBar + wall * 0.62, '46', F.sm, 'start', P, false, '600');                // pared ancho
+  g += txt(cx + 18, cyBar + vDn * 0.5, String(r.bandB), F.num, 'start', P, false, '600');           // base alto
+  g += txt(cx - wall * 0.5, cyBar - vUp - 12, '46', F.sm, 'middle', P, false, '600');               // pared alto
+  g += tsans(cx - hw, cyBar + vDn + 46, 'secciones ancho × alto · paredes 46', F.ty, 'start', P, 500, P.muted || P.text);
   g += tsans(ox + w - 30, oy + h - 22, 'plana ' + r.devA + ' × ' + r.devB, F.ty, 'end', P, 700, P.accent);
   return g;
 }

@@ -219,7 +219,7 @@ function calcularCamara(p) {
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
   var bandA = extA - 4 * t, bandB = extB - 4 * t;
-  var chapa = (bandA >= C.camChapaUmbral || bandB >= C.camChapaUmbral) ? 14 : 16;
+  var chapa = (extA >= C.camChapaUmbral || extB >= C.camChapaUmbral) ? 14 : 16;  // umbral sobre el marco (ext)
   var ded = TABLA_DEDUCCION[chapa][90];
   // bandeja: por dirección [pared 46, base, pared 46] → Σ − 4·ded (base en U + 2 pestañas)
   var devA = Math.round(bandA + 2 * h - 4 * ded);
