@@ -29,6 +29,11 @@ var C = {
   margenMuro: 0,              // (provisorio) espesor marco = muro terminado; margen corte/pintura pendiente de afinar
   t3Metalica: 35, t3Madera: 31,  // tramo 3 según tipo de hoja
   marcoTurns: ['L', 'L', 'R', 'L', 'L', 'R', 'L', 'L'],
+  // --- Gabinete con tablillas ---
+  gabDescLado: 5,                  // descuento del bastidor por lado (izq/der/sup; abajo 0)
+  gabLuzTab1: 40, gabLuzTab2: 10,  // luces de la tablilla (estr↔hoja, hoja↔tablilla)
+  gabPasoTab: 70,                  // alto que abarca cada tablilla (mm)
+  gabDesP1: 114, gabDesP2: 95,     // desarrollos fijos de los plegados (chapa 18)
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -151,6 +156,45 @@ function calcularMarco(p) {
     cantidadTexto: cantidad + ' marco' + (cantidad === 1 ? '' : 's'),
     muro: muro, tipoHoja: tipoHoja, marco: marco, pisoTerminado: pisoTerminado, enterrar: enterrar,
     luz: luz, despiece: despiece,
+  };
+}
+
+/* ---- Motor GABINETE con tablillas (una hoja): estructural + hoja (P1) + tablillas (P2) ----
+   - Estructural y hoja comparten largos (mismo bastidor, uniones a 45°).
+   - Largos: horizontales = ancho vano − 2·5 ; verticales = alto vano − 5 (abajo sin descuento).
+   - Tablilla: largo = ancho del marco − gabLuzTab1 − gabLuzTab2 ; cantidad = floor(alto marco ÷ 70).
+   - Secciones de P1 y P2 fijas → desarrollos (plana) constantes 114 y 95. */
+function calcularGabinete(p) {
+  var W = p.W, H = p.H, chapa = p.chapa || 18;
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var ea = p.estrA == null || p.estrA <= 0 ? 50 : p.estrA;   // profundidad del caño
+  var eb = p.estrB == null || p.estrB <= 0 ? 20 : p.estrB;   // canto hacia el frente
+  var ee = p.estrEsp == null || p.estrEsp <= 0 ? 1.6 : p.estrEsp;
+  var cano = ea + '×' + eb + '×' + String(ee).replace('.', ',');
+  var anchoMarco = W - 2 * C.gabDescLado;        // horizontales (ancho)
+  var altoMarco = H - C.gabDescLado;             // verticales (alto)
+  var tabLargo = anchoMarco - C.gabLuzTab1 - C.gabLuzTab2;
+  var nTab = Math.max(1, Math.floor(altoMarco / C.gabPasoTab));
+  var MAT_CH = 'Chapa N°' + chapa, MAT_ES = 'Caño ' + cano;
+  var base = [
+    { pieza: 'E', desc: 'Marco estructural — horizontal', cantUno: 2, ancho: null, largo: anchoMarco, mat: MAT_ES },
+    { pieza: 'E', desc: 'Marco estructural — vertical', cantUno: 2, ancho: null, largo: altoMarco, mat: MAT_ES },
+    { pieza: 'P.1', desc: 'Marco hoja — horizontal', cantUno: 2, ancho: C.gabDesP1, largo: anchoMarco, mat: MAT_CH },
+    { pieza: 'P.1', desc: 'Marco hoja — vertical', cantUno: 2, ancho: C.gabDesP1, largo: altoMarco, mat: MAT_CH },
+    { pieza: 'P.2', desc: 'Tablilla', cantUno: nTab, ancho: C.gabDesP2, largo: tabLargo, mat: MAT_CH },
+  ];
+  var despiece = base.map(function (d) {
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+  });
+  return {
+    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantidad: cant, total: cant,
+    cantidadTexto: cant + ' gabinete' + (cant === 1 ? '' : 's'),
+    tipoTexto: 'Gabinete tablillas · caño ' + cano,
+    estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
+    anchoMarco: anchoMarco, altoMarco: altoMarco, tabLargo: tabLargo, nTab: nTab,
+    desP1: C.gabDesP1, desP2: C.gabDesP2,
+    picaporte: p.picaporte == null ? 1020 : p.picaporte,
+    despiece: despiece,
   };
 }
 
@@ -518,4 +562,4 @@ function generarSVG(params, P, logo) {
   return { svg: svg, r: r };
 }
 
-if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
+if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };

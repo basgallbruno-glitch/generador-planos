@@ -179,13 +179,17 @@ function getParams(){
 }
 function validarGen(p){
   if(!(p.W>0)||!(p.H>0)) return 'Completá ancho y alto.';
-  if(p.W-60<=0) return 'El ancho es menor que el marco: no hay luz de paso.';
-  const t3=p.tipoHoja==='madera'?31:35, t7=(p.espesorMuro||0)-t3-15;
-  if(t7<=0) return 'El muro es muy chico para este marco (tramo 7 ≤ 0).';
-  const msgs=[];
-  if(p.W<700||p.W>1200) msgs.push('ancho fuera del rango piloto (700–1200)');
-  if(p.H<1900||p.H>2400) msgs.push('alto fuera del rango piloto (1900–2400)');
-  return msgs.length? 'Verificar: '+msgs.join('; ')+'. Se genera igual.' : '';
+  // chequeos específicos de puertas/marco (tienen espesor de muro); el gabinete los omite
+  if(p.espesorMuro!=null){
+    if(p.W-60<=0) return 'El ancho es menor que el marco: no hay luz de paso.';
+    const t3=p.tipoHoja==='madera'?31:35, t7=p.espesorMuro-t3-15;
+    if(t7<=0) return 'El muro es muy chico para este marco (tramo 7 ≤ 0).';
+    const msgs=[];
+    if(p.W<700||p.W>1200) msgs.push('ancho fuera del rango piloto (700–1200)');
+    if(p.H<1900||p.H>2400) msgs.push('alto fuera del rango piloto (1900–2400)');
+    return msgs.length? 'Verificar: '+msgs.join('; ')+'. Se genera igual.' : '';
+  }
+  return '';
 }
 function dibujar(){
   const t=tipoActual(), p=getParams();

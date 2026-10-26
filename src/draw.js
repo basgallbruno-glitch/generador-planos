@@ -284,9 +284,12 @@ function cajetin(r, ox, oy, w, h, P, logo) {
 
 /* --- Despiece (tabla) con material --- */
 function despieceTabla(r, ox, oy, P, tw) {
-  var mat = 'Chapa N°' + (r.chapa || 18);
+  var matDef = 'Chapa N°' + (r.chapa || 18);
   var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo'];
-  var filas = r.despiece.map(function (d) { return { c: [d.pieza, d.desc, String(d.cant), mat, d.ancho + '×' + d.largo] }; });
+  var filas = r.despiece.map(function (d) {
+    var med = (d.ancho == null) ? String(d.largo) : (d.ancho + '×' + d.largo);
+    return { c: [d.pieza, d.desc, String(d.cant), d.mat || matDef, med] };
+  });
   // ancho de cada columna según el texto más largo (mono ≈ 0.6·fs por carácter + padding)
   var fs = 27, colW = headers.map(function (h, i) {
     var mx = h.length;
@@ -405,6 +408,124 @@ function generarMarco(params, P, logo) {
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
 
+/* ===========================================================================
+   GABINETE CON TABLILLAS — dibujo
+   =========================================================================== */
+function gabBox(ox, oy, w, h, titulo, caption, P) {
+  return rect(ox, oy, w, h, SW.thin, P, P.card || 'none') +
+    tituloNum(ox + 24, oy + 42, titulo, P) +
+    (caption ? tsans(ox + 24, oy + 76, caption, F.ty, 'start', P, 500, P.muted || P.text) : '');
+}
+
+/* ① Caño estructural (sección del tubo; canto al frente = arriba) */
+function secGabCano(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '① Marco estructural', 'caño ' + r.cano + ' (comprado) · unión 45°', P);
+  var bw = r.estrB, bh = r.estrA;
+  var k = Math.min((w - 240) / bw, (h - 250) / bh); k = Math.min(k, 7);
+  var dw = bw * k, dh = bh * k;
+  var x0 = ox + w * 0.42 - dw / 2, y0 = oy + 130 + (h - 160 - dh) / 2;
+  g += rect(x0, y0, dw, dh, SW.thick, P);
+  var t = Math.max(3, r.estrEsp * k);
+  g += rect(x0 + t, y0 + t, dw - 2 * t, dh - 2 * t, SW.thin, P);
+  g += txt(x0 + dw / 2, y0 - 16, String(r.estrB), F.num, 'middle', P, false, '600');
+  g += txt(x0 - 20, y0 + dh / 2 + 8, String(r.estrA), F.num, 'end', P, false, '600');
+  g += txt(x0 + dw / 2, y0 + dh + 36, 'e = ' + String(r.estrEsp).replace('.', ',') + ' mm', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += tsans(ox + 24, oy + h - 22, 'canto (' + r.estrB + ') hacia el frente', F.ty, 'start', P, 500, P.muted || P.text);
+  return g;
+}
+
+/* ② Marco de la hoja (P1): canal con 2 ganchos a 180° */
+function secGabP1(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '② Marco hoja (P1)', 'canal c/ ganchos · tramos 15·30·32·30·15', P);
+  var web = 32, fl = 30, gh = 15;
+  var k = Math.min((w - 260) / fl, (h - 260) / web); k = Math.min(k, 9);
+  var x0 = ox + w * 0.44 - (fl * k) / 2, y0 = oy + 130 + (h - 180 - web * k) / 2;
+  g += line(x0, y0, x0, y0 + web * k, SW.thick, P);                                   // web
+  g += line(x0, y0, x0 + fl * k, y0, SW.thick, P);                                     // flange sup
+  g += hook180(x0 + fl * k, y0, -1, 0, 0, 1, gh * k, 11, P, null);                     // gancho sup (hacia adentro)
+  g += line(x0, y0 + web * k, x0 + fl * k, y0 + web * k, SW.thick, P);                 // flange inf
+  g += hook180(x0 + fl * k, y0 + web * k, -1, 0, 0, -1, gh * k, 11, P, null);          // gancho inf
+  g += txt(x0 - 22, y0 + web * k / 2 + 8, '32', F.num, 'end', P, false, '600');
+  g += txt(x0 + fl * k / 2, y0 - 16, '30', F.num, 'middle', P, false, '600');
+  g += txt(x0 + fl * k / 2, y0 + web * k + 36, '30', F.num, 'middle', P, false, '600');
+  g += txt(x0 + fl * k + 34, y0 + 30, '15', F.sm, 'start', P, false, '600');
+  g += txt(x0 + fl * k + 34, y0 + web * k - 30, '15', F.sm, 'start', P, false, '600');
+  g += tsans(ox + w - 30, oy + h - 22, 'desarrollo ' + r.desP1, F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* ③ Tablilla (P2): 20 vertical · 50 diagonal · 15 vertical · 10 pie (28/42 = guía de dibujo) */
+function secGabP2(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '③ Tablilla (P2)', 'tramos 20·50·15·10', P);
+  var bw = 28 + 10, bh = 20 + 42 + 15;
+  var k = Math.min((w - 260) / bw, (h - 260) / bh); k = Math.min(k, 7);
+  var x0 = ox + w * 0.44 - (bw * k) / 2, y0 = oy + 130 + (h - 180 - bh * k) / 2;
+  var A = { x: x0 + 28 * k, y: y0 };                 // arriba
+  var B = { x: A.x, y: A.y + 20 * k };               // baja 20
+  var Cc = { x: x0, y: B.y + 42 * k };               // diagonal 50
+  var D = { x: x0, y: Cc.y + 15 * k };               // baja 15
+  var E = { x: x0 + 10 * k, y: D.y };                // pie 10
+  g += '<path d="M' + A.x.toFixed(1) + ' ' + A.y.toFixed(1) + ' L' + B.x.toFixed(1) + ' ' + B.y.toFixed(1) +
+    ' L' + Cc.x.toFixed(1) + ' ' + Cc.y.toFixed(1) + ' L' + D.x.toFixed(1) + ' ' + D.y.toFixed(1) +
+    ' L' + E.x.toFixed(1) + ' ' + E.y.toFixed(1) + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '" stroke-linejoin="round" stroke-linecap="round"/>';
+  // guía de dibujo (punteado): proyecciones del diagonal
+  g += line(Cc.x, Cc.y, B.x, Cc.y, SW.dim, P, '14 10', P.dim || P.line);   // 28 horizontal
+  g += line(B.x, B.y, B.x, Cc.y, SW.dim, P, '14 10', P.dim || P.line);     // 42 vertical
+  g += txt(A.x + 16, B.y - 10 * k + 8, '20', F.num, 'start', P, false, '600');
+  g += txt((A.x + Cc.x) / 2 - 22, (B.y + Cc.y) / 2, '50', F.num, 'end', P, false, '600');
+  g += txt(Cc.x - 16, (Cc.y + D.y) / 2 + 8, '15', F.sm, 'end', P, false, '600');
+  g += txt((D.x + E.x) / 2, D.y + 32, '10', F.sm, 'middle', P, false, '600');
+  g += txt((Cc.x + B.x) / 2, Cc.y + 30, '28', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += txt(B.x + 14, (B.y + Cc.y) / 2, '42', F.sm, 'start', P, false, '500', P.muted || P.text);
+  g += tsans(ox + w - 30, oy + h - 22, 'desarrollo ' + r.desP2, F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* Frente del gabinete: estructural + hoja + tablillas + apertura */
+function frenteGabinete(r, ox, oy, P, k, mano) {
+  var W = r.anchoMarco * k, H = r.altoMarco * k, g = '';
+  g += tsans(ox, oy - 18, 'FRENTE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += rect(ox, oy, W, H, SW.thick, P);                                   // estructural
+  var ins = Math.max(10, (r.estrB + 6) * k);
+  var hx = ox + ins, hy = oy + ins, hw = W - 2 * ins, hh = H - 2 * ins;
+  g += rect(hx, hy, hw, hh, SW.thin, P);                                  // hoja
+  var innTop = hy + 10, innBot = hy + hh - 10, step = (innBot - innTop) / r.nTab;
+  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(hx + 8, yy, hx + hw - 8, yy, SW.dim, P, 0, P.dim || P.line); }
+  var mid = hy + hh / 2;
+  if (mano === 'der') { g += line(hx + hw, hy, hx, mid, SW.dim, P, '18 12', P.accent) + line(hx + hw, hy + hh, hx, mid, SW.dim, P, '18 12', P.accent); }
+  else { g += line(hx, hy, hx + hw, mid, SW.dim, P, '18 12', P.accent) + line(hx, hy + hh, hx + hw, mid, SW.dim, P, '18 12', P.accent); }
+  var cx = mano === 'der' ? hx + 16 : hx + hw - 16;
+  g += '<circle cx="' + cx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+  g += dimH(ox, ox + W, oy + H + 60, String(r.anchoMarco), P, oy + H);
+  g += dimV(oy, oy + H, ox - 60, String(r.altoMarco), P, ox);
+  return g;
+}
+
+/* Hoja A4: GABINETE con tablillas */
+function generarGabinete(params, P, logo) {
+  var r = calcularGabinete(params);
+  r.rotulo = params.rotulo;
+  r.herrajes = params.herrajes || [];
+  var mano = params.drawMano || 'izq';
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var kf = Math.min(380 / r.anchoMarco, 820 / r.altoMarco);
+  g += frenteGabinete(r, M + 90, 330, P, kf, mano);
+  var dx = 760;
+  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var TW = 2030 - dx;
+  var dt = despieceTabla(r, dx, 320, P, TW);
+  g += dt.svg;
+  var hy = 320 + dt.h + 54;
+  g += tsans(dx, hy - 12, 'HERRAJES', F.h2, 'start', P, 700, P.accent);
+  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  var by = 1300, bw = 600, gap = 30;
+  g += secGabCano(r, M, by, bw, 900, P);
+  g += secGabP1(r, M + bw + gap, by, bw, 900, P);
+  g += secGabP2(r, M + 2 * (bw + gap), by, bw, 900, P);
+  return [pagina(g, P, 'Perfiles fuera de escala (cotas en mm). Plana = ancho de la chapa a cortar. Estructural = caño comprado (unión a 45°). Imprimir en A4.')];
+}
+
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
 var TIPOS = [
   {
@@ -438,7 +559,22 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularMarco(p); },
     generar: function (p, P, logo) { return generarMarco(p, P, logo); }
+  },
+  {
+    id: 'gabinete', nombre: 'Gabinete con tablillas (una hoja)',
+    campos: [
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 200, max: 2500 },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
+      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
+      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
+      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
+      { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
+      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] }
+    ],
+    calcular: function (p) { return calcularGabinete(p); },
+    generar: function (p, P, logo) { return generarGabinete(p, P, logo); }
   }
 ];
 
-if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, TIPOS: TIPOS, PG: PG };
+if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, TIPOS: TIPOS, PG: PG };
