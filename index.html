@@ -140,8 +140,7 @@ var C = {
   marcoTurns: ['L', 'L', 'R', 'L', 'L', 'R', 'L', 'L'],
   // --- Gabinete con tablillas ---
   gabDescLado: 5,                  // descuento del bastidor por lado (izq/der/sup; abajo 0)
-  gabLuzTab1: 40, gabLuzTab2: 10,  // luces de la tablilla (estr↔hoja, hoja↔tablilla)
-  gabJuegoTab: 2,                  // juego extra de la tablilla por lado (mm)
+  gabJuegoLat: 5, gabJuegoCentro: 3,  // juego de la tablilla por lado: lateral + central (mm)
   gabPasoTab: 70,                  // alto que abarca cada tablilla (mm)
   gabDesP1: 114, gabDesP2: 95,     // desarrollos fijos de los plegados (chapa 18)
   // --- Cámara cloacal (marco ángulo + tapa bandeja) ---
@@ -290,7 +289,7 @@ function calcularGabinete(p) {
   var cano = ea + '×' + eb + '×' + String(ee).replace('.', ',');
   var anchoMarco = W - 2 * C.gabDescLado;        // horizontales (ancho)
   var altoMarco = H - C.gabDescLado;             // verticales (alto)
-  var tabLargo = anchoMarco - C.gabLuzTab1 - C.gabLuzTab2 - 2 * C.gabJuegoTab;  // + 2 mm de juego por lado
+  var tabLargo = anchoMarco - 2 * eb - 2 * C.gabJuegoLat - 2 * C.gabJuegoCentro;  // ancho estr − 2·canto − 2·5 − 2·3
   var nTab = Math.max(1, Math.floor(altoMarco / C.gabPasoTab));
   var MAT_CH = 'Chapa N°' + chapa, MAT_ES = 'Caño ' + cano;
   var base = [
