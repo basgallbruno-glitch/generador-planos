@@ -539,14 +539,17 @@ function plantaCamara(r, ox, oy, P, k) {
     g += line(c[0] - 19, c[1], c[0] + 19, c[1], SW.thin, P) + line(c[0], c[1] - 19, c[0], c[1] + 19, SW.thin, P);
   });
   g += tsans(tir[0][0] + 22, tir[0][1] - 20, 'tirador', 17, 'start', P, 600, P.accent);
-  // cotas apiladas: interior (cerca) y exterior (lejos)
+  // cota del modo ingresado: exterior si el dato es exterior, interior si es interior
   var floorY = oy + eB;
-  g += dimH(ix, ix + iw, floorY + 60, String(Math.round(r.intA)), P, iy + ih);
-  g += dimH(ox, ox + eA, floorY + 150, String(Math.round(r.extA)), P, floorY);
-  g += dimV(iy, iy + ih, ox - 70, String(Math.round(r.intB)), P, ix);
-  g += dimV(oy, oy + eB, ox - 160, String(Math.round(r.extB)), P, ox);
-  g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
-  g += tsans(ox - 160, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
+  if (r.modo === 'int') {
+    g += dimH(ix, ix + iw, floorY + 70, String(Math.round(r.intA)), P, iy + ih);
+    g += dimV(iy, iy + ih, ox - 70, String(Math.round(r.intB)), P, ix);
+    g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  } else {
+    g += dimH(ox, ox + eA, floorY + 70, String(Math.round(r.extA)), P, floorY);
+    g += dimV(oy, oy + eB, ox - 70, String(Math.round(r.extB)), P, ox);
+    g += tsans(ox - 70, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
+  }
   return g;
 }
 
