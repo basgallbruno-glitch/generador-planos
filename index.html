@@ -1116,25 +1116,19 @@ function secGabP2(r, ox, oy, w, h, P) {
 
 /* Frente del gabinete: estructural + hoja + tablillas + apertura */
 function frenteGabinete(r, ox, oy, P, k, mano) {
-  var Wv = r.W * k, Hv = r.H * k, g = '';
+  var mw = r.anchoMarco * k, mh = r.altoMarco * k, g = '';
   g += tsans(ox, oy - 18, 'FRENTE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, Wv, Hv, SW.thin, P);                                  // vano (exterior, fino)
-  var gL = (r.W - r.anchoMarco) / 2, gT = r.H - r.altoMarco;              // luces 5 izq/der/sup, 0 abajo
-  var mx = ox + gL * k, my = oy + gT * k, mw = r.anchoMarco * k, mh = r.altoMarco * k;
-  g += rect(mx, my, mw, mh, SW.thick, P);                                 // marco (interior, grueso)
-  var pad = Math.max(6, 12 * k), innTop = my + pad, innBot = my + mh - pad, step = (innBot - innTop) / r.nTab;
-  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(mx + pad, yy, mx + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
-  var mid = my + mh / 2;
-  if (mano === 'der') { g += line(mx + mw, my, mx, mid, SW.dim, P, '18 12', P.accent) + line(mx + mw, my + mh, mx, mid, SW.dim, P, '18 12', P.accent); }
-  else { g += line(mx, my, mx + mw, mid, SW.dim, P, '18 12', P.accent) + line(mx, my + mh, mx + mw, mid, SW.dim, P, '18 12', P.accent); }
-  var lcx = mano === 'der' ? mx + 14 : mx + mw - 14;
+  g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco (el vano queda para cálculo)
+  var pad = Math.max(6, 12 * k), innTop = oy + pad, innBot = oy + mh - pad, step = (innBot - innTop) / r.nTab;
+  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(ox + pad, yy, ox + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
+  var mid = oy + mh / 2;
+  if (mano === 'der') { g += line(ox + mw, oy, ox, mid, SW.dim, P, '18 12', P.accent) + line(ox + mw, oy + mh, ox, mid, SW.dim, P, '18 12', P.accent); }
+  else { g += line(ox, oy, ox + mw, mid, SW.dim, P, '18 12', P.accent) + line(ox, oy + mh, ox + mw, mid, SW.dim, P, '18 12', P.accent); }
+  var lcx = mano === 'der' ? ox + 14 : ox + mw - 14;
   g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-  var floorY = oy + Hv;
-  g += dimV(my, my + mh, ox - 72, String(r.altoMarco), P, mx);            // marco (interior)
-  g += dimV(oy, floorY, ox - 162, String(r.H), P, ox);                    // vano (exterior)
-  g += dimH(mx, mx + mw, floorY + 60, String(r.anchoMarco), P, my + mh);  // ancho: solo marco (el vano queda para cálculo)
-  g += tsans(ox - 72, my - 14, 'marco', 17, 'middle', P, 600, P.accent);
-  g += tsans(ox - 162, oy - 14, 'vano', 17, 'middle', P, 600, P.accent);
+  var floorY = oy + mh;
+  g += dimH(ox, ox + mw, floorY + 60, String(r.anchoMarco), P, floorY);   // ancho del marco
+  g += dimV(oy, floorY, ox - 70, String(r.altoMarco), P, ox);             // alto del marco
   return g;
 }
 
@@ -1146,8 +1140,8 @@ function generarGabinete(params, P, logo) {
   var mano = params.drawMano || 'izq';
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(520 / r.W, 1000 / r.H);
-  g += frenteGabinete(r, M + 180, 330, P, kf, mano);
+  var kf = Math.min(520 / r.anchoMarco, 1000 / r.altoMarco);
+  g += frenteGabinete(r, M + 120, 330, P, kf, mano);
   var dx = 760;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
