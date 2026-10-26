@@ -317,6 +317,13 @@ function herrajesTabla(r, ox, oy, P, tw) {
   return tabla(ox, oy, [c0, w - c0], filas, P, ['Cant', 'Accesorio'], { fs: 27, rh: 68 });
 }
 
+/* --- Bloque ACCESORIOS: título + tabla, solo si hay items cargados --- */
+function bloqueAccesorios(r, dx, hy, P, TW) {
+  var items = (r.herrajes || []).filter(function (s) { return s && s.trim(); });
+  if (!items.length) return '';
+  return tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent) + herrajesTabla(r, dx, hy, P, TW).svg;
+}
+
 /* --- Envoltura de página A4 --- */
 function pagina(inner, P, nota) {
   return '<svg width="210mm" height="297mm" viewBox="0 0 ' + PG.w + ' ' + PG.h + '" xmlns="http://www.w3.org/2000/svg">' +
@@ -346,8 +353,7 @@ function generarPaginas(params, P, logo) {
   g += dt.svg;
   // Planilla de herrajes, debajo del despiece
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  g += bloqueAccesorios(r, dx, hy, P, TW);
 
   // Fila B: ① GRANDE a la izquierda (escala alta -> cotas centradas y sin amontonarse).
   // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
@@ -398,8 +404,7 @@ function generarMarco(params, P, logo) {
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  g += bloqueAccesorios(r, dx, hy, P, TW);
   // ① Marco: perfil grande y legible (hay lugar de sobra)
   var bw = 880, bx = M + (full - bw) / 2;
   g += bloquePerfil(bx, 1300, bw, 1420, '① Marco',
@@ -498,8 +503,7 @@ function generarGabinete(params, P, logo) {
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
   var hy = 320 + dt.h + 54;
-  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  g += bloqueAccesorios(r, dx, hy, P, TW);
   // Perfiles: ② P1 y ③ P2 (el marco estructural es caño comprado, no se grafica)
   var by = 1500, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += secGabP1(r, x0, by, bw, 900, P);
@@ -626,8 +630,7 @@ function generarCamara(params, P, logo) {
   var ny = 320 + dt.h + 40;
   g += tsans(dx, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
   var hy = ny + 56;
-  g += tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent);
-  g += herrajesTabla(r, dx, hy, P, TW).svg;
+  g += bloqueAccesorios(r, dx, hy, P, TW);
   var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += corteCamara(r, x0, by, bw, 820, P);
   g += secBandeja(r, x0 + bw + gap, by, bw, 820, P);

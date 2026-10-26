@@ -233,8 +233,7 @@ function calcularCamara(p) {
     { pieza: 'M', desc: 'Marco ángulo — lado A', cantUno: 2, ancho: null, largo: Math.round(extA), mat: MAT_ANG },
     { pieza: 'M', desc: 'Marco ángulo — lado B', cantUno: 2, ancho: null, largo: Math.round(extB), mat: MAT_ANG },
     { pieza: 'T', desc: 'Tapa (bandeja)', cantUno: 1, ancho: devA, largo: devB, mat: MAT_CH },
-    { pieza: 'A', desc: 'Tirador (bulón)', cantUno: nTir, ancho: null, largo: '—', mat: 'Bulón' },
-  ];
+  ];   // el tirador va en la lista de accesorios, no en el despiece
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
   });
