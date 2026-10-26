@@ -568,16 +568,18 @@ function corteCamara(r, ox, oy, w, h, P) {
   g += line(bXL + 14, my, bXR - 14, my, SW.dim, P, 0, P.dim || P.line);
   g += '<path d="M' + bXL.toFixed(1) + ' ' + bTop.toFixed(1) + ' L' + bXL.toFixed(1) + ' ' + seat.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + seat.toFixed(1) + ' L' + bXR.toFixed(1) + ' ' + bTop.toFixed(1) + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
   g += txt(xL - 12, (cyTop + cyBot) / 2, '50,8', F.sm, 'end', P, true, '600');
-  g += txt(bXR + 16, (bTop + seat) / 2, '46', F.num, 'start', P, true, '600');
+  g += txt(xR + 16, (bTop + seat) / 2, '46', F.num, 'start', P, true, '600');
   g += line(xL + t2, cyTop - 12, bXL, cyTop - 12, SW.dim, P, '8 6', P.dim || P.line);
   g += txt((xL + t2 + bXL) / 2, cyTop - 20, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);
   g += txt(cx, cyBot + 34, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // tirador (bulón) — representativo, al centro
-  var hY = bTop - 30, nY = seat + 24;
-  g += line(cx, nY, cx, hY, SW.thick, P);
-  g += '<rect x="' + (cx - 18).toFixed(1) + '" y="' + (hY - 13).toFixed(1) + '" width="36" height="13" fill="' + P.line + '"/>';   // cabeza
-  g += '<rect x="' + (cx - 13).toFixed(1) + '" y="' + seat.toFixed(1) + '" width="26" height="14" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';  // tuerca bajo el fondo
-  g += txt(cx + 30, hY - 2, 'tirador', F.sm, 'start', P, false, '600');
+  // tirador(es) (bulón): 1 centrado o 2 en los tercios, igual que en planta
+  var hY = bTop - 30, nY = seat + 24, sp = bXR - bXL, tcs = r.nTir >= 2 ? [bXL + sp / 3, bXL + 2 * sp / 3] : [cx];
+  tcs.forEach(function (tcx) {
+    g += line(tcx, nY, tcx, hY, SW.thick, P);
+    g += '<rect x="' + (tcx - 18).toFixed(1) + '" y="' + (hY - 13).toFixed(1) + '" width="36" height="13" fill="' + P.line + '"/>';
+    g += '<rect x="' + (tcx - 13).toFixed(1) + '" y="' + seat.toFixed(1) + '" width="26" height="14" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+  });
+  g += txt(tcs[0] + 30, hY - 2, 'tirador', F.sm, 'start', P, false, '600');
   g += tsans(ox + 24, oy + h - 22, 'luz = 3 mm fija (bandeja ↔ marco)', F.ty, 'start', P, 500, P.muted || P.text);
   return g;
 }
@@ -597,10 +599,12 @@ function secBandeja(r, ox, oy, w, h, P) {
   g += line(cx, cyBar + vDn, cx - wall, cyBar + vDn, SW.thick, P);
   // cotas
   g += txt(cx + hw * 0.5, cyBar + 30, String(r.bandA), F.num, 'middle', P, false, '600');           // base ancho
-  g += txt(cx + hw + 14, cyBar - wall * 0.5, '46', F.sm, 'start', P, false, '600');                  // pared ancho (arriba)
   g += txt(cx + 18, cyBar + vDn * 0.5, String(r.bandB), F.num, 'start', P, false, '600');           // base alto
-  g += txt(cx - wall * 0.5, cyBar - vUp - 12, '46', F.sm, 'middle', P, false, '600');               // pared alto
-  g += tsans(cx - hw, cyBar + vDn + 46, 'secciones ancho × alto · paredes 46', F.ty, 'start', P, 500, P.muted || P.text);
+  // 46 en las cuatro paredes
+  g += txt(cx - hw - 14, cyBar - wall * 0.5, '46', F.sm, 'end', P, true, '600');                    // pared ancho izq
+  g += txt(cx + hw + 14, cyBar - wall * 0.5, '46', F.sm, 'start', P, true, '600');                  // pared ancho der
+  g += txt(cx - wall * 0.5, cyBar - vUp - 12, '46', F.sm, 'middle', P, false, '600');               // pared alto sup
+  g += txt(cx - wall * 0.5, cyBar + vDn + 28, '46', F.sm, 'middle', P, false, '600');               // pared alto inf
   g += tsans(ox + w - 30, oy + h - 22, 'plana ' + r.devA + ' × ' + r.devB, F.ty, 'end', P, 700, P.accent);
   return g;
 }
