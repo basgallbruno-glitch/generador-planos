@@ -472,7 +472,7 @@ function secGabP2(r, ox, oy, w, h, P) {
 /* Frente del gabinete: estructural + hoja + tablillas + apertura */
 function frenteGabinete(r, ox, oy, P, k, mano) {
   var mw = r.anchoMarco * k, mh = r.altoMarco * k, g = '';
-  g += tsans(ox, oy - 18, 'FRENTE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += tsans(ox, oy - 18, 'FRENTE — mano ' + (mano === 'izq' ? 'izquierda' : 'derecha'), F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco (el vano queda para cálculo)
   var pad = Math.max(6, 12 * k), innTop = oy + pad, innBot = oy + mh - pad, step = (innBot - innTop) / r.nTab;
   for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(ox + pad, yy, ox + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
@@ -498,7 +498,7 @@ function generarGabinete(params, P, logo) {
   var kf = Math.min(520 / r.anchoMarco, 1000 / r.altoMarco);
   g += frenteGabinete(r, M + 120, 330, P, kf, mano);
   var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, 300, 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
@@ -679,7 +679,8 @@ var TIPOS = [
     campos: [
       { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 200, max: 2500 },
       { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
-      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: '', step: 1, min: 0, max: 999 },
+      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 999 },
       { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
       { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
       { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },

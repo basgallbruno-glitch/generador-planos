@@ -281,7 +281,9 @@ function calcularMarco(p) {
    - Secciones de P1 y P2 fijas → desarrollos (plana) constantes 114 y 95. */
 function calcularGabinete(p) {
   var W = p.W, H = p.H, chapa = p.chapa || 18;
-  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
+  var cantDer = Math.max(0, p.cantDer == null ? 0 : p.cantDer);
+  var total = Math.max(1, cantIzq + cantDer);
   var ea = p.estrA == null || p.estrA <= 0 ? 50 : p.estrA;   // profundidad del caño
   var eb = p.estrB == null || p.estrB <= 0 ? 20 : p.estrB;   // canto hacia el frente
   var ee = p.estrEsp == null || p.estrEsp <= 0 ? 1.6 : p.estrEsp;
@@ -299,11 +301,10 @@ function calcularGabinete(p) {
     { pieza: 'P.2', desc: 'Tablilla', cantUno: nTab, ancho: C.gabDesP2, largo: tabLargo, mat: MAT_CH },
   ];
   var despiece = base.map(function (d) {
-    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * total, ancho: d.ancho, largo: d.largo, mat: d.mat };
   });
   return {
-    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantidad: cant, total: cant,
-    cantidadTexto: cant + ' gabinete' + (cant === 1 ? '' : 's'),
+    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantIzq: cantIzq, cantDer: cantDer, total: total,
     tipoTexto: 'Gabinete tablillas · caño ' + cano,
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
     anchoMarco: anchoMarco, altoMarco: altoMarco, tabLargo: tabLargo, nTab: nTab,
@@ -1173,7 +1174,7 @@ function secGabP2(r, ox, oy, w, h, P) {
 /* Frente del gabinete: estructural + hoja + tablillas + apertura */
 function frenteGabinete(r, ox, oy, P, k, mano) {
   var mw = r.anchoMarco * k, mh = r.altoMarco * k, g = '';
-  g += tsans(ox, oy - 18, 'FRENTE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += tsans(ox, oy - 18, 'FRENTE — mano ' + (mano === 'izq' ? 'izquierda' : 'derecha'), F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco (el vano queda para cálculo)
   var pad = Math.max(6, 12 * k), innTop = oy + pad, innBot = oy + mh - pad, step = (innBot - innTop) / r.nTab;
   for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(ox + pad, yy, ox + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
@@ -1199,7 +1200,7 @@ function generarGabinete(params, P, logo) {
   var kf = Math.min(520 / r.anchoMarco, 1000 / r.altoMarco);
   g += frenteGabinete(r, M + 120, 330, P, kf, mano);
   var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, 300, 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
@@ -1380,7 +1381,8 @@ var TIPOS = [
     campos: [
       { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 200, max: 2500 },
       { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
-      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: '', step: 1, min: 0, max: 999 },
+      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 999 },
       { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
       { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
       { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },

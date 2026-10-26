@@ -174,7 +174,9 @@ function calcularMarco(p) {
    - Secciones de P1 y P2 fijas → desarrollos (plana) constantes 114 y 95. */
 function calcularGabinete(p) {
   var W = p.W, H = p.H, chapa = p.chapa || 18;
-  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
+  var cantDer = Math.max(0, p.cantDer == null ? 0 : p.cantDer);
+  var total = Math.max(1, cantIzq + cantDer);
   var ea = p.estrA == null || p.estrA <= 0 ? 50 : p.estrA;   // profundidad del caño
   var eb = p.estrB == null || p.estrB <= 0 ? 20 : p.estrB;   // canto hacia el frente
   var ee = p.estrEsp == null || p.estrEsp <= 0 ? 1.6 : p.estrEsp;
@@ -192,11 +194,10 @@ function calcularGabinete(p) {
     { pieza: 'P.2', desc: 'Tablilla', cantUno: nTab, ancho: C.gabDesP2, largo: tabLargo, mat: MAT_CH },
   ];
   var despiece = base.map(function (d) {
-    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * total, ancho: d.ancho, largo: d.largo, mat: d.mat };
   });
   return {
-    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantidad: cant, total: cant,
-    cantidadTexto: cant + ' gabinete' + (cant === 1 ? '' : 's'),
+    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantIzq: cantIzq, cantDer: cantDer, total: total,
     tipoTexto: 'Gabinete tablillas · caño ' + cano,
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
     anchoMarco: anchoMarco, altoMarco: altoMarco, tabLargo: tabLargo, nTab: nTab,
