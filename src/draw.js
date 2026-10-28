@@ -662,13 +662,15 @@ function generarCamara(params, P, logo) {
    =========================================================================== */
 /* Planta: marco L (ext + hueco) + rejilla con planchuelas y refuerzos */
 function plantaPluvial(r, ox, oy, P, k) {
-  var eA = r.extA * k, eB = r.extB * k, band = r.leg * k, g = '';
+  var eA = r.extA * k, eB = r.extB * k, g = '';
   g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // marco ext
-  var ix = ox + band, iy = oy + band, iw = r.intA * k, ih = r.intB * k;
-  g += rect(ix, iy, iw, ih, SW.thin, P);                                  // hueco interior
-  var jk = r.esp * k, rx = ix + jk, ry = iy + jk, rw = r.rejA * k, rh = r.rejB * k;
-  g += rect(rx, ry, rw, rh, SW.thin, P);                                  // marco de la rejilla
+  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // borde ext del plegado
+  var jk = r.esp * k, rx = ox + jk, ry = oy + jk, rw = r.rejA * k, rh = r.rejB * k;
+  g += rect(rx, ry, rw, rh, SW.thin, P);                                  // rejilla (apoyada sobre el ala)
+  var band = r.leg * k, ix = ox + band, iy = oy + band, iw = r.intA * k, ih = r.intB * k;
+  var dc = P.muted || P.dim || P.text;                                    // hueco libre por debajo (punteado)
+  g += line(ix, iy, ix + iw, iy, SW.dim, P, '10 8', dc) + line(ix, iy + ih, ix + iw, iy + ih, SW.dim, P, '10 8', dc)
+     + line(ix, iy, ix, iy + ih, SW.dim, P, '10 8', dc) + line(ix + iw, iy, ix + iw, iy + ih, SW.dim, P, '10 8', dc);
   var horizLong = r.rejA >= r.rejB, n = r.nBarras, i;                     // barras ⊥ a la dimensión mayor
   if (horizLong) { var st = rw / (n + 1); for (i = 1; i <= n; i++) { var xx = rx + i * st; g += line(xx, ry, xx, ry + rh, SW.dim, P); } }
   else { var sv = rh / (n + 1); for (i = 1; i <= n; i++) { var yy = ry + i * sv; g += line(rx, yy, rx + rw, yy, SW.dim, P); } }

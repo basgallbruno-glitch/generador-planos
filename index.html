@@ -152,8 +152,9 @@ var C = {
   // --- Cámara pluvial (marco L plegado + rejilla de planchuelas) ---
   pluvMarcoLeg: 42, pluvMarcoDev: 78,  // marco L 42×42 (desarrollo 39+39 = 78)
   pluvChapaEsp: 3.18,                  // chapa 1/8" (espesor del plegado)
-  pluvSepReja: 25,                     // separación entre planchuelas (mm)
-  pluvRefUmbral: 1000,                 // rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
+  pluvPlanchEsp: 4.76,                 // planchuela 3/16" (ancho en planta)
+  pluvSepReja: 25,                     // luz libre entre planchuelas (mm); extremos se ajustan
+  pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -386,15 +387,17 @@ function calcularPluvial(p) {
   var A = p.W, B = p.H, modo = p.modo || 'ext';
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var refuerzo = !!p.refuerzo;
-  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja;
+  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja, tp = C.pluvPlanchEsp;
   var extA, extB, intA, intB;
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
-  var rejA = Math.round(intA - 2 * esp), rejB = Math.round(intB - 2 * esp);   // juego 1 esp por lado
+  // la rejilla apoya sobre el ala del plegado: = ext − 2 esp (= hueco + 2 leg − 2 esp)
+  var rejA = Math.round(extA - 2 * esp), rejB = Math.round(extB - 2 * esp);
   var lado = Math.max(rejA, rejB), corto = Math.min(rejA, rejB);
-  var nBarras = Math.max(0, Math.ceil(lado / sep) - 1);     // barras ⊥ a la mayor, cada 25
+  // planchuelas ⊥ a la mayor, luz libre ≈25 con extremos ajustados (paso = luz + ancho planchuela)
+  var nBarras = Math.max(0, Math.round(lado / (sep + tp)) - 1);
   var largoBarra = corto;
-  var nRef = refuerzo ? (corto < C.pluvRefUmbral ? 1 : 2) : 0;
+  var nRef = refuerzo ? (lado < C.pluvRefUmbral ? 1 : 2) : 0;   // umbral sobre el lado mayor
   var largoRef = lado;
   var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1/2"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
   var base = [
@@ -1426,13 +1429,15 @@ function generarCamara(params, P, logo) {
    =========================================================================== */
 /* Planta: marco L (ext + hueco) + rejilla con planchuelas y refuerzos */
 function plantaPluvial(r, ox, oy, P, k) {
-  var eA = r.extA * k, eB = r.extB * k, band = r.leg * k, g = '';
+  var eA = r.extA * k, eB = r.extB * k, g = '';
   g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // marco ext
-  var ix = ox + band, iy = oy + band, iw = r.intA * k, ih = r.intB * k;
-  g += rect(ix, iy, iw, ih, SW.thin, P);                                  // hueco interior
-  var jk = r.esp * k, rx = ix + jk, ry = iy + jk, rw = r.rejA * k, rh = r.rejB * k;
-  g += rect(rx, ry, rw, rh, SW.thin, P);                                  // marco de la rejilla
+  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // borde ext del plegado
+  var jk = r.esp * k, rx = ox + jk, ry = oy + jk, rw = r.rejA * k, rh = r.rejB * k;
+  g += rect(rx, ry, rw, rh, SW.thin, P);                                  // rejilla (apoyada sobre el ala)
+  var band = r.leg * k, ix = ox + band, iy = oy + band, iw = r.intA * k, ih = r.intB * k;
+  var dc = P.muted || P.dim || P.text;                                    // hueco libre por debajo (punteado)
+  g += line(ix, iy, ix + iw, iy, SW.dim, P, '10 8', dc) + line(ix, iy + ih, ix + iw, iy + ih, SW.dim, P, '10 8', dc)
+     + line(ix, iy, ix, iy + ih, SW.dim, P, '10 8', dc) + line(ix + iw, iy, ix + iw, iy + ih, SW.dim, P, '10 8', dc);
   var horizLong = r.rejA >= r.rejB, n = r.nBarras, i;                     // barras ⊥ a la dimensión mayor
   if (horizLong) { var st = rw / (n + 1); for (i = 1; i <= n; i++) { var xx = rx + i * st; g += line(xx, ry, xx, ry + rh, SW.dim, P); } }
   else { var sv = rh / (n + 1); for (i = 1; i <= n; i++) { var yy = ry + i * sv; g += line(rx, yy, rx + rw, yy, SW.dim, P); } }

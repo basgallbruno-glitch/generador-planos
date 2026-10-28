@@ -45,8 +45,9 @@ var C = {
   // --- Cámara pluvial (marco L plegado + rejilla de planchuelas) ---
   pluvMarcoLeg: 42, pluvMarcoDev: 78,  // marco L 42×42 (desarrollo 39+39 = 78)
   pluvChapaEsp: 3.18,                  // chapa 1/8" (espesor del plegado)
-  pluvSepReja: 25,                     // separación entre planchuelas (mm)
-  pluvRefUmbral: 1000,                 // rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
+  pluvPlanchEsp: 4.76,                 // planchuela 3/16" (ancho en planta)
+  pluvSepReja: 25,                     // luz libre entre planchuelas (mm); extremos se ajustan
+  pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -279,15 +280,17 @@ function calcularPluvial(p) {
   var A = p.W, B = p.H, modo = p.modo || 'ext';
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var refuerzo = !!p.refuerzo;
-  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja;
+  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja, tp = C.pluvPlanchEsp;
   var extA, extB, intA, intB;
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
-  var rejA = Math.round(intA - 2 * esp), rejB = Math.round(intB - 2 * esp);   // juego 1 esp por lado
+  // la rejilla apoya sobre el ala del plegado: = ext − 2 esp (= hueco + 2 leg − 2 esp)
+  var rejA = Math.round(extA - 2 * esp), rejB = Math.round(extB - 2 * esp);
   var lado = Math.max(rejA, rejB), corto = Math.min(rejA, rejB);
-  var nBarras = Math.max(0, Math.ceil(lado / sep) - 1);     // barras ⊥ a la mayor, cada 25
+  // planchuelas ⊥ a la mayor, luz libre ≈25 con extremos ajustados (paso = luz + ancho planchuela)
+  var nBarras = Math.max(0, Math.round(lado / (sep + tp)) - 1);
   var largoBarra = corto;
-  var nRef = refuerzo ? (corto < C.pluvRefUmbral ? 1 : 2) : 0;
+  var nRef = refuerzo ? (lado < C.pluvRefUmbral ? 1 : 2) : 0;   // umbral sobre el lado mayor
   var largoRef = lado;
   var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1/2"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
   var base = [
