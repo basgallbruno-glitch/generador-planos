@@ -721,7 +721,7 @@ function secPluvMarco(r, ox, oy, w, h, P) {
 function cortePluvial(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Corte', 'rejilla apoyada sobre el marco · anclajes de amure', P);
   var cx = ox + w / 2, span = w * 0.56, hw = span / 2, lx = cx - hw, rx = cx + hw;
-  var bandTop = oy + h * 0.30, rejH = 22, bandBot = bandTop + rejH, botY = bandTop + 160, foot = 40, barW = 9, i;
+  var arm = 66, bandTop = oy + h * 0.36, rejH = 22, bandBot = bandTop + rejH, botY = bandTop + arm, foot = arm, barW = 9, i;
   g += line(lx, bandTop, rx, bandTop, SW.thin, P) + line(lx, bandBot, rx, bandBot, SW.thin, P);  // banda rejilla
   var nb = 8, stp = span / (nb + 1);                                      // planchuelas de canto (en corte)
   for (i = 1; i <= nb; i++) { var bx = lx + i * stp; g += rect(bx - barW / 2, bandTop, barW, rejH, SW.thin, P, P.hatch); }
