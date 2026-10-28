@@ -1190,26 +1190,30 @@ function frenteGabinete(r, ox, oy, P, k, mano) {
   var mw = r.anchoMarco * k, mh = r.altoMarco * k, g = '';
   var titulo = r.nHojas === 2 ? 'FRENTE — doble hoja' : 'FRENTE — mano ' + (mano === 'izq' ? 'izquierda' : 'derecha');
   g += tsans(ox, oy - 18, titulo, F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco estructural
   var floorY = oy + mh, hojaW = r.hojaAncho * k;
-  var cantoK = r.estrB * k, luzK = C.gabJuegoLat * k, centK = C.gabLuzCentral * k, pad = Math.max(5, 10 * k);
+  var cantoK = r.estrB * k, luzK = C.gabJuegoLat * k, centK = C.gabLuzCentral * k, p1K = Math.max(3, 30 * k);
+  // marco estructural: banda (contorno + abertura interior = ancho del caño)
+  g += rect(ox, oy, mw, mh, SW.thick, P);
+  g += rect(ox + cantoK, oy + cantoK, mw - 2 * cantoK, mh - 2 * cantoK, SW.thin, P);
+  var opL = ox + cantoK;
   var hojas = [];
   if (r.nHojas === 2) {
-    var xL = ox + cantoK + luzK;
+    var xL = opL + luzK;
     hojas.push({ x: xL, m: 'izq' });                      // abre a la izquierda (bisagra izq)
     hojas.push({ x: xL + hojaW + centK, m: 'der' });      // abre a la derecha (bisagra der)
   } else {
-    hojas.push({ x: ox + cantoK + luzK, m: mano });
+    hojas.push({ x: opL + luzK, m: mano });
   }
   hojas.forEach(function (hj) {
     var hx = hj.x, mid = oy + mh / 2;
-    g += rect(hx, oy, hojaW, mh, SW.thin, P);                             // hoja (ancho con luz; alto completo)
-    var innTop = oy + pad, innBot = floorY - pad, step = (innBot - innTop) / r.nTab, i;
-    for (i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(hx + pad, yy, hx + hojaW - pad, yy, SW.dim, P, 0, P.dim || P.line); }
+    g += rect(hx, oy, hojaW, mh, SW.thin, P);                             // marco hoja: contorno (alto completo)
+    g += rect(hx + p1K, oy + p1K, hojaW - 2 * p1K, mh - 2 * p1K, SW.thin, P); // marco hoja: cara interior
+    var innTop = oy + p1K + 6, innBot = floorY - p1K - 6, step = (innBot - innTop) / r.nTab, i;
+    for (i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(hx + p1K, yy, hx + hojaW - p1K, yy, SW.dim, P, 0, P.dim || P.line); }
     if (hj.m === 'der') { g += line(hx + hojaW, oy, hx, mid, SW.dim, P, '18 12', P.accent) + line(hx + hojaW, floorY, hx, mid, SW.dim, P, '18 12', P.accent); }
     else { g += line(hx, oy, hx + hojaW, mid, SW.dim, P, '18 12', P.accent) + line(hx, floorY, hx + hojaW, mid, SW.dim, P, '18 12', P.accent); }
-    var lcx = hj.m === 'der' ? hx + 14 : hx + hojaW - 14;
-    g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+    var lcx = hj.m === 'der' ? hx + p1K + 10 : hx + hojaW - p1K - 10;
+    g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   });
   g += dimH(ox, ox + mw, floorY + 60, String(r.anchoMarco), P, floorY);   // ancho del estructural
   g += dimV(oy, floorY, ox - 70, String(r.altoMarco), P, ox);             // alto del estructural
