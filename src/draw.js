@@ -472,18 +472,31 @@ function secGabP2(r, ox, oy, w, h, P) {
 /* Frente del gabinete: estructural + hoja + tablillas + apertura */
 function frenteGabinete(r, ox, oy, P, k, mano) {
   var mw = r.anchoMarco * k, mh = r.altoMarco * k, g = '';
-  g += tsans(ox, oy - 18, 'FRENTE — mano ' + (mano === 'izq' ? 'izquierda' : 'derecha'), F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco (el vano queda para cálculo)
-  var pad = Math.max(6, 12 * k), innTop = oy + pad, innBot = oy + mh - pad, step = (innBot - innTop) / r.nTab;
-  for (var i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(ox + pad, yy, ox + mw - pad, yy, SW.dim, P, 0, P.dim || P.line); }
-  var mid = oy + mh / 2;
-  if (mano === 'der') { g += line(ox + mw, oy, ox, mid, SW.dim, P, '18 12', P.accent) + line(ox + mw, oy + mh, ox, mid, SW.dim, P, '18 12', P.accent); }
-  else { g += line(ox, oy, ox + mw, mid, SW.dim, P, '18 12', P.accent) + line(ox, oy + mh, ox + mw, mid, SW.dim, P, '18 12', P.accent); }
-  var lcx = mano === 'der' ? ox + 14 : ox + mw - 14;
-  g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-  var floorY = oy + mh;
-  g += dimH(ox, ox + mw, floorY + 60, String(r.anchoMarco), P, floorY);   // ancho del marco
-  g += dimV(oy, floorY, ox - 70, String(r.altoMarco), P, ox);             // alto del marco
+  var titulo = r.nHojas === 2 ? 'FRENTE — doble hoja' : 'FRENTE — mano ' + (mano === 'izq' ? 'izquierda' : 'derecha');
+  g += tsans(ox, oy - 18, titulo, F.h2, 'start', P, 700, P.accent);
+  g += rect(ox, oy, mw, mh, SW.thick, P);                                 // marco estructural
+  var floorY = oy + mh, hojaW = r.hojaAncho * k;
+  var cantoK = r.estrB * k, luzK = C.gabJuegoLat * k, centK = C.gabLuzCentral * k, pad = Math.max(5, 10 * k);
+  var hojas = [];
+  if (r.nHojas === 2) {
+    var xL = ox + cantoK + luzK;
+    hojas.push({ x: xL, m: 'izq' });                      // abre a la izquierda (bisagra izq)
+    hojas.push({ x: xL + hojaW + centK, m: 'der' });      // abre a la derecha (bisagra der)
+  } else {
+    hojas.push({ x: ox + cantoK + luzK, m: mano });
+  }
+  hojas.forEach(function (hj) {
+    var hx = hj.x, mid = oy + mh / 2;
+    g += rect(hx, oy, hojaW, mh, SW.thin, P);                             // hoja (ancho con luz; alto completo)
+    var innTop = oy + pad, innBot = floorY - pad, step = (innBot - innTop) / r.nTab, i;
+    for (i = 1; i < r.nTab; i++) { var yy = innTop + i * step; g += line(hx + pad, yy, hx + hojaW - pad, yy, SW.dim, P, 0, P.dim || P.line); }
+    if (hj.m === 'der') { g += line(hx + hojaW, oy, hx, mid, SW.dim, P, '18 12', P.accent) + line(hx + hojaW, floorY, hx, mid, SW.dim, P, '18 12', P.accent); }
+    else { g += line(hx, oy, hx + hojaW, mid, SW.dim, P, '18 12', P.accent) + line(hx, floorY, hx + hojaW, mid, SW.dim, P, '18 12', P.accent); }
+    var lcx = hj.m === 'der' ? hx + 14 : hx + hojaW - 14;
+    g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
+  });
+  g += dimH(ox, ox + mw, floorY + 60, String(r.anchoMarco), P, floorY);   // ancho del estructural
+  g += dimV(oy, floorY, ox - 70, String(r.altoMarco), P, ox);             // alto del estructural
   return g;
 }
 
@@ -498,7 +511,7 @@ function generarGabinete(params, P, logo) {
   var kf = Math.min(520 / r.anchoMarco, 1000 / r.altoMarco);
   g += frenteGabinete(r, M + 120, 330, P, kf, mano);
   var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
+  g += tsans(dx, 300, (r.nHojas === 2 ? 'DESPIECE — ' + r.total + ' gabinetes (doble hoja)' : 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)'), F.h2, 'start', P, 700, P.accent);
   var TW = 2030 - dx;
   var dt = despieceTabla(r, dx, 320, P, TW);
   g += dt.svg;
@@ -689,6 +702,20 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularGabinete(p); },
     generar: function (p, P, logo) { return generarGabinete(p, P, logo); }
+  },
+  {
+    id: 'gabinete-doble', nombre: 'Gabinete con tablillas (doble hoja)',
+    campos: [
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 3000 },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
+      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
+      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
+      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
+      { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] }
+    ],
+    calcular: function (p) { p.nHojas = 2; return calcularGabinete(p); },
+    generar: function (p, P, logo) { p.nHojas = 2; return generarGabinete(p, P, logo); }
   },
   {
     id: 'camara', nombre: 'Cámara cloacal (marco + tapa)',

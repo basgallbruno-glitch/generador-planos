@@ -33,7 +33,8 @@ var C = {
   marcoTurns: ['L', 'L', 'R', 'L', 'L', 'R', 'L', 'L'],
   // --- Gabinete con tablillas ---
   gabDescLado: 5,                  // descuento del bastidor por lado (izq/der/sup; abajo 0)
-  gabJuegoLat: 5, gabJuegoCentro: 3,  // juego de la tablilla por lado: lateral + central (mm)
+  gabJuegoLat: 5, gabJuegoCentro: 3,  // luz marco hoja↔estructural (lateral, ancho) + luz tablilla↔hoja
+  gabLuzCentral: 8,                // doble hoja: luz entre las dos hojas (mm)
   gabPasoTab: 70,                  // alto que abarca cada tablilla (mm)
   gabDesP1: 114, gabDesP2: 95,     // desarrollos fijos de los plegados (chapa 18)
   // --- Cámara cloacal (marco ángulo + tapa bandeja) ---
@@ -173,33 +174,47 @@ function calcularMarco(p) {
    - Secciones de P1 y P2 fijas → desarrollos (plana) constantes 114 y 95. */
 function calcularGabinete(p) {
   var W = p.W, H = p.H, chapa = p.chapa || 18;
-  var cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
-  var cantDer = Math.max(0, p.cantDer == null ? 0 : p.cantDer);
-  var total = Math.max(1, cantIzq + cantDer);
+  var nHojas = p.nHojas === 2 ? 2 : 1;
+  var cantIzq = 0, cantDer = 0, total;
+  if (nHojas === 2) {
+    total = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  } else {
+    cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
+    cantDer = Math.max(0, p.cantDer == null ? 0 : p.cantDer);
+    total = Math.max(1, cantIzq + cantDer);
+  }
   var ea = p.estrA == null || p.estrA <= 0 ? 50 : p.estrA;   // profundidad del caño
   var eb = p.estrB == null || p.estrB <= 0 ? 20 : p.estrB;   // canto hacia el frente
   var ee = p.estrEsp == null || p.estrEsp <= 0 ? 1.6 : p.estrEsp;
   var cano = ea + '×' + eb + '×' + String(ee).replace('.', ',');
-  var anchoMarco = W - 2 * C.gabDescLado;        // horizontales (ancho)
-  var altoMarco = H - C.gabDescLado;             // verticales (alto)
-  var tabLargo = anchoMarco - 2 * eb - 2 * C.gabJuegoLat - 2 * C.gabJuegoCentro;  // ancho estr − 2·canto − 2·5 − 2·3
+  var anchoMarco = W - 2 * C.gabDescLado;        // estructural: horizontales (ancho)
+  var altoMarco = H - C.gabDescLado;             // estructural: verticales (alto)
+  var aberturaInt = anchoMarco - 2 * eb;         // abertura interior del estructural (ancho)
+  // marco de hoja: el 5 mm de luz aplica solo al ancho; el alto no cambia (= altoMarco)
+  var hojaAncho = nHojas === 2
+    ? Math.round((aberturaInt - 2 * C.gabJuegoLat - C.gabLuzCentral) / 2)
+    : (aberturaInt - 2 * C.gabJuegoLat);
+  var tabLargo = hojaAncho - 2 * C.gabJuegoCentro;
   var nTab = Math.max(1, Math.floor(altoMarco / C.gabPasoTab));
   var MAT_CH = 'Chapa N°' + chapa, MAT_ES = 'Caño ' + cano;
   var base = [
     { pieza: 'E', desc: 'Marco estructural — horizontal', cantUno: 2, ancho: null, largo: anchoMarco, mat: MAT_ES },
     { pieza: 'E', desc: 'Marco estructural — vertical', cantUno: 2, ancho: null, largo: altoMarco, mat: MAT_ES },
-    { pieza: 'P.1', desc: 'Marco hoja — horizontal', cantUno: 2, ancho: C.gabDesP1, largo: anchoMarco, mat: MAT_CH },
-    { pieza: 'P.1', desc: 'Marco hoja — vertical', cantUno: 2, ancho: C.gabDesP1, largo: altoMarco, mat: MAT_CH },
-    { pieza: 'P.2', desc: 'Tablilla', cantUno: nTab, ancho: C.gabDesP2, largo: tabLargo, mat: MAT_CH },
+    { pieza: 'P.1', desc: 'Marco hoja — horizontal', cantUno: 2 * nHojas, ancho: C.gabDesP1, largo: hojaAncho, mat: MAT_CH },
+    { pieza: 'P.1', desc: 'Marco hoja — vertical', cantUno: 2 * nHojas, ancho: C.gabDesP1, largo: altoMarco, mat: MAT_CH },
+    { pieza: 'P.2', desc: 'Tablilla', cantUno: nTab * nHojas, ancho: C.gabDesP2, largo: tabLargo, mat: MAT_CH },
   ];
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * total, ancho: d.ancho, largo: d.largo, mat: d.mat };
   });
   return {
-    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, cantIzq: cantIzq, cantDer: cantDer, total: total,
-    tipoTexto: 'Gabinete tablillas · caño ' + cano,
+    tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, nHojas: nHojas,
+    cantIzq: cantIzq, cantDer: cantDer, total: total,
+    cantidadTexto: nHojas === 2 ? (total + ' gabinete' + (total === 1 ? '' : 's')) : undefined,
+    tipoTexto: (nHojas === 2 ? 'Gabinete doble hoja · caño ' : 'Gabinete tablillas · caño ') + cano,
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
-    anchoMarco: anchoMarco, altoMarco: altoMarco, tabLargo: tabLargo, nTab: nTab,
+    anchoMarco: anchoMarco, altoMarco: altoMarco, aberturaInt: aberturaInt,
+    hojaAncho: hojaAncho, tabLargo: tabLargo, nTab: nTab,
     desP1: C.gabDesP1, desP2: C.gabDesP2,
     picaporte: p.picaporte == null ? 1020 : p.picaporte,
     despiece: despiece,
