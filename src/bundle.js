@@ -48,6 +48,7 @@ var C = {
   pluvPlanchEsp: 4.76,                 // planchuela 3/16" (ancho en planta)
   pluvSepReja: 25,                     // luz libre entre planchuelas (mm); extremos se ajustan
   pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
+  pluvCorte45: 15,                     // margen que se suma al largo del plegado para el corte a 45°
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -294,8 +295,8 @@ function calcularPluvial(p) {
   var largoRef = lado;
   var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1/2"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
   var base = [
-    { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extA), mat: MAT_MARCO },
-    { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extB), mat: MAT_MARCO },
+    { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extA) + C.pluvCorte45, mat: MAT_MARCO },
+    { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extB) + C.pluvCorte45, mat: MAT_MARCO },
     { pieza: 'R', desc: 'Rejilla — marco lado A', cantUno: 2, ancho: null, largo: rejA, mat: MAT_PL },
     { pieza: 'R', desc: 'Rejilla — marco lado B', cantUno: 2, ancho: null, largo: rejB, mat: MAT_PL },
     { pieza: 'R', desc: 'Rejilla — planchuelas', cantUno: nBarras, ancho: null, largo: largoBarra, mat: MAT_PL },

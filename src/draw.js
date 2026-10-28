@@ -660,10 +660,18 @@ function generarCamara(params, P, logo) {
 /* ===========================================================================
    CÁMARA PLUVIAL — dibujo
    =========================================================================== */
-/* Planta: marco L (ext + hueco) + rejilla con planchuelas y refuerzos */
+/* Anclaje de amure en "Y": tallo desde el borde + horquilla hacia afuera */
+function anchorY(px, py, dx, dy, P) {
+  var stem = 30, pr = 26, spr = 0.6;
+  var bx = px + dx * stem, by = py + dy * stem, perpx = -dy, perpy = dx;
+  var a1x = bx + dx * pr + perpx * pr * spr, a1y = by + dy * pr + perpy * pr * spr;
+  var a2x = bx + dx * pr - perpx * pr * spr, a2y = by + dy * pr - perpy * pr * spr;
+  return line(px, py, bx, by, SW.thin, P) + line(bx, by, a1x, a1y, SW.thin, P) + line(bx, by, a2x, a2y, SW.thin, P);
+}
+
+/* Planta: marco L (ext + hueco) + rejilla + anclajes de amure "Y" en el perímetro */
 function plantaPluvial(r, ox, oy, P, k) {
   var eA = r.extA * k, eB = r.extB * k, g = '';
-  g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, eA, eB, SW.thick, P);                                 // borde ext del plegado
   var jk = r.esp * k, rx = ox + jk, ry = oy + jk, rw = r.rejA * k, rh = r.rejB * k;
   g += rect(rx, ry, rw, rh, SW.thin, P);                                  // rejilla (apoyada sobre el ala)
@@ -681,15 +689,19 @@ function plantaPluvial(r, ox, oy, P, k) {
       else { var xx = rx + rw * f; g += line(xx, ry, xx, ry + rh, SW.thick, P, '22 10', P.accent); }
     });
   }
-  var floorY = oy + eB;
+  [1 / 3, 2 / 3].forEach(function (f) {                                   // anclajes de amure: 2 por lado
+    g += anchorY(ox + eA * f, oy, 0, -1, P) + anchorY(ox + eA * f, oy + eB, 0, 1, P);
+    g += anchorY(ox, oy + eB * f, -1, 0, P) + anchorY(ox + eA, oy + eB * f, 1, 0, P);
+  });
+  var floorY = oy + eB, cv = 170;                                         // cotas por fuera de los anclajes
   if (r.modo === 'int') {
-    g += dimH(ix, ix + iw, floorY + 70, String(Math.round(r.intA)), P, iy + ih);
-    g += dimV(iy, iy + ih, ox - 70, String(Math.round(r.intB)), P, ix);
-    g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+    g += dimH(ix, ix + iw, floorY + cv, String(Math.round(r.intA)), P, iy + ih);
+    g += dimV(iy, iy + ih, ox - cv, String(Math.round(r.intB)), P, ix);
+    g += tsans(ox - cv, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
   } else {
-    g += dimH(ox, ox + eA, floorY + 70, String(Math.round(r.extA)), P, floorY);
-    g += dimV(oy, oy + eB, ox - 70, String(Math.round(r.extB)), P, ox);
-    g += tsans(ox - 70, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
+    g += dimH(ox, ox + eA, floorY + cv, String(Math.round(r.extA)), P, floorY);
+    g += dimV(oy, oy + eB, ox - cv, String(Math.round(r.extB)), P, ox);
+    g += tsans(ox - cv, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
   }
   return g;
 }
@@ -697,46 +709,52 @@ function plantaPluvial(r, ox, oy, P, k) {
 /* ① Marco: plegado en L 42×42 */
 function secPluvMarco(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa 1/8" · L 42×42 · plana 78', P);
-  var legH = 330, legV = 330, t = 24, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 180;
+  var legH = 230, legV = 230, t = 18, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 130;
   g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
   g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
   g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
-  g += tsans(ox + w - 30, oy + h - 22, 'desarrollo 39 + 39 = 78', F.ty, 'end', P, 700, P.accent);
+  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo 39 + 39 = 78', F.ty, 'end', P, 700, P.accent);
   return g;
 }
 
-/* ② Rejilla: planchuelas de canto cada 25 (+ refuerzo si corresponde) */
-function secPluvReja(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '② Rejilla', 'planchuela 1/2"×3/16" de canto · cada 25' + (r.refuerzo ? ' · con refuerzo' : ''), P);
-  var s = 4.6, barW = Math.max(10, 4.76 * s), barH = 12.7 * s, gapu = 25 * s, cy = oy + h * 0.46, x0 = ox + 150, x = x0;
-  for (var i = 0; i < 4; i++) { g += rect(x, cy - barH, barW, barH, SW.thick, P, P.hatch); if (i < 3) g += txt(x + barW + gapu / 2, cy + 38, '25', F.sm, 'middle', P, false, '600'); x += barW + gapu; }
-  var xEnd = x - gapu;
-  g += txt(x0 - 18, cy - barH / 2, '12,7', F.sm, 'end', P, true, '600');
-  if (r.refuerzo) {
-    var ryy = cy + 70, rhh = 3.18 * s * 1.3;
-    g += rect(x0, ryy, xEnd - x0, rhh, SW.thin, P, P.hatch);
-    g += txt(x0, ryy + rhh + 34, 'refuerzo 1/2"×1/8" por debajo (⊥)', F.sm, 'start', P, false, '500', P.muted || P.text);
-  }
-  g += tsans(ox + 24, oy + h - 22, r.nBarras + ' planchuelas de ' + r.largoBarra + ' mm' + (r.nRef ? ' · ' + r.nRef + ' refuerzo' + (r.nRef > 1 ? 's' : '') + ' de ' + r.largoRef : ''), F.ty, 'start', P, 500, P.muted || P.text);
+/* ② Corte: rejilla de planchuelas de canto apoyada sobre el marco L + anclajes */
+function cortePluvial(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '② Corte', 'rejilla apoyada sobre el marco · anclajes de amure', P);
+  var cx = ox + w / 2, topY = oy + h * 0.42, span = w * 0.58, hw = span / 2;
+  var lx = cx - hw, rx = cx + hw, rejH = 24, ala = 42, legDown = 100, barW = 9, i;
+  g += line(lx, topY - rejH, rx, topY - rejH, SW.thin, P) + line(lx, topY, rx, topY, SW.thin, P);  // banda rejilla
+  var nb = 8, stp = span / (nb + 1);                                      // planchuelas de canto (en corte)
+  for (i = 1; i <= nb; i++) { var bx = lx + i * stp; g += rect(bx - barW / 2, topY - rejH, barW, rejH, SW.thin, P, P.hatch); }
+  g += line(lx, topY, lx + ala, topY, SW.thick, P) + line(lx, topY, lx, topY + legDown, SW.thick, P);  // marco L izq
+  g += line(rx, topY, rx - ala, topY, SW.thick, P) + line(rx, topY, rx, topY + legDown, SW.thick, P);  // marco L der
+  g += anchorY(lx, topY + legDown, -0.4, 1, P) + anchorY(rx, topY + legDown, 0.4, 1, P);               // anclajes
+  g += txt(cx, topY - rejH - 14, 'rejilla', F.sm, 'middle', P, false, '600');
+  g += tsans(ox + w - 26, oy + h - 20, 'anclajes esquemáticos (sin especificación)', F.ty, 'end', P, 500, P.muted || P.text);
   return g;
 }
 
-/* Hoja A4: CÁMARA PLUVIAL */
+/* Hoja A4: CÁMARA PLUVIAL — planta centrada (grande) · esquemas · despiece centrado */
 function generarPluvial(params, P, logo) {
   var r = calcularPluvial(params);
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
-  var M = PG.m, full = PG.w - 2 * M, g = '';
+  var M = PG.m, full = PG.w - 2 * M, cxp = PG.w / 2, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(470 / r.extA, 900 / r.extB);
-  g += plantaPluvial(r, M + 180, 360, P, kf);
-  var dx = 760, TW = 2030 - dx;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, 320, P, TW); g += dt.svg;
-  var hy = 320 + dt.h + 54; g += bloqueAccesorios(r, dx, hy, P, TW);
-  var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
-  g += secPluvMarco(r, x0, by, bw, 820, P);
-  g += secPluvReja(r, x0 + bw + gap, by, bw, 820, P);
-  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (unión a 45°). Rejilla de planchuelas. Imprimir en A4.')];
+  // PLANTA centrada
+  var kf = Math.min(760 / r.extA, 620 / r.extB), eA = r.extA * kf, eB = r.extB * kf;
+  var pox = cxp - eA / 2, poy = 470;
+  g += tsans(cxp, 330, 'PLANTA', F.h2, 'middle', P, 700, P.accent);
+  g += plantaPluvial(r, pox, poy, P, kf);
+  // ESQUEMAS (① Marco L · ② Corte) centrados debajo de la planta
+  var esqW = 720, esqH = 520, esqGap = 80;
+  var esqTop = poy + eB + 230, x0 = cxp - (esqW * 2 + esqGap) / 2;
+  g += secPluvMarco(r, x0, esqTop, esqW, esqH, P);
+  g += cortePluvial(r, x0 + esqW + esqGap, esqTop, esqW, esqH, P);
+  // DESPIECE centrado, abajo
+  var TW = 1260, dx = cxp - TW / 2, dyTitle = esqTop + esqH + 70;
+  g += tsans(cxp, dyTitle, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'middle', P, 700, P.accent);
+  var dt = despieceTabla(r, dx, dyTitle + 22, P, TW); g += dt.svg;
+  var hy = dyTitle + 22 + dt.h + 46; g += bloqueAccesorios(r, dx, hy, P, TW);
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (unión a 45°), largo = ext + 15 por corte a 45°. Rejilla de planchuelas. Imprimir en A4.')];
 }
 
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
