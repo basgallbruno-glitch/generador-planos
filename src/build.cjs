@@ -120,11 +120,9 @@ const LOGO=${JSON.stringify(logoB64)};
 ${bundle}
 
 function palette(){
-  const s=getComputedStyle(document.documentElement);
-  const g=n=>s.getPropertyValue(n).trim();
-  return {paper:g('--dw-paper'),line:g('--dw-line'),thin:g('--dw-line'),
-    text:g('--dw-text'),accent:g('--dw-accent'),hatch:g('--dw-hatch'),
-    muted:g('--dw-muted')||g('--dw-text'),dim:g('--dw-text'),card:'none',head:g('--dw-hatch')};
+  // el plano va siempre sobre fondo blanco (no sigue el modo oscuro); letras en navy, un poco más azules
+  return {paper:'#ffffff',line:'#13213a',thin:'#13213a',text:'#16305e',accent:'#0a3f85',
+    hatch:'#eef4fb',muted:'#5b6b82',dim:'#5b6b82',card:'none',head:'#eef4fb'};
 }
 const val=id=>document.getElementById(id).value;
 const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -145,6 +143,8 @@ function renderCampos(){
     } else if(c.type==='seg'){
       segState[c.id]=c.value;
       h+='<div class="field"><label>'+escH(c.label)+'</label><div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
+    } else if(c.type==='check'){
+      h+='<div class="field" style="flex-direction:row;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
@@ -157,7 +157,7 @@ function renderCampos(){
         dibujar();
       }));
     } else {
-      document.getElementById('f_'+c.id).addEventListener(c.type==='select'?'change':'input', dibujar);
+      document.getElementById('f_'+c.id).addEventListener((c.type==='select'||c.type==='check')?'change':'input', dibujar);
     }
   });
 }
@@ -165,7 +165,7 @@ function renderCampos(){
 function getParams(){
   const t=tipoActual(), p={};
   t.campos.forEach(c=>{
-    let v = c.type==='seg' ? segState[c.id] : document.getElementById('f_'+c.id).value;
+    let v = c.type==='seg' ? segState[c.id] : (c.type==='check' ? document.getElementById('f_'+c.id).checked : document.getElementById('f_'+c.id).value);
     if(c.type==='number') v=+v;
     p[c.id]=v;
   });

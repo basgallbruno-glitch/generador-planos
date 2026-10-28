@@ -42,6 +42,11 @@ var C = {
   camBandAlto: 46,                   // alto de la bandeja (= ala − espesor; queda al ras)
   camChapaUmbral: 1000,              // ≥1 m en algún lado del marco → N°14; si no, N°16
   camLuzFija: 3,                     // luz fija bandeja↔marco (mm); por lado se resta 1·esp + luz
+  // --- Cámara pluvial (marco L plegado + rejilla de planchuelas) ---
+  pluvMarcoLeg: 42, pluvMarcoDev: 78,  // marco L 42×42 (desarrollo 39+39 = 78)
+  pluvChapaEsp: 3.18,                  // chapa 1/8" (espesor del plegado)
+  pluvSepReja: 25,                     // separación entre planchuelas (mm)
+  pluvRefUmbral: 1000,                 // rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -260,6 +265,49 @@ function calcularCamara(p) {
     extA: extA, extB: extB, intA: intA, intB: intB,
     bandA: Math.round(bandA), bandB: Math.round(bandB),
     h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir,
+    despiece: despiece,
+  };
+}
+
+/* ---- Motor CÁMARA PLUVIAL: marco plegado en L + rejilla de planchuelas ----
+   - Marco: plegado en L 42×42 (chapa 1/8"), desarrollo 78. ext = int + 2·ala (plegados hacia afuera).
+   - Rejilla: planchuelas 1/2"×3/16" de canto; marco perimetral + barras cada 25 mm, ⊥ a la dimensión
+     mayor. Juego = 1 espesor de plegado por lado respecto del hueco → rejilla = int − 2·esp.
+   - Refuerzo opcional (zona transitable): planchuela 1/2"×1/8" por debajo, ⊥ a las barras;
+     1 al medio si la rejilla < 1 m, o 2 en los tercios si no. */
+function calcularPluvial(p) {
+  var A = p.W, B = p.H, modo = p.modo || 'ext';
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var refuerzo = !!p.refuerzo;
+  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja;
+  var extA, extB, intA, intB;
+  if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
+  else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
+  var rejA = Math.round(intA - 2 * esp), rejB = Math.round(intB - 2 * esp);   // juego 1 esp por lado
+  var lado = Math.max(rejA, rejB), corto = Math.min(rejA, rejB);
+  var nBarras = Math.max(0, Math.ceil(lado / sep) - 1);     // barras ⊥ a la mayor, cada 25
+  var largoBarra = corto;
+  var nRef = refuerzo ? (corto < C.pluvRefUmbral ? 1 : 2) : 0;
+  var largoRef = lado;
+  var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1/2"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
+  var base = [
+    { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extA), mat: MAT_MARCO },
+    { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extB), mat: MAT_MARCO },
+    { pieza: 'R', desc: 'Rejilla — marco lado A', cantUno: 2, ancho: null, largo: rejA, mat: MAT_PL },
+    { pieza: 'R', desc: 'Rejilla — marco lado B', cantUno: 2, ancho: null, largo: rejB, mat: MAT_PL },
+    { pieza: 'R', desc: 'Rejilla — planchuelas', cantUno: nBarras, ancho: null, largo: largoBarra, mat: MAT_PL },
+  ];
+  if (nRef) base.push({ pieza: 'R', desc: 'Rejilla — refuerzo', cantUno: nRef, ancho: null, largo: largoRef, mat: MAT_REF });
+  var despiece = base.map(function (d) {
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+  });
+  return {
+    tipoPlano: 'pluvial', W: A, H: B, modo: modo, cantidad: cant, total: cant, refuerzo: refuerzo,
+    cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
+    tipoTexto: 'Cámara pluvial · marco L 42×42',
+    extA: extA, extB: extB, intA: intA, intB: intB, rejA: rejA, rejB: rejB,
+    lado: lado, corto: corto, nBarras: nBarras, largoBarra: largoBarra,
+    nRef: nRef, largoRef: largoRef, leg: leg, esp: esp, sep: sep,
     despiece: despiece,
   };
 }
@@ -628,4 +676,4 @@ function generarSVG(params, P, logo) {
   return { svg: svg, r: r };
 }
 
-if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, calcularCamara: calcularCamara, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
+if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, calcularCamara: calcularCamara, calcularPluvial: calcularPluvial, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };

@@ -657,6 +657,86 @@ function generarCamara(params, P, logo) {
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Ángulo comprado. Desarrollo = chapa a cortar (deducción = espesor redondeado al entero menor, por doblez). Imprimir en A4.')];
 }
 
+/* ===========================================================================
+   CÁMARA PLUVIAL — dibujo
+   =========================================================================== */
+/* Planta: marco L (ext + hueco) + rejilla con planchuelas y refuerzos */
+function plantaPluvial(r, ox, oy, P, k) {
+  var eA = r.extA * k, eB = r.extB * k, band = r.leg * k, g = '';
+  g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
+  g += rect(ox, oy, eA, eB, SW.thick, P);                                 // marco ext
+  var ix = ox + band, iy = oy + band, iw = r.intA * k, ih = r.intB * k;
+  g += rect(ix, iy, iw, ih, SW.thin, P);                                  // hueco interior
+  var jk = r.esp * k, rx = ix + jk, ry = iy + jk, rw = r.rejA * k, rh = r.rejB * k;
+  g += rect(rx, ry, rw, rh, SW.thin, P);                                  // marco de la rejilla
+  var horizLong = r.rejA >= r.rejB, n = r.nBarras, i;                     // barras ⊥ a la dimensión mayor
+  if (horizLong) { var st = rw / (n + 1); for (i = 1; i <= n; i++) { var xx = rx + i * st; g += line(xx, ry, xx, ry + rh, SW.dim, P); } }
+  else { var sv = rh / (n + 1); for (i = 1; i <= n; i++) { var yy = ry + i * sv; g += line(rx, yy, rx + rw, yy, SW.dim, P); } }
+  if (r.nRef) {                                                           // refuerzos ⊥ a las barras (punteados)
+    var pos = r.nRef === 1 ? [0.5] : [1 / 3, 2 / 3];
+    pos.forEach(function (f) {
+      if (horizLong) { var yy = ry + rh * f; g += line(rx, yy, rx + rw, yy, SW.thick, P, '22 10', P.accent); }
+      else { var xx = rx + rw * f; g += line(xx, ry, xx, ry + rh, SW.thick, P, '22 10', P.accent); }
+    });
+  }
+  var floorY = oy + eB;
+  if (r.modo === 'int') {
+    g += dimH(ix, ix + iw, floorY + 70, String(Math.round(r.intA)), P, iy + ih);
+    g += dimV(iy, iy + ih, ox - 70, String(Math.round(r.intB)), P, ix);
+    g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  } else {
+    g += dimH(ox, ox + eA, floorY + 70, String(Math.round(r.extA)), P, floorY);
+    g += dimV(oy, oy + eB, ox - 70, String(Math.round(r.extB)), P, ox);
+    g += tsans(ox - 70, oy - 14, 'ext', 17, 'middle', P, 600, P.accent);
+  }
+  return g;
+}
+
+/* ① Marco: plegado en L 42×42 */
+function secPluvMarco(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa 1/8" · L 42×42 · plana 78', P);
+  var legH = 330, legV = 330, t = 24, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 180;
+  g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
+  g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
+  g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
+  g += tsans(ox + w - 30, oy + h - 22, 'desarrollo 39 + 39 = 78', F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* ② Rejilla: planchuelas de canto cada 25 (+ refuerzo si corresponde) */
+function secPluvReja(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '② Rejilla', 'planchuela 1/2"×3/16" de canto · cada 25' + (r.refuerzo ? ' · con refuerzo' : ''), P);
+  var s = 4.6, barW = Math.max(10, 4.76 * s), barH = 12.7 * s, gapu = 25 * s, cy = oy + h * 0.46, x0 = ox + 150, x = x0;
+  for (var i = 0; i < 4; i++) { g += rect(x, cy - barH, barW, barH, SW.thick, P, P.hatch); if (i < 3) g += txt(x + barW + gapu / 2, cy + 38, '25', F.sm, 'middle', P, false, '600'); x += barW + gapu; }
+  var xEnd = x - gapu;
+  g += txt(x0 - 18, cy - barH / 2, '12,7', F.sm, 'end', P, true, '600');
+  if (r.refuerzo) {
+    var ryy = cy + 70, rhh = 3.18 * s * 1.3;
+    g += rect(x0, ryy, xEnd - x0, rhh, SW.thin, P, P.hatch);
+    g += txt(x0, ryy + rhh + 34, 'refuerzo 1/2"×1/8" por debajo (⊥)', F.sm, 'start', P, false, '500', P.muted || P.text);
+  }
+  g += tsans(ox + 24, oy + h - 22, r.nBarras + ' planchuelas de ' + r.largoBarra + ' mm' + (r.nRef ? ' · ' + r.nRef + ' refuerzo' + (r.nRef > 1 ? 's' : '') + ' de ' + r.largoRef : ''), F.ty, 'start', P, 500, P.muted || P.text);
+  return g;
+}
+
+/* Hoja A4: CÁMARA PLUVIAL */
+function generarPluvial(params, P, logo) {
+  var r = calcularPluvial(params);
+  r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var kf = Math.min(470 / r.extA, 900 / r.extB);
+  g += plantaPluvial(r, M + 180, 360, P, kf);
+  var dx = 760, TW = 2030 - dx;
+  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, dx, 320, P, TW); g += dt.svg;
+  var hy = 320 + dt.h + 54; g += bloqueAccesorios(r, dx, hy, P, TW);
+  var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
+  g += secPluvMarco(r, x0, by, bw, 820, P);
+  g += secPluvReja(r, x0 + bw + gap, by, bw, 820, P);
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (unión a 45°). Rejilla de planchuelas. Imprimir en A4.')];
+}
+
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
 var TIPOS = [
   {
@@ -731,7 +811,19 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularCamara(p); },
     generar: function (p, P, logo) { return generarCamara(p, P, logo); }
+  },
+  {
+    id: 'pluvial', nombre: 'Cámara pluvial (marco + rejilla)',
+    campos: [
+      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']] },
+      { id: 'W', label: 'Lado A (mm)', type: 'number', value: '', step: 10, min: 100, max: 3000 },
+      { id: 'H', label: 'Lado B (mm)', type: 'number', value: '', step: 10, min: 100, max: 3000 },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'refuerzo', label: 'Rejilla con refuerzo (zona transitable)', type: 'check', value: false }
+    ],
+    calcular: function (p) { return calcularPluvial(p); },
+    generar: function (p, P, logo) { return generarPluvial(p, P, logo); }
   }
 ];
 
-if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, generarCamara: generarCamara, TIPOS: TIPOS, PG: PG };
+if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, generarCamara: generarCamara, generarPluvial: generarPluvial, TIPOS: TIPOS, PG: PG };
