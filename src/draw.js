@@ -721,14 +721,15 @@ function secPluvMarco(r, ox, oy, w, h, P) {
 function cortePluvial(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Corte', 'rejilla apoyada sobre el marco · anclajes de amure', P);
   var cx = ox + w / 2, span = w * 0.56, hw = span / 2, lx = cx - hw, rx = cx + hw;
-  var arm = 66, bandTop = oy + h * 0.36, rejH = 22, bandBot = bandTop + rejH, botY = bandTop + arm, foot = arm, barW = 9, i;
-  g += line(lx, bandTop, rx, bandTop, SW.thin, P) + line(lx, bandBot, rx, bandBot, SW.thin, P);  // banda rejilla
+  var sc = 1.8, alaV = 42 * sc, foot = 42 * sc, planH = 38.1 * sc, barW = 4.76 * sc * 1.6, i;  // 1½"×3/16" de canto
+  var topY = oy + h * 0.34, botY = topY + alaV, planBot = topY + planH;     // nivel superior común
+  g += line(lx, topY, rx, topY, SW.thin, P) + line(lx, planBot, rx, planBot, SW.thin, P);  // banda rejilla (1½")
   var nb = 8, stp = span / (nb + 1);                                      // planchuelas de canto (en corte)
-  for (i = 1; i <= nb; i++) { var bx = lx + i * stp; g += rect(bx - barW / 2, bandTop, barW, rejH, SW.thin, P, P.hatch); }
-  g += txt(cx, bandTop - 16, 'rejilla', F.sm, 'middle', P, false, '600');
-  // marco L izquierdo (⌞): ala vertical + pie hacia adentro ; derecho (⌟) espejado
-  g += line(lx, bandTop, lx, botY, SW.thick, P) + line(lx, botY, lx + foot, botY, SW.thick, P);
-  g += line(rx, bandTop, rx, botY, SW.thick, P) + line(rx, botY, rx - foot, botY, SW.thick, P);
+  for (i = 1; i <= nb; i++) { var bx = lx + i * stp; g += rect(bx - barW / 2, topY, barW, planH, SW.thin, P, P.hatch); }
+  g += txt(cx, topY - 16, 'rejilla 1½"', F.sm, 'middle', P, false, '600');
+  // marco L izquierdo (⌞): ala vertical + pie hacia adentro ; derecho (⌟) espejado — tope superior a nivel
+  g += line(lx, topY, lx, botY, SW.thick, P) + line(lx, botY, lx + foot, botY, SW.thick, P);
+  g += line(rx, topY, rx, botY, SW.thick, P) + line(rx, botY, rx - foot, botY, SW.thick, P);
   // anclajes "Y invertida" a 45° desde la base del ala vertical, hacia afuera
   g += anchorY(lx, botY, -0.707, 0.707, P) + anchorY(rx, botY, 0.707, 0.707, P);
   g += tsans(ox + w - 26, oy + h - 20, 'anclajes esquemáticos (sin especificación)', F.ty, 'end', P, 500, P.muted || P.text);

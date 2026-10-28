@@ -273,8 +273,8 @@ function calcularCamara(p) {
 
 /* ---- Motor CÁMARA PLUVIAL: marco plegado en L + rejilla de planchuelas ----
    - Marco: plegado en L 42×42 (chapa 1/8"), desarrollo 78. ext = int + 2·ala (plegados hacia afuera).
-   - Rejilla: planchuelas 1/2"×3/16" de canto; marco perimetral + barras cada 25 mm, ⊥ a la dimensión
-     mayor. Juego = 1 espesor de plegado por lado respecto del hueco → rejilla = int − 2·esp.
+   - Rejilla: planchuelas 1½"×3/16" de canto; marco perimetral + barras cada 25 mm, ⊥ a la dimensión
+     mayor. Apoya sobre el ala del marco → rejilla = ext − 2·esp.
    - Refuerzo opcional (zona transitable): planchuela 1/2"×1/8" por debajo, ⊥ a las barras;
      1 al medio si la rejilla < 1 m, o 2 en los tercios si no. */
 function calcularPluvial(p) {
@@ -293,7 +293,7 @@ function calcularPluvial(p) {
   var largoBarra = corto;
   var nRef = refuerzo ? (lado < C.pluvRefUmbral ? 1 : 2) : 0;   // umbral sobre el lado mayor
   var largoRef = lado;
-  var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1/2"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
+  var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1½"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
   var base = [
     { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extA) + C.pluvCorte45, mat: MAT_MARCO },
     { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extB) + C.pluvCorte45, mat: MAT_MARCO },
