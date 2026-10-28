@@ -723,9 +723,10 @@ function cortePluvial(r, ox, oy, w, h, P) {
   var cx = ox + w / 2, span = w * 0.56, hw = span / 2, lx = cx - hw, rx = cx + hw;
   var sc = 1.8, alaV = 42 * sc, foot = 42 * sc, planH = 38.1 * sc, barW = 4.76 * sc * 1.6, i;  // 1½"×3/16" de canto
   var topY = oy + h * 0.34, botY = topY + alaV, planBot = topY + planH;     // nivel superior común
-  g += line(lx, topY, rx, topY, SW.thin, P) + line(lx, planBot, rx, planBot, SW.thin, P);  // banda rejilla (1½")
-  var nb = 8, stp = span / (nb + 1);                                      // planchuelas de canto (en corte)
-  for (i = 1; i <= nb; i++) { var bx = lx + i * stp; g += rect(bx - barW / 2, topY, barW, planH, SW.thin, P, P.hatch); }
+  var luz = 26, rLx = lx + luz, rRx = rx - luz, rejSpan = rRx - rLx;        // luz visible rejilla↔marco
+  g += line(rLx, topY, rRx, topY, SW.thin, P) + line(rLx, planBot, rRx, planBot, SW.thin, P);  // banda rejilla (1½")
+  var nb = 8, stp = rejSpan / (nb - 1);                                   // planchuelas de canto (en corte)
+  for (i = 0; i < nb; i++) { var bx = rLx + i * stp; g += rect(bx - barW / 2, topY, barW, planH, SW.thin, P, P.hatch); }
   g += txt(cx, topY - 16, 'rejilla 1½"', F.sm, 'middle', P, false, '600');
   // marco L izquierdo (⌞): ala vertical + pie hacia adentro ; derecho (⌟) espejado — tope superior a nivel
   g += line(lx, topY, lx, botY, SW.thick, P) + line(lx, botY, lx + foot, botY, SW.thick, P);
