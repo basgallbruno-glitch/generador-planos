@@ -702,32 +702,40 @@ function corteCALF(r, ox, oy, w, h, P) {
   g += rect(xWL - wallW, topY, wallW, vert + 46, SW.thin, P, P.hatch) + rect(xWR, topY, wallW, vert + 46, SW.thin, P, P.hatch);
   g += txt(xWL - wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
   g += txt(xWR + wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // marco plegado 1: vertical contra la pared + pestaña 54 hacia afuera (10°)
-  g += line(xWL, topY, xWL, botY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY - p1 * sin, SW.thick, P);
-  g += line(xWR, topY, xWR, botY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY - p1 * sin, SW.thick, P);
-  // tapa plegado 2 (azul): pestaña 61 arriba (lapa), vertical adentro, pie 30 hacia adentro
+  // marco plegado 1: vertical contra la pared + pestaña 54 hacia afuera y abajo (−10°)
+  g += line(xWL, topY, xWL, botY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY + p1 * sin, SW.thick, P);
+  g += line(xWR, topY, xWR, botY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY + p1 * sin, SW.thick, P);
+  // tapa plegado 2 (azul): pestaña 61 lapa hacia afuera y abajo, vertical adentro, pie 30 hacia adentro
   var gap = esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = botY;
-  g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop - p2 * sin, SW.thick, P, 0, AC);
-  g += line(tR, tTop, tR, tBot, SW.thick, P, 0, AC) + line(tR, tBot, tR - pie, tBot, SW.thick, P, 0, AC) + line(tR, tTop, tR + p2 * cos, tTop - p2 * sin, SW.thick, P, 0, AC);
-  // chapa de encofrado apoyada sobre los pies
-  var chL = tL + pie - 10, chR = tR - pie + 10, chY = tBot - esp * 0.6;
+  g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
+  g += line(tR, tTop, tR, tBot, SW.thick, P, 0, AC) + line(tR, tBot, tR - pie, tBot, SW.thick, P, 0, AC) + line(tR, tTop, tR + p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
+  // chapa de encofrado apoyada sobre casi todo el pie
+  var chL = tL + 6, chR = tR - 6, chY = tBot - esp * 0.6;
   g += line(chL, chY, chR, chY, SW.thick, P);
   g += txt(cx, chY + 30, 'chapa de encofrado', F.sm, 'middle', P, false, '600');
-  // malla + hormigón por encima de la chapa
+  // malla + hormigón por encima de la chapa (llega casi al extremo de la tapa)
   var my = chY - vert * 0.30, dd;
-  for (dd = chL + 28; dd < chR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-  g += line(chL + 14, my, chR - 14, my, SW.dim, P, 0, P.dim || P.line);
-  g += txt(cx, topY - 6, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // manija(s) U invertida por encima
-  var sp = chR - chL, mcs = r.nMan >= 2 ? [chL + sp / 3, chL + 2 * sp / 3] : [cx];
-  var uy = tTop - p2 * sin - 78, uw = 48, legh = 78;
-  mcs.forEach(function (m) {
-    g += line(m - uw / 2, uy, m + uw / 2, uy, SW.thick, P) + line(m - uw / 2, uy, m - uw / 2, uy + legh, SW.thick, P) + line(m + uw / 2, uy, m + uw / 2, uy + legh, SW.thick, P);
-  });
-  g += txt(mcs[mcs.length - 1] + uw, uy + 6, 'manija U invertida', F.sm, 'start', P, false, '600');
-  g += txt(xWL - p1 * cos * 0.5, topY - p1 * sin - 10, '54', F.sm, 'middle', P, false, '600');
-  g += txt(tR + p2 * cos * 0.5 + 6, tTop - p2 * sin - 10, '61', F.sm, 'start', P, false, '600', AC);
+  for (dd = tL + 16; dd < tR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+  g += line(tL + 12, my, tR - 12, my, SW.dim, P, 0, P.dim || P.line);
+  g += txt(cx, chY + 56, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  // manija(s) ⌀16 en ∩ que desliza en caños 3/4" (atraviesa el hormigón)
+  var sp = tR - tL, mcs = r.nMan >= 2 ? [tL + sp / 3, tL + 2 * sp / 3] : [cx];
+  mcs.forEach(function (m) { g += manijaCALF(m, topY - 4, P); });
+  g += txt(mcs[mcs.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
+  g += txt(mcs[mcs.length - 1] + 58, topY - 66, 'desliza en caño 3/4"', 17, 'start', P, false, '500', P.muted || P.text);
+  g += txt(xWL - p1 * cos * 0.5, topY + p1 * sin * 0.5 - 12, '54', F.sm, 'middle', P, false, '600');
+  g += txt(tR + p2 * cos * 0.5 + 6, tTop + p2 * sin * 0.5 - 8, '61', F.sm, 'start', P, false, '600', AC);
   g += tsans(ox + 24, oy + h - 20, 'plegado 1 = marco · plegado 2 = tapa (azul)', F.ty, 'start', P, 500, P.muted || P.text);
+  return g;
+}
+
+/* Manija ⌀16 en ∩ que atraviesa el hormigón deslizando en caños 3/4" soldados a la estructura */
+function manijaCALF(mx, surfY, P) {
+  var hw = 30, r = 15, archTop = surfY - 70, legBot = surfY + 78, sw2 = 7, slT = surfY - 8, slH = 74, g = '';
+  [mx - hw, mx + hw].forEach(function (lx) {   // caños (vaina a cada lado de la pata)
+    g += line(lx - sw2, slT, lx - sw2, slT + slH, SW.thin, P) + line(lx + sw2, slT, lx + sw2, slT + slH, SW.thin, P);
+  });
+  g += '<path d="M' + (mx - hw) + ' ' + legBot + ' L' + (mx - hw) + ' ' + (archTop + r) + ' Q' + (mx - hw) + ' ' + archTop + ' ' + (mx - hw + r) + ' ' + archTop + ' L' + (mx + hw - r) + ' ' + archTop + ' Q' + (mx + hw) + ' ' + archTop + ' ' + (mx + hw) + ' ' + (archTop + r) + ' L' + (mx + hw) + ' ' + legBot + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '" stroke-linecap="round" stroke-linejoin="round"/>';
   return g;
 }
 
@@ -738,9 +746,9 @@ function secCALFp1(r, ox, oy, w, h, P) {
   var cornerX = ox + w * 0.58, topY = oy + h * 0.34;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
   g += line(cornerX, topY, cornerX, topY + vert, SW.thick, P);                    // vertical
-  g += line(cornerX, topY, cornerX - pest * cos, topY - pest * sin, SW.thick, P);  // pestaña a 10°
+  g += line(cornerX, topY, cornerX - pest * cos, topY + pest * sin, SW.thick, P);  // pestaña a −10°
   g += txt(cornerX + 16, topY + vert / 2, String(r.p1Vert), F.num, 'start', P, true, '600');
-  g += txt(cornerX - pest * cos * 0.5, topY - pest * sin - 14, String(r.p1Pest), F.num, 'middle', P, false, '600');
+  g += txt(cornerX - pest * cos * 0.5, topY + pest * sin * 0.5 - 14, String(r.p1Pest), F.num, 'middle', P, false, '600');
   g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p1Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
   return g;
 }
@@ -752,10 +760,10 @@ function secCALFp2(r, ox, oy, w, h, P) {
   var topX = ox + w * 0.50, topY = oy + h * 0.28;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
   g += line(topX, topY, topX, topY + vert, SW.thick, P);                          // vertical
-  g += line(topX, topY, topX - pest * cos, topY - pest * sin, SW.thick, P);        // pestaña sup a 10°
+  g += line(topX, topY, topX - pest * cos, topY + pest * sin, SW.thick, P);        // pestaña sup a −10°
   g += line(topX, topY + vert, topX + pie, topY + vert, SW.thick, P);             // pie inferior hacia adentro
   g += txt(topX + 16, topY + vert / 2, String(r.p2Vert), F.num, 'start', P, true, '600');
-  g += txt(topX - pest * cos * 0.5, topY - pest * sin - 14, String(r.p2Pest), F.num, 'middle', P, false, '600');
+  g += txt(topX - pest * cos * 0.5, topY + pest * sin * 0.5 - 14, String(r.p2Pest), F.num, 'middle', P, false, '600');
   g += txt(topX + pie * 0.5, topY + vert + 28, String(r.p2Pie), F.num, 'middle', P, false, '600');
   g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p2Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
   return g;

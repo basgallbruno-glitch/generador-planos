@@ -71,15 +71,15 @@ function pluvReja() {   // planchuelas de canto + refuerzo por debajo
   return WRAP(W, H, g);
 }
 function p1Calf() {   // plegado 1 (marco CALF): pestaña 54 (10°) + vertical 57
-  const W = 300, H = 200, cx = 190, ty = 60, inc = 10 * Math.PI / 180, vert = 120, pest = 116;
-  const px = cx - pest * Math.cos(inc), py = ty - pest * Math.sin(inc);
+  const W = 300, H = 200, cx = 190, ty = 54, inc = 10 * Math.PI / 180, vert = 120, pest = 116;
+  const px = cx - pest * Math.cos(inc), py = ty + pest * Math.sin(inc);
   let g = LNc(cx, ty, cx, ty + vert) + LNc(cx, ty, px, py);
   g += LT(cx + 16, ty + vert / 2, 'B') + LT((cx + px) / 2, py + 2, 'A');
   return WRAP(W, H, g);
 }
 function p2Calf() {   // plegado 2 (tapa CALF): pestaña 61 (10°) + vertical 57 + pie 30
-  const W = 300, H = 210, cx = 155, ty = 50, inc = 10 * Math.PI / 180, vert = 120, pest = 128, pie = 64;
-  const px = cx - pest * Math.cos(inc), py = ty - pest * Math.sin(inc);
+  const W = 300, H = 210, cx = 155, ty = 44, inc = 10 * Math.PI / 180, vert = 120, pest = 128, pie = 64;
+  const px = cx - pest * Math.cos(inc), py = ty + pest * Math.sin(inc);
   let g = LNc(cx, ty, cx, ty + vert) + LNc(cx, ty, px, py) + LNc(cx, ty + vert, cx + pie, ty + vert);
   g += LT(cx + 16, ty + vert / 2, 'B') + LT((cx + px) / 2, py + 2, 'A') + LT(cx + pie / 2, ty + vert + 20, 'C');
   return WRAP(W, H, g);
