@@ -70,6 +70,20 @@ function pluvReja() {   // planchuelas de canto + refuerzo por debajo
   g += '<text x="' + ((x0 + xEnd) / 2) + '" y="' + (y + 50) + '" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="' + COL.muted + '" text-anchor="middle">planchuelas de canto cada 25 · refuerzo ⊥ por debajo</text>';
   return WRAP(W, H, g);
 }
+function p1Calf() {   // plegado 1 (marco CALF): pestaña 54 (10°) + vertical 57
+  const W = 300, H = 200, cx = 190, ty = 60, inc = 10 * Math.PI / 180, vert = 120, pest = 116;
+  const px = cx - pest * Math.cos(inc), py = ty - pest * Math.sin(inc);
+  let g = LNc(cx, ty, cx, ty + vert) + LNc(cx, ty, px, py);
+  g += LT(cx + 16, ty + vert / 2, 'B') + LT((cx + px) / 2, py + 2, 'A');
+  return WRAP(W, H, g);
+}
+function p2Calf() {   // plegado 2 (tapa CALF): pestaña 61 (10°) + vertical 57 + pie 30
+  const W = 300, H = 210, cx = 155, ty = 50, inc = 10 * Math.PI / 180, vert = 120, pest = 128, pie = 64;
+  const px = cx - pest * Math.cos(inc), py = ty - pest * Math.sin(inc);
+  let g = LNc(cx, ty, cx, ty + vert) + LNc(cx, ty, px, py) + LNc(cx, ty + vert, cx + pie, ty + vert);
+  g += LT(cx + 16, ty + vert / 2, 'B') + LT((cx + px) / 2, py + 2, 'A') + LT(cx + pie / 2, ty + vert + 20, 'C');
+  return WRAP(W, H, g);
+}
 const m = perfilMarco(150, 'metalica');
 const cap = (v, c) => Math.min(v, c);
 const S = {
@@ -84,6 +98,8 @@ const S = {
   BANDEJACAM: cruz({ lens: [46, 150, 46], turns: ['L', 'L'], h0: [0, -1], letras: ['A', 'B', 'C'] }, { lens: [46, 150, 46], turns: ['L', 'L'], h0: [0, -1], letras: ['D', 'E', 'F'] }, 300, 150),
   PLUVL: pluvL(),
   PLUVREJA: pluvReja(),
+  P1CALF: p1Calf(),
+  P2CALF: p2Calf(),
 };
 
 function row(l, tr, cr) { return '<tr><td class="l">' + l + '</td><td class="t">' + tr + '</td><td>' + cr + '</td></tr>'; }
@@ -115,6 +131,10 @@ html += '<h2>Tipología 5 — Cámara pluvial (marco + rejilla)</h2><p class="su
 html += '<div class="card"><ul class="g"><li><b>Marco:</b> plegado en L de 42×42 mm (desarrollo 39+39 = 78) en chapa 1/8" (3,18 mm), uniones a 45°. El ala horizontal es el asiento de la rejilla.</li><li><b>Medidas:</b> exterior (conjunto terminado) o interior (hueco libre); desde la interior los plegados van hacia afuera. <b>ext = int + 2 × 42.</b> La planta se acota con la medida ingresada.</li><li><b>Rejilla:</b> marco perimetral + planchuelas; apoya sobre el ala del marco, por eso <b>lado de la rejilla = ext − 2 × espesor del plegado (3,18)</b> — abarca casi todo el exterior y deja un juego de un espesor por lado para que no quede en el aire.</li><li><b>Planchuelas:</b> 1½"×3/16" de canto (inercia fuerte), ⊥ a la dimensión mayor, con luz libre ≈ 25 mm (las de los extremos se ajustan). Cantidad = redondeo(lado mayor ÷ (25 + ancho de planchuela)) − 1. Largo = lado menor de la rejilla.</li><li><b>Refuerzo</b> (opcional, zona transitable): planchuela 1/2"×1/8" soldada por debajo, ⊥ a las principales. 1 al medio si el lado mayor de la rejilla < 1 m; 2 en los tercios si ≥ 1 m.</li><li><b>Largo del plegado:</b> al largo exterior se le suma <b>15 mm</b> para poder cortar las puntas a 45° con margen de error.</li><li><b>Anclajes de amure:</b> a cada lado del marco se sueldan grapas en "Y" para empotrarlo. Son esquemáticas (sin especificación de medida).</li></ul></div>';
 html += plegado('1', 'Marco (plegado L)', S.PLUVL, [row('A', 'Ala vertical', '42 mm. Pared del hueco.'), row('B', 'Ala horizontal', '42 mm. Asiento de la rejilla.')], 'Chapa 1/8" (3,18 mm). Desarrollo = 39 + 39 = 78. Despiece: 2 lados A + 2 lados B, largo = medida exterior; uniones a 45°.');
 html += plegado('2', 'Rejilla (planchuelas de canto)', S.PLUVREJA, [row('M', 'Marco de la rejilla', 'Planchuela 1½"×3/16". 2 lados largos + 2 lados cortos = lado de la rejilla.'), row('P', 'Planchuelas', '1½"×3/16" de canto, cada ≈25 mm, ⊥ a la dimensión mayor. Largo = lado menor.'), row('R', 'Refuerzo', '1/2"×1/8" por debajo (sólo si es transitable). Largo = lado mayor.')], 'La rejilla apoya sobre el ala del marco (lado = ext − 2 × 3,18). El refuerzo sólo se agrega en cámaras transitables, con la casilla del generador.');
+html += '<h2>Tipología 6 — Cámara tipo CALF (marco + tapa)</h2><p class="sub">Marco y tapa de chapa plegada 1/8". El dato es siempre el interior (hueco). Plegados normalizados y fijos: el marco con el "plegado 1" y la tapa con el "plegado 2". Sobre el pie de la tapa apoya una chapa que oficia de encofrado perdido para hormigonar por encima.</p>';
+html += '<div class="card"><ul class="g"><li><b>Dato:</b> siempre el interior (hueco donde va la tapa). Ambos plegados tienen la pestaña superior inclinada 10°.</li><li><b>Marco (plegado 1):</b> el vertical apoya sobre la pared del hueco, la pestaña de 54 queda por fuera sobre el suelo → <b>largo = interior</b> por lado. Desarrollo normalizado 105.</li><li><b>Tapa (plegado 2):</b> entra por encima del marco con un juego de 1 espesor de chapa por lado → <b>largo = interior − 2 × espesor (3,18)</b>. Desarrollo normalizado 139.</li><li><b>Chapa de encofrado:</b> apoya sobre el pie de 30 de la tapa, con 2 mm de juego por lado → <b>lado = interior − 2 × espesor − 2 × 2</b>. Espesor N°16 si el lado mayor < 800; N°14 si ≥ 800.</li><li><b>Manijas en U invertida</b> (no tiradores): quedan libres en su movimiento vertical para agarrarlas cuando hace falta. Van en accesorios (cantidad y altura ajustables).</li><li>Malla electrosoldada y hormigón por encima de la chapa, en obra (se ven en planta y corte).</li></ul></div>';
+html += plegado('1', 'Plegado 1 — marco', S.P1CALF, [row('A', 'Pestaña superior', '54 mm, inclinada 10°. Queda por fuera del hueco, apoyada sobre el suelo.'), row('B', 'Vertical', '57 mm. Apoya sobre la pared del hueco.')], 'Chapa 1/8". Desarrollo normalizado = 105. Despiece: 2 lados A + 2 lados B, largo = interior; uniones a 45°.');
+html += plegado('2', 'Plegado 2 — tapa', S.P2CALF, [row('A', 'Pestaña superior', '61 mm, inclinada 10°. Lapa por encima de la pestaña del marco.'), row('B', 'Vertical', '57 mm. Entra dentro del marco con 1 espesor de luz por lado.'), row('C', 'Pie inferior', '30 mm, hacia adentro. Asiento de la chapa de encofrado.')], 'Chapa 1/8". Desarrollo normalizado = 139. Despiece: 2 lados A + 2 lados B, largo = interior − 2 × espesor; uniones a 45°. + 1 chapa de encofrado (N°16/N°14) apoyada sobre el pie.');
 html += '<div class="foot">Documento generado a partir de los criterios cargados en el motor del generador (src/bundle.js). Si cambia una constante del taller (p. ej. el rebaje o un juego), regenerar con <code>node tools/build-criterios.cjs</code>.</div></div></body></html>';
 fs.writeFileSync(path.join(ROOT, 'criterios.html'), html);
 console.log('criterios.html', (html.length / 1024).toFixed(0) + 'KB');

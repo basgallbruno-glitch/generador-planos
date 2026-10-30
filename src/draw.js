@@ -658,6 +658,131 @@ function generarCamara(params, P, logo) {
 }
 
 /* ===========================================================================
+   CÁMARA TIPO CALF — dibujo (marco plegado 1 + tapa plegado 2 + chapa encofrado)
+   =========================================================================== */
+/* Planta: hueco interior + contorno de la tapa + chapa con malla + manijas U */
+function plantaCALF(r, ox, oy, P, k) {
+  var iA = r.intA * k, iB = r.intB * k, g = '';
+  g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
+  g += rect(ox, oy, iA, iB, SW.thick, P);                                   // hueco interior
+  var tA = r.tapaA * k, tB = r.tapaB * k, tx = ox + (iA - tA) / 2, ty = oy + (iB - tB) / 2;
+  g += rect(tx, ty, tA, tB, SW.thin, P);                                    // contorno de la tapa (plegado 2)
+  var cA = r.chapaA * k, cB = r.chapaB * k, cx0 = ox + (iA - cA) / 2, cy0 = oy + (iB - cB) / 2;
+  g += '<rect x="' + cx0.toFixed(1) + '" y="' + cy0.toFixed(1) + '" width="' + cA.toFixed(1) + '" height="' + cB.toFixed(1) + '" fill="none" stroke="' + P.accent + '" stroke-width="' + SW.dim + '" stroke-dasharray="16 10"/>';  // chapa de encofrado
+  var mstep = Math.max(26, 110 * k), xx, yy;                               // malla sobre la chapa
+  for (xx = cx0 + mstep; xx < cx0 + cA - 2; xx += mstep) g += line(xx, cy0, xx, cy0 + cB, SW.dim, P, 0, P.muted || P.line);
+  for (yy = cy0 + mstep; yy < cy0 + cB - 2; yy += mstep) g += line(cx0, yy, cx0 + cA, yy, SW.dim, P, 0, P.muted || P.line);
+  var cxm = ox + iA / 2, cym = oy + iB / 2, horizLong = r.intA >= r.intB, man = [];  // manijas U invertida
+  if (r.nMan >= 2) {
+    if (horizLong) { man.push([ox + iA / 3, cym]); man.push([ox + 2 * iA / 3, cym]); }
+    else { man.push([cxm, oy + iB / 3]); man.push([cxm, oy + 2 * iB / 3]); }
+  } else man.push([cxm, cym]);
+  man.forEach(function (c) {
+    var hw2 = 34, ft = 13;
+    if (horizLong) { g += line(c[0] - hw2, c[1], c[0] + hw2, c[1], SW.thick, P) + line(c[0] - hw2, c[1] - ft, c[0] - hw2, c[1] + ft, SW.thin, P) + line(c[0] + hw2, c[1] - ft, c[0] + hw2, c[1] + ft, SW.thin, P); }
+    else { g += line(c[0], c[1] - hw2, c[0], c[1] + hw2, SW.thick, P) + line(c[0] - ft, c[1] - hw2, c[0] + ft, c[1] - hw2, SW.thin, P) + line(c[0] - ft, c[1] + hw2, c[0] + ft, c[1] + hw2, SW.thin, P); }
+  });
+  g += tsans(man[0][0] + 44, man[0][1] - 16, 'manija', 17, 'start', P, 600, P.accent);
+  var floorY = oy + iB;
+  g += dimH(ox, ox + iA, floorY + 70, String(Math.round(r.intA)), P, floorY);
+  g += dimV(oy, oy + iB, ox - 70, String(Math.round(r.intB)), P, ox);
+  g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  return g;
+}
+
+/* Corte de armado: marco (plegado 1) contra la pared + tapa (plegado 2) + chapa + malla/hormigón + manija */
+function corteCALF(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '① Corte de armado', 'marco (plegado 1) + tapa (plegado 2, azul) + chapa de encofrado · malla + hormigón · fuera de escala', P);
+  var cx = ox + w / 2, sc = 2.3;
+  var esp = Math.max(8, 3.18 * sc), vert = 57 * sc, pie = 30 * sc, p1 = 54 * sc, p2 = 61 * sc;
+  var AW = w * 0.46, xWL = cx - AW / 2, xWR = cx + AW / 2;
+  var topY = oy + h * 0.42, botY = topY + vert;
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), AC = P.accent;
+  var wallW = 72;                                                            // muro a cada lado
+  g += rect(xWL - wallW, topY, wallW, vert + 46, SW.thin, P, P.hatch) + rect(xWR, topY, wallW, vert + 46, SW.thin, P, P.hatch);
+  g += txt(xWL - wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += txt(xWR + wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  // marco plegado 1: vertical contra la pared + pestaña 54 hacia afuera (10°)
+  g += line(xWL, topY, xWL, botY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY - p1 * sin, SW.thick, P);
+  g += line(xWR, topY, xWR, botY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY - p1 * sin, SW.thick, P);
+  // tapa plegado 2 (azul): pestaña 61 arriba (lapa), vertical adentro, pie 30 hacia adentro
+  var gap = esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = botY;
+  g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop - p2 * sin, SW.thick, P, 0, AC);
+  g += line(tR, tTop, tR, tBot, SW.thick, P, 0, AC) + line(tR, tBot, tR - pie, tBot, SW.thick, P, 0, AC) + line(tR, tTop, tR + p2 * cos, tTop - p2 * sin, SW.thick, P, 0, AC);
+  // chapa de encofrado apoyada sobre los pies
+  var chL = tL + pie - 10, chR = tR - pie + 10, chY = tBot - esp * 0.6;
+  g += line(chL, chY, chR, chY, SW.thick, P);
+  g += txt(cx, chY + 30, 'chapa de encofrado', F.sm, 'middle', P, false, '600');
+  // malla + hormigón por encima de la chapa
+  var my = chY - vert * 0.30, dd;
+  for (dd = chL + 28; dd < chR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
+  g += line(chL + 14, my, chR - 14, my, SW.dim, P, 0, P.dim || P.line);
+  g += txt(cx, topY - 6, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  // manija(s) U invertida por encima
+  var sp = chR - chL, mcs = r.nMan >= 2 ? [chL + sp / 3, chL + 2 * sp / 3] : [cx];
+  var uy = tTop - p2 * sin - 78, uw = 48, legh = 78;
+  mcs.forEach(function (m) {
+    g += line(m - uw / 2, uy, m + uw / 2, uy, SW.thick, P) + line(m - uw / 2, uy, m - uw / 2, uy + legh, SW.thick, P) + line(m + uw / 2, uy, m + uw / 2, uy + legh, SW.thick, P);
+  });
+  g += txt(mcs[mcs.length - 1] + uw, uy + 6, 'manija U invertida', F.sm, 'start', P, false, '600');
+  g += txt(xWL - p1 * cos * 0.5, topY - p1 * sin - 10, '54', F.sm, 'middle', P, false, '600');
+  g += txt(tR + p2 * cos * 0.5 + 6, tTop - p2 * sin - 10, '61', F.sm, 'start', P, false, '600', AC);
+  g += tsans(ox + 24, oy + h - 20, 'plegado 1 = marco · plegado 2 = tapa (azul)', F.ty, 'start', P, 500, P.muted || P.text);
+  return g;
+}
+
+/* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
+function secCALFp1(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa 1/8" · desarrollo ' + r.p1Des, P);
+  var sc = 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc;
+  var cornerX = ox + w * 0.58, topY = oy + h * 0.34;
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
+  g += line(cornerX, topY, cornerX, topY + vert, SW.thick, P);                    // vertical
+  g += line(cornerX, topY, cornerX - pest * cos, topY - pest * sin, SW.thick, P);  // pestaña a 10°
+  g += txt(cornerX + 16, topY + vert / 2, String(r.p1Vert), F.num, 'start', P, true, '600');
+  g += txt(cornerX - pest * cos * 0.5, topY - pest * sin - 14, String(r.p1Pest), F.num, 'middle', P, false, '600');
+  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p1Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* ③ Plegado 2 (tapa): pestaña 61 (10°) + vertical 57 + pie 30 */
+function secCALFp2(r, ox, oy, w, h, P) {
+  var g = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa 1/8" · desarrollo ' + r.p2Des, P);
+  var sc = 2.0, vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
+  var topX = ox + w * 0.50, topY = oy + h * 0.28;
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
+  g += line(topX, topY, topX, topY + vert, SW.thick, P);                          // vertical
+  g += line(topX, topY, topX - pest * cos, topY - pest * sin, SW.thick, P);        // pestaña sup a 10°
+  g += line(topX, topY + vert, topX + pie, topY + vert, SW.thick, P);             // pie inferior hacia adentro
+  g += txt(topX + 16, topY + vert / 2, String(r.p2Vert), F.num, 'start', P, true, '600');
+  g += txt(topX - pest * cos * 0.5, topY - pest * sin - 14, String(r.p2Pest), F.num, 'middle', P, false, '600');
+  g += txt(topX + pie * 0.5, topY + vert + 28, String(r.p2Pie), F.num, 'middle', P, false, '600');
+  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p2Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
+  return g;
+}
+
+/* Hoja A4: CÁMARA TIPO CALF */
+function generarCALF(params, P, logo) {
+  var r = calcularCALF(params);
+  r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var kf = Math.min(470 / r.intA, 720 / r.intB);
+  g += plantaCALF(r, M + 180, 360, P, kf);
+  var dx = 760, TW = 2030 - dx;
+  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, dx, 320, P, TW); g += dt.svg;
+  var ny = 320 + dt.h + 40;
+  g += tsans(dx, ny, '+ Malla electrosoldada y hormigón por encima de la chapa, en obra.', F.ty, 'start', P, 500, P.muted || P.text);
+  var hy = ny + 56; g += bloqueAccesorios(r, dx, hy, P, TW);
+  var by = 900; g += corteCALF(r, M, by, full, 500, P);
+  var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
+  g += secCALFp1(r, x0, by2, bw, 470, P);
+  g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados normalizados (chapa 1/8"). Chapa de encofrado N°16/N°14 según el lado mayor. Manijas U invertida. Imprimir en A4.')];
+}
+
+/* ===========================================================================
    CÁMARA PLUVIAL — dibujo
    =========================================================================== */
 /* Anclaje de amure en "Y": tallo desde el borde + horquilla hacia afuera */
@@ -847,7 +972,17 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularPluvial(p); },
     generar: function (p, P, logo) { return generarPluvial(p, P, logo); }
+  },
+  {
+    id: 'calf', nombre: 'Cámara tipo CALF (marco + tapa)',
+    campos: [
+      { id: 'W', label: 'Lado A interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
+      { id: 'H', label: 'Lado B interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 }
+    ],
+    calcular: function (p) { return calcularCALF(p); },
+    generar: function (p, P, logo) { return generarCALF(p, P, logo); }
   }
 ];
 
-if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, generarCamara: generarCamara, generarPluvial: generarPluvial, TIPOS: TIPOS, PG: PG };
+if (typeof module !== 'undefined') module.exports = { generarPaginas: generarPaginas, generarMarco: generarMarco, generarGabinete: generarGabinete, generarCamara: generarCamara, generarPluvial: generarPluvial, generarCALF: generarCALF, TIPOS: TIPOS, PG: PG };

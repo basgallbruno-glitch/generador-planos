@@ -49,6 +49,13 @@ var C = {
   pluvSepReja: 25,                     // luz libre entre planchuelas (mm); extremos se ajustan
   pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
   pluvCorte45: 15,                     // margen que se suma al largo del plegado para el corte a 45°
+  // --- Cámara tipo CALF (marco plegado 1 + tapa plegado 2 + chapa encofrado) ---
+  calfEsp: 3.18,                       // chapa 1/8" de ambos plegados
+  calfP1Des: 105, calfP2Des: 139,      // desarrollos normalizados (plegado 1 marco / plegado 2 tapa)
+  calfP1Pest: 54, calfP1Vert: 57,      // plegado 1: pestaña sup (10°) + vertical
+  calfP2Pest: 61, calfP2Vert: 57, calfP2Pie: 30,  // plegado 2: pestaña sup (10°) + vertical + pie inferior
+  calfJuegoChapa: 2,                   // juego de la chapa de encofrado por lado (apoya en el pie de 30)
+  calfChapaUmbral: 800,                // lado mayor ≥ 800 → N°14; si no, N°16
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -267,6 +274,48 @@ function calcularCamara(p) {
     extA: extA, extB: extB, intA: intA, intB: intB,
     bandA: Math.round(bandA), bandB: Math.round(bandB),
     h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir,
+    despiece: despiece,
+  };
+}
+
+/* ---- Motor CÁMARA TIPO CALF: marco (plegado 1) + tapa (plegado 2 + chapa encofrado) ----
+   Dato: siempre interior (hueco). Plegados normalizados y fijos (desarrollos 105 / 139).
+   - Marco (plegado 1): vertical apoya sobre la pared del hueco → largo = interior.
+   - Tapa (plegado 2): entra por encima del marco con juego de 1 espesor por lado → largo = int − 2·esp.
+   - Chapa de encofrado: apoya en el pie de 30 de la tapa con 2 mm de juego por lado
+     → lado chapa = int − 2·esp − 2·2.  N°16 si lado mayor < 800; N°14 si ≥ 800. */
+function calcularCALF(p) {
+  var A = p.W, B = p.H;                                   // interior (hueco)
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var esp = C.calfEsp, jc = C.calfJuegoChapa;
+  var intA = A, intB = B;
+  var marcoA = Math.round(intA), marcoB = Math.round(intB);                 // plegado 1: largo = interior
+  var tapaA = Math.round(intA - 2 * esp), tapaB = Math.round(intB - 2 * esp);   // plegado 2: juego 1 esp/lado
+  var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado
+  var ladoMayor = Math.max(intA, intB);
+  var chapa = ladoMayor >= C.calfChapaUmbral ? 14 : 16;
+  var nMan = ladoMayor > C.calfChapaUmbral ? 2 : 1;        // manijas U invertida (ajustable); van en accesorios
+  var MAT_PLEG = 'Chapa 1/8"', MAT_CH = 'Chapa N°' + chapa;
+  var base = [
+    { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: C.calfP1Des, largo: marcoA, mat: MAT_PLEG },
+    { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: C.calfP1Des, largo: marcoB, mat: MAT_PLEG },
+    { pieza: 'T', desc: 'Tapa (plegado 2) — lado A', cantUno: 2, ancho: C.calfP2Des, largo: tapaA, mat: MAT_PLEG },
+    { pieza: 'T', desc: 'Tapa (plegado 2) — lado B', cantUno: 2, ancho: C.calfP2Des, largo: tapaB, mat: MAT_PLEG },
+    { pieza: 'T', desc: 'Tapa — chapa de encofrado', cantUno: 1, ancho: chapaB, largo: chapaA, mat: MAT_CH },
+  ];   // las manijas van en accesorios, no en el despiece
+  var despiece = base.map(function (d) {
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cant, ancho: d.ancho, largo: d.largo, mat: d.mat };
+  });
+  return {
+    tipoPlano: 'calf', W: A, H: B, modo: 'int', cantidad: cant, total: cant,
+    cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
+    tipoTexto: 'Cámara CALF · plegados 1 y 2',
+    intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
+    tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
+    esp: esp, chapa: chapa, nMan: nMan,
+    p1Des: C.calfP1Des, p2Des: C.calfP2Des,
+    p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
+    p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,
     despiece: despiece,
   };
 }
@@ -680,4 +729,4 @@ function generarSVG(params, P, logo) {
   return { svg: svg, r: r };
 }
 
-if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, calcularCamara: calcularCamara, calcularPluvial: calcularPluvial, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
+if (typeof module !== 'undefined') module.exports = { calcularDespiece: calcularDespiece, calcularMarco: calcularMarco, calcularGabinete: calcularGabinete, calcularCamara: calcularCamara, calcularPluvial: calcularPluvial, calcularCALF: calcularCALF, generarSVG: generarSVG, C: C, SHEET: SHEET, ESCALA: ESCALA };
