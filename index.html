@@ -161,7 +161,7 @@ var C = {
   calfP1Des: 105, calfP2Des: 139,      // desarrollos normalizados (plegado 1 marco / plegado 2 tapa)
   calfP1Pest: 54, calfP1Vert: 57,      // plegado 1: pestaña sup (10°) + vertical
   calfP2Pest: 61, calfP2Vert: 57, calfP2Pie: 30,  // plegado 2: pestaña sup (10°) + vertical + pie inferior
-  calfJuegoChapa: 2,                   // juego de la chapa de encofrado por lado (apoya en el pie de 30)
+  calfJuegoChapa: 3,                   // juego de la chapa de encofrado por lado (apoya en el pie de 30)
   calfChapaUmbral: 800,                // lado mayor ≥ 800 → N°14; si no, N°16
 };
 
@@ -389,8 +389,8 @@ function calcularCamara(p) {
    Dato: siempre interior (hueco). Plegados normalizados y fijos (desarrollos 105 / 139).
    - Marco (plegado 1): vertical apoya sobre la pared del hueco → largo = interior.
    - Tapa (plegado 2): entra por encima del marco con juego de 1 espesor por lado → largo = int − 2·esp.
-   - Chapa de encofrado: apoya en el pie de 30 de la tapa con 2 mm de juego por lado
-     → lado chapa = int − 2·esp − 2·2.  N°16 si lado mayor < 800; N°14 si ≥ 800. */
+   - Chapa de encofrado: apoya en el pie de 30 de la tapa con 3 mm de juego por lado
+     → lado chapa = int − 2·esp − 2·3.  N°16 si lado mayor < 800; N°14 si ≥ 800. */
 function calcularCALF(p) {
   var A = p.W, B = p.H;                                   // interior (hueco)
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
