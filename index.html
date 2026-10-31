@@ -1501,9 +1501,9 @@ function plantaCALF(r, ox, oy, P, k) {
   });
   g += tsans(man[0][0] + 44, man[0][1] - 16, 'manija', 17, 'start', P, 600, P.accent);
   var floorY = oy + iB;
-  g += dimH(ox, ox + iA, floorY + 70, String(Math.round(r.intA)), P, floorY);
-  g += dimV(oy, oy + iB, ox - 70, String(Math.round(r.intB)), P, ox);
-  g += tsans(ox - 70, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  g += dimH(ox, ox + iA, floorY + 100, String(Math.round(r.intA)), P, floorY);
+  g += dimV(oy, oy + iB, ox - 100, String(Math.round(r.intB)), P, ox);
+  g += tsans(ox - 100, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
   return g;
 }
 
@@ -1592,7 +1592,7 @@ function generarCALF(params, P, logo) {
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(470 / r.intA, 720 / r.intB);
+  var kf = Math.min(470 / r.intA, 540 / r.intB), iB = r.intB * kf;
   g += plantaCALF(r, M + 180, 360, P, kf);
   var dx = 760, TW = 2030 - dx;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
@@ -1600,7 +1600,7 @@ function generarCALF(params, P, logo) {
   var ny = 320 + dt.h + 40;
   g += tsans(dx, ny, '+ Malla electrosoldada y hormigón por encima de la chapa, en obra.', F.ty, 'start', P, 500, P.muted || P.text);
   var hy = ny + 56; g += bloqueAccesorios(r, dx, hy, P, TW);
-  var by = 900; g += corteCALF(r, M, by, full, 500, P);
+  var by = Math.max(360 + iB + 170, ny + 70); g += corteCALF(r, M, by, full, 500, P);
   var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += secCALFp1(r, x0, by2, bw, 470, P);
   g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
