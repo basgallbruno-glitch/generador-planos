@@ -712,15 +712,16 @@ function corteCALF(r, ox, oy, w, h, P) {
   // chapa de encofrado apoyada sobre casi todo el pie
   var chL = tL + 6, chR = tR - 6, chY = tBot - esp * 0.6;
   g += line(chL, chY, chR, chY, SW.thick, P);
-  g += txt(cx, chY + 30, 'chapa de encofrado', F.sm, 'middle', P, false, '600');
   // malla + hormigón por encima de la chapa (llega casi al extremo de la tapa)
   var my = chY - vert * 0.30, dd;
   for (dd = tL + 16; dd < tR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
   g += line(tL + 12, my, tR - 12, my, SW.dim, P, 0, P.dim || P.line);
-  g += txt(cx, chY + 56, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // manija(s) ⌀16 en ∩ que desliza en caños 3/4" (atraviesa el hormigón)
+  // manija(s) ⌀16 en ∩: atraviesan la chapa y topan con una tuerca por debajo (con juego para levantar)
   var sp = tR - tL, mcs = r.nMan >= 2 ? [tL + sp / 3, tL + 2 * sp / 3] : [cx];
-  mcs.forEach(function (m) { g += manijaCALF(m, topY - 4, P); });
+  mcs.forEach(function (m) { g += manijaCALF(m, topY - 4, chY, P); });
+  g += txt(mcs[mcs.length - 1] + 52, chY + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
+  g += txt(ox + 40, topY - 64, 'malla + hormigón (en obra)', F.sm, 'start', P, false, '500', P.muted || P.text);
+  g += txt(cx, chY + 92, 'chapa de encofrado · tuerca de tope', F.sm, 'middle', P, false, '600');
   g += txt(mcs[mcs.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
   g += txt(mcs[mcs.length - 1] + 58, topY - 66, 'desliza en caño 3/4"', 17, 'start', P, false, '500', P.muted || P.text);
   g += txt(xWL - p1 * cos * 0.5, topY + p1 * sin * 0.5 - 12, '54', F.sm, 'middle', P, false, '600');
@@ -729,13 +730,19 @@ function corteCALF(r, ox, oy, w, h, P) {
   return g;
 }
 
-/* Manija ⌀16 en ∩ que atraviesa el hormigón deslizando en caños 3/4" soldados a la estructura */
-function manijaCALF(mx, surfY, P) {
-  var hw = 30, r = 15, archTop = surfY - 70, legBot = surfY + 78, sw2 = 7, slT = surfY - 8, slH = 74, g = '';
-  [mx - hw, mx + hw].forEach(function (lx) {   // caños (vaina a cada lado de la pata)
-    g += line(lx - sw2, slT, lx - sw2, slT + slH, SW.thin, P) + line(lx + sw2, slT, lx + sw2, slT + slH, SW.thin, P);
+/* Manija ⌀16 en ∩: desliza en caño 3/4" soldado a la chapa, atraviesa la chapa y topa con una tuerca
+   por debajo. El juego entre la tuerca y la chapa es la carrera de levante. */
+function manijaCALF(mx, surfY, chY, P) {
+  var hw = 30, r = 15, archTop = surfY - 68, sw2 = 7, g = '';
+  var nutGap = 22, nutH = 15, nutW = 24, legBot = chY + nutGap + nutH + 10, slTop = chY - 66;
+  [mx - hw, mx + hw].forEach(function (lx) {   // caño 3/4" soldado a la chapa (la pata desliza adentro)
+    g += line(lx - sw2, slTop, lx - sw2, chY, SW.thin, P) + line(lx + sw2, slTop, lx + sw2, chY, SW.thin, P);
   });
   g += '<path d="M' + (mx - hw) + ' ' + legBot + ' L' + (mx - hw) + ' ' + (archTop + r) + ' Q' + (mx - hw) + ' ' + archTop + ' ' + (mx - hw + r) + ' ' + archTop + ' L' + (mx + hw - r) + ' ' + archTop + ' Q' + (mx + hw) + ' ' + archTop + ' ' + (mx + hw) + ' ' + (archTop + r) + ' L' + (mx + hw) + ' ' + legBot + '" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thick + '" stroke-linecap="round" stroke-linejoin="round"/>';
+  [mx - hw, mx + hw].forEach(function (lx) {   // tuerca de tope por debajo de la chapa
+    g += rect(lx - nutW / 2, chY + nutGap, nutW, nutH, SW.thin, P, P.line);
+    g += line(lx + nutW / 2 + 4, chY, lx + nutW / 2 + 4, chY + nutGap, SW.dim, P, 0, P.dim || P.line);  // marca del juego
+  });
   return g;
 }
 
