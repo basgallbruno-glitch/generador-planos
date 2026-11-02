@@ -321,7 +321,7 @@ function calcularCALF(p) {
     tipoTexto: 'Cámara CALF · plegados 1 y 2',
     intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
-    esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan,
+    esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, proy: C.calfProyPest,
     p1Des: C.calfP1Des, p2Des: C.calfP2Des,
     p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
     p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,

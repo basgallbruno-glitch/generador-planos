@@ -660,20 +660,25 @@ function generarCamara(params, P, logo) {
 /* ===========================================================================
    CÁMARA TIPO CALF — dibujo (marco plegado 1 + tapa plegado 2 + chapa encofrado)
    =========================================================================== */
-/* Planta: hueco interior + contorno de la tapa + chapa con malla + manijas U */
+/* Planta: marco (banda ext/int con encuentros a 45°) + hueco interior + chapa con malla + manijas */
 function plantaCALF(r, ox, oy, P, k) {
-  var iA = r.intA * k, iB = r.intB * k, g = '';
+  var proy = r.proy || 60, bw = proy * k, g = '';
+  var eA = (r.intA + 2 * proy) * k, eB = (r.intB + 2 * proy) * k;          // exterior del marco
+  var ix = ox + bw, iy = oy + bw, iA = r.intA * k, iB = r.intB * k;        // cara interior de la pestaña = hueco
   g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, iA, iB, SW.thick, P);                                   // hueco interior
-  var cA = r.chapaA * k, cB = r.chapaB * k, cx0 = ox + (iA - cA) / 2, cy0 = oy + (iB - cB) / 2;
+  g += rect(ox, oy, eA, eB, SW.thick, P);                                  // marco: cara exterior
+  g += rect(ix, iy, iA, iB, SW.thick, P);                                  // marco: cara interior (= medida interior)
+  g += line(ox, oy, ix, iy, SW.thin, P) + line(ox + eA, oy, ix + iA, iy, SW.thin, P)
+     + line(ox, oy + eB, ix, iy + iB, SW.thin, P) + line(ox + eA, oy + eB, ix + iA, iy + iB, SW.thin, P);  // encuentros a 45°
+  var cA = r.chapaA * k, cB = r.chapaB * k, cx0 = ix + (iA - cA) / 2, cy0 = iy + (iB - cB) / 2;
   g += '<rect x="' + cx0.toFixed(1) + '" y="' + cy0.toFixed(1) + '" width="' + cA.toFixed(1) + '" height="' + cB.toFixed(1) + '" fill="none" stroke="' + P.accent + '" stroke-width="' + SW.dim + '" stroke-dasharray="16 10"/>';  // chapa de encofrado
   var mstep = Math.max(26, 110 * k), xx, yy;                               // malla sobre la chapa
   for (xx = cx0 + mstep; xx < cx0 + cA - 2; xx += mstep) g += line(xx, cy0, xx, cy0 + cB, SW.dim, P, 0, P.muted || P.line);
   for (yy = cy0 + mstep; yy < cy0 + cB - 2; yy += mstep) g += line(cx0, yy, cx0 + cA, yy, SW.dim, P, 0, P.muted || P.line);
-  var cxm = ox + iA / 2, cym = oy + iB / 2, horizLong = r.intA >= r.intB, man = [];  // manijas U invertida
+  var cxm = ix + iA / 2, cym = iy + iB / 2, horizLong = r.intA >= r.intB, man = [];  // manijas U invertida
   if (r.nMan >= 2) {
-    if (horizLong) { man.push([ox + iA / 3, cym]); man.push([ox + 2 * iA / 3, cym]); }
-    else { man.push([cxm, oy + iB / 3]); man.push([cxm, oy + 2 * iB / 3]); }
+    if (horizLong) { man.push([ix + iA / 3, cym]); man.push([ix + 2 * iA / 3, cym]); }
+    else { man.push([cxm, iy + iB / 3]); man.push([cxm, iy + 2 * iB / 3]); }
   } else man.push([cxm, cym]);
   man.forEach(function (c) {
     var hw2 = 34, ft = 13;
@@ -681,10 +686,10 @@ function plantaCALF(r, ox, oy, P, k) {
     else { g += line(c[0], c[1] - hw2, c[0], c[1] + hw2, SW.thick, P) + line(c[0] - ft, c[1] - hw2, c[0] + ft, c[1] - hw2, SW.thin, P) + line(c[0] - ft, c[1] + hw2, c[0] + ft, c[1] + hw2, SW.thin, P); }
   });
   g += tsans(man[0][0] + 44, man[0][1] - 16, 'manija', 17, 'start', P, 600, P.accent);
-  var floorY = oy + iB;
-  g += dimH(ox, ox + iA, floorY + 100, String(Math.round(r.intA)), P, floorY);
-  g += dimV(oy, oy + iB, ox - 100, String(Math.round(r.intB)), P, ox);
-  g += tsans(ox - 100, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
+  var floorY = oy + eB;                                                    // cota de la MEDIDA INTERIOR (cara interior)
+  g += dimH(ix, ix + iA, floorY + 95, String(Math.round(r.intA)), P, iy + iB);
+  g += dimV(iy, iy + iB, ox - 95, String(Math.round(r.intB)), P, ix);
+  g += tsans(ox - 95, oy - 14, 'int', 17, 'middle', P, 600, P.accent);
   return g;
 }
 
@@ -780,7 +785,8 @@ function generarCALF(params, P, logo) {
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(470 / r.intA, 540 / r.intB), iB = r.intB * kf;
+  var eAx = r.intA + 2 * r.proy, eBx = r.intB + 2 * r.proy;                 // exterior del marco (para escalar la planta)
+  var kf = Math.min(470 / eAx, 540 / eBx), iB = eBx * kf;
   g += plantaCALF(r, M + 180, 360, P, kf);
   var dx = 760, TW = 2030 - dx;
   g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
