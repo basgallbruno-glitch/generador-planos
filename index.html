@@ -1612,7 +1612,9 @@ function generarCALF(params, P, logo) {
   var ny = 320 + dt.h + 40;
   g += tsans(dx, ny, '+ Malla electrosoldada y hormigón por encima de la chapa, en obra.', F.ty, 'start', P, 500, P.muted || P.text);
   var hy = ny + 56; g += bloqueAccesorios(r, dx, hy, P, TW);
-  var by = Math.max(360 + iB + 170, ny + 70); g += corteCALF(r, M, by, full, 500, P);
+  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
+  var rightBottom = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 40);   // deja lugar a la tabla de accesorios
+  var by = Math.max(360 + iB + 170, rightBottom + 45); g += corteCALF(r, M, by, full, 500, P);
   var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += secCALFp1(r, x0, by2, bw, 470, P);
   g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
