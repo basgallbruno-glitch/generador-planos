@@ -1491,8 +1491,6 @@ function plantaCALF(r, ox, oy, P, k) {
   var iA = r.intA * k, iB = r.intB * k, g = '';
   g += tsans(ox, oy - 18, 'PLANTA', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, iA, iB, SW.thick, P);                                   // hueco interior
-  var tA = r.tapaA * k, tB = r.tapaB * k, tx = ox + (iA - tA) / 2, ty = oy + (iB - tB) / 2;
-  g += rect(tx, ty, tA, tB, SW.thin, P);                                    // contorno de la tapa (plegado 2)
   var cA = r.chapaA * k, cB = r.chapaB * k, cx0 = ox + (iA - cA) / 2, cy0 = oy + (iB - cB) / 2;
   g += '<rect x="' + cx0.toFixed(1) + '" y="' + cy0.toFixed(1) + '" width="' + cA.toFixed(1) + '" height="' + cB.toFixed(1) + '" fill="none" stroke="' + P.accent + '" stroke-width="' + SW.dim + '" stroke-dasharray="16 10"/>';  // chapa de encofrado
   var mstep = Math.max(26, 110 * k), xx, yy;                               // malla sobre la chapa
