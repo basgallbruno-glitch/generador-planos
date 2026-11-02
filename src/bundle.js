@@ -233,6 +233,7 @@ function calcularGabinete(p) {
     cantidadTexto: nHojas === 2 ? (total + ' gabinete' + (total === 1 ? '' : 's')) : undefined,
     tipoTexto: (nHojas === 2 ? 'Gabinete doble hoja · caño ' : 'Gabinete tablillas · caño ') + cano,
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
+    canoKgm: cano === '50×20×1,6' ? 1.7 : Math.round((2 * (ea + eb) - 4 * ee) * ee * 7.85e-3 * 100) / 100,
     anchoMarco: anchoMarco, altoMarco: altoMarco, aberturaInt: aberturaInt,
     hojaAncho: hojaAncho, tabLargo: tabLargo, nTab: nTab,
     desP1: C.gabDesP1, desP2: C.gabDesP2,

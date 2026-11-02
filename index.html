@@ -340,6 +340,7 @@ function calcularGabinete(p) {
     cantidadTexto: nHojas === 2 ? (total + ' gabinete' + (total === 1 ? '' : 's')) : undefined,
     tipoTexto: (nHojas === 2 ? 'Gabinete doble hoja · caño ' : 'Gabinete tablillas · caño ') + cano,
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
+    canoKgm: cano === '50×20×1,6' ? 1.7 : Math.round((2 * (ea + eb) - 4 * ee) * ee * 7.85e-3 * 100) / 100,
     anchoMarco: anchoMarco, altoMarco: altoMarco, aberturaInt: aberturaInt,
     hojaAncho: hojaAncho, tabLargo: tabLargo, nTab: nTab,
     desP1: C.gabDesP1, desP2: C.gabDesP2,
@@ -1115,12 +1116,36 @@ function cajetin(r, ox, oy, w, h, P, logo) {
 }
 
 /* --- Despiece (tabla) con material --- */
+/* --- Pesos: chapa por peso superficial [kg/m²] · perfiles por peso lineal de catálogo [kg/m] --- */
+var PESO_SUP = { 'Chapa N°18': 9.86, 'Chapa N°16': 12.60, 'Chapa N°14': 15.80, 'Chapa 1/8"': 25.1, 'Chapa 3/16"': 37.8 };
+var PESO_LIN = { 'Áng. 2"×3/16"': 3.7, 'Planch. 1½"×3/16"': 1.5, 'Planch. 1/2"×1/8"': 0.32 };
+function fmt1(x) { return x.toFixed(1).replace('.', ','); }
+function ceil1(x) { return Math.ceil(x * 10) / 10; }
+function pesoPieza(d, r) {   // kg de UNA pieza (chapa: desarrollo×largo×sup · perfil: largo×kg/m)
+  var mat = d.mat || ('Chapa N°' + (r.chapa || 18));
+  if (PESO_SUP[mat] != null) return d.ancho == null ? null : (d.ancho * d.largo / 1e6) * PESO_SUP[mat];
+  if (PESO_LIN[mat] != null) return (d.largo / 1000) * PESO_LIN[mat];
+  if (/^Caño /.test(mat)) return (d.largo / 1000) * (r.canoKgm || 1.7);
+  return null;
+}
+function pesoPorUnidad(r) {   // peso por CADA unidad de la tipología, agrupado por material
+  var acc = {}, orden = [];
+  r.despiece.forEach(function (d) {
+    var pw = pesoPieza(d, r); if (pw == null) return;
+    var mat = d.mat || ('Chapa N°' + (r.chapa || 18));
+    if (acc[mat] == null) { acc[mat] = 0; orden.push(mat); }
+    acc[mat] += (d.cantUno != null ? d.cantUno : d.cant) * pw;
+  });
+  return orden.map(function (m) { return { mat: m, kg: ceil1(acc[m]) }; });
+}
+
 function despieceTabla(r, ox, oy, P, tw) {
   var matDef = 'Chapa N°' + (r.chapa || 18);
-  var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo'];
+  var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo', 'Peso [kg]'];
   var filas = r.despiece.map(function (d) {
     var med = (d.ancho == null) ? String(d.largo) : (d.ancho + '×' + d.largo);
-    return { c: [d.pieza, d.desc, String(d.cant), d.mat || matDef, med] };
+    var pw = pesoPieza(d, r), ps = pw == null ? '—' : fmt1(ceil1(pw * d.cant));
+    return { c: [d.pieza, d.desc, String(d.cant), d.mat || matDef, med, ps] };
   });
   // ancho de cada columna según el texto más largo (mono ≈ 0.6·fs por carácter + padding)
   var fs = 27, colW = headers.map(function (h, i) {
@@ -1128,9 +1153,25 @@ function despieceTabla(r, ox, oy, P, tw) {
     filas.forEach(function (f) { mx = Math.max(mx, String(f.c[i]).length); });
     return Math.ceil(mx * fs * 0.6) + 40;
   });
-  // estira para ocupar el ancho disponible: el sobrante va a Descripción
-  if (tw) { var s = colW.reduce(function (a, b) { return a + b; }, 0); if (s < tw) colW[1] += tw - s; }
-  return tabla(ox, oy, colW, filas, P, headers, { fs: fs, rh: 68 });
+  // ajusta al ancho disponible: si sobra, el extra va a Descripción; si falta, encoge fuente y columnas
+  var rh = 68;
+  if (tw) {
+    var s = colW.reduce(function (a, b) { return a + b; }, 0);
+    if (s < tw) { colW[1] += tw - s; }
+    else { var k = tw / s; fs *= k; rh *= Math.max(0.82, k); colW = colW.map(function (c) { return c * k; }); }
+  }
+  var t = tabla(ox, oy, colW, filas, P, headers, { fs: fs, rh: rh }), g = t.svg, hy = oy + t.h;
+  // resumen: PESO POR UNIDAD agrupado por material
+  var pm = pesoPorUnidad(r);
+  if (pm.length) {
+    hy += 30; g += tsans(ox, hy, 'PESO POR UNIDAD', F.lbl, 'start', P, 700, P.accent); hy += 34;
+    var tot = colW.reduce(function (a, b) { return a + b; }, 0), wx = ox + Math.min(tot - 150, tot * 0.62);
+    pm.forEach(function (x) {
+      g += txt(ox + 6, hy, x.mat, F.sm, 'start', P, false, '400') + txt(wx, hy, fmt1(x.kg) + ' kg', F.sm, 'start', P, false, '700');
+      hy += 34;
+    });
+  }
+  return { svg: g, h: hy - oy };
 }
 
 /* --- Planilla de herrajes (lo que el usuario carga en el artefacto) --- */
