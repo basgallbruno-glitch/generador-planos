@@ -1128,15 +1128,16 @@ function pesoPieza(d, r) {   // kg de UNA pieza (chapa: desarrollo×largo×sup �
   if (/^Caño /.test(mat)) return (d.largo / 1000) * (r.canoKgm || 1.7);
   return null;
 }
-function pesoPorUnidad(r) {   // peso por CADA unidad de la tipología, agrupado por material
-  var acc = {}, orden = [];
+function pesoResumen(r) {   // por material: peso por unidad (kgU) y total del plano (kgT, dinámico con la cantidad)
+  var aU = {}, aT = {}, orden = [];
   r.despiece.forEach(function (d) {
     var pw = pesoPieza(d, r); if (pw == null) return;
     var mat = d.mat || ('Chapa N°' + (r.chapa || 18));
-    if (acc[mat] == null) { acc[mat] = 0; orden.push(mat); }
-    acc[mat] += (d.cantUno != null ? d.cantUno : d.cant) * pw;
+    if (aU[mat] == null) { aU[mat] = 0; aT[mat] = 0; orden.push(mat); }
+    aU[mat] += (d.cantUno != null ? d.cantUno : d.cant) * pw;
+    aT[mat] += d.cant * pw;
   });
-  return orden.map(function (m) { return { mat: m, kg: ceil1(acc[m]) }; });
+  return orden.map(function (m) { return { mat: m, kgU: ceil1(aU[m]), kgT: ceil1(aT[m]) }; });
 }
 
 function despieceTabla(r, ox, oy, P, tw) {
@@ -1161,13 +1162,16 @@ function despieceTabla(r, ox, oy, P, tw) {
     else { var k = tw / s; fs *= k; rh *= Math.max(0.82, k); colW = colW.map(function (c) { return c * k; }); }
   }
   var t = tabla(ox, oy, colW, filas, P, headers, { fs: fs, rh: rh }), g = t.svg, hy = oy + t.h;
-  // resumen: PESO POR UNIDAD agrupado por material
-  var pm = pesoPorUnidad(r);
+  // resumen de peso por material: por unidad y total del plano (dinámico con la cantidad)
+  var pm = pesoResumen(r), nUn = r.total || r.cantidad || 1;
   if (pm.length) {
-    hy += 30; g += tsans(ox, hy, 'PESO POR UNIDAD', F.lbl, 'start', P, 700, P.accent); hy += 34;
-    var tot = colW.reduce(function (a, b) { return a + b; }, 0), wx = ox + Math.min(tot - 150, tot * 0.62);
+    var tot = colW.reduce(function (a, b) { return a + b; }, 0), wU = ox + tot * 0.52, wT = ox + tot * 0.76;
+    hy += 30;
+    g += tsans(ox, hy, nUn > 1 ? ('PESO — por unidad · total (' + nUn + ' u.)') : 'PESO POR UNIDAD', F.lbl, 'start', P, 700, P.accent);
+    hy += 34;
     pm.forEach(function (x) {
-      g += txt(ox + 6, hy, x.mat, F.sm, 'start', P, false, '400') + txt(wx, hy, fmt1(x.kg) + ' kg', F.sm, 'start', P, false, '700');
+      g += txt(ox + 6, hy, x.mat, F.sm, 'start', P, false, '400') + txt(wU, hy, fmt1(x.kgU) + ' kg', F.sm, 'start', P, false, '700');
+      if (nUn > 1) g += txt(wT, hy, fmt1(x.kgT) + ' kg', F.sm, 'start', P, false, '700');
       hy += 34;
     });
   }
@@ -1447,8 +1451,10 @@ function plantaCamara(r, ox, oy, P, k) {
 function corteCamara(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Corte de armado', 'ángulo 2"×3/16" + tapa (malla + hormigón) · fuera de escala', P);
   var cx = ox + w * 0.5, AW = w * 0.64, xL = cx - AW / 2, xR = cx + AW / 2;
-  var t2 = 16, legH = 135, ledge = 95, luz = 16, bandH = 118;
-  var cyBot = oy + h * 0.74, cyTop = cyBot - legH, seat = cyBot - t2;   // ala vertical arriba, horizontal abajo
+  var sc = Math.max(1, Math.min(2, h / 760));                          // escala del dibujo (con tope)
+  var t2 = 16 * sc, legH = 135 * sc, ledge = 95 * sc, luz = 16 * sc, bandH = 118 * sc;
+  var cyBot = oy + 110 + (h - 110) / 2 + (bandH + t2) / 2;              // dibujo centrado en el recuadro
+  var cyTop = cyBot - legH, seat = cyBot - t2;                          // ala vertical arriba, horizontal abajo
   function angL(x0, dir) {   // ala vertical hacia arriba (borde) + ala horizontal hacia adentro (abajo)
     var xi = x0 + dir * t2, xt = x0 + dir * ledge;
     return '<path d="M' + x0.toFixed(1) + ' ' + cyTop.toFixed(1) + ' L' + xi.toFixed(1) + ' ' + cyTop.toFixed(1) +
@@ -1484,8 +1490,8 @@ function corteCamara(r, ox, oy, w, h, P) {
 /* ② Bandeja (tapa): sección en U (pared 46 · base · pared 46) + plana */
 function secBandeja(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Bandeja (tapa) — panel', 'chapa N°' + r.chapa + ' · paredes 46 · plana ' + r.devA + '×' + r.devB, P);
-  var cx = ox + w * 0.47, cyBar = oy + 140 + (h - 170) / 2;
-  var hw = w * 0.30, vUp = (h - 170) * 0.30, vDn = (h - 170) * 0.30, wall = 66;
+  var cx = ox + w * 0.47, cyBar = oy + 110 + (h - 110) / 2;              // centrado en el recuadro
+  var hw = w * 0.30, vUp = Math.min((h - 170) * 0.30, w * 0.28), vDn = vUp, wall = 66;
   // sección a lo ANCHO (barra horizontal; paredes hacia arriba)
   g += line(cx - hw, cyBar, cx + hw, cyBar, SW.thick, P);
   g += line(cx - hw, cyBar, cx - hw, cyBar - wall, SW.thick, P);
@@ -1524,9 +1530,13 @@ function generarCamara(params, P, logo) {
   g += tsans(dx, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
   var hy = ny + 56;
   g += bloqueAccesorios(r, dx, hy, P, TW);
-  var by = 1120, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
-  g += corteCamara(r, x0, by, bw, 820, P);
-  g += secBandeja(r, x0 + bw + gap, by, bw, 820, P);
+  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
+  var plantaBot = 360 + r.extB * kf + 170, rightBot = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 40);
+  var by = Math.max(plantaBot, rightBot + 45);
+  var bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
+  var bh = Math.max(760, PG.h - PG.m - 40 - by);        // estira los recuadros hasta el borde inferior
+  g += corteCamara(r, x0, by, bw, bh, P);
+  g += secBandeja(r, x0 + bw + gap, by, bw, bh, P);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Ángulo comprado. Desarrollo = chapa a cortar (deducción = espesor redondeado al entero menor, por doblez). Imprimir en A4.')];
 }
 
@@ -1569,7 +1579,7 @@ function plantaCALF(r, ox, oy, P, k) {
 /* Corte de armado: marco (plegado 1) contra la pared + tapa (plegado 2) + chapa + malla/hormigón + manija */
 function corteCALF(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Corte de armado', 'marco (plegado 1) + tapa (plegado 2, azul) + chapa de encofrado · malla + hormigón · fuera de escala', P);
-  var cx = ox + w / 2, sc = 2.3;
+  var cx = ox + w / 2, sc = Math.max(2.3, Math.min(5, h / 200));             // la escala crece con la altura del recuadro
   var esp = Math.max(8, 3.18 * sc), vert = 57 * sc, pie = 30 * sc, p1 = 54 * sc, p2 = 61 * sc;
   var AW = w * 0.46, xWL = cx - AW / 2, xWR = cx + AW / 2;
   var topY = oy + h * 0.42, botY = topY + vert;
@@ -1625,8 +1635,8 @@ function manijaCALF(mx, surfY, chY, P) {
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des, P);
-  var sc = 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc;
-  var cornerX = ox + w * 0.58, topY = oy + h * 0.34;
+  var sc = Math.max(2.3, Math.min(4.6, h / 190)), vert = r.p1Vert * sc, pest = r.p1Pest * sc;
+  var cornerX = ox + w * 0.58, topY = oy + 110 + (h - 110 - vert) / 2;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
   g += line(cornerX, topY, cornerX, topY + vert, SW.thick, P);                    // vertical
   g += line(cornerX, topY, cornerX - pest * cos, topY + pest * sin, SW.thick, P);  // pestaña a −10°
@@ -1639,8 +1649,8 @@ function secCALFp1(r, ox, oy, w, h, P) {
 /* ③ Plegado 2 (tapa): pestaña 61 (10°) + vertical 57 + pie 30 */
 function secCALFp2(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p2Des, P);
-  var sc = 2.0, vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
-  var topX = ox + w * 0.50, topY = oy + h * 0.28;
+  var sc = Math.max(2.0, Math.min(4.2, h / 210)), vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
+  var topX = ox + w * 0.50, topY = oy + 110 + (h - 110 - vert) / 2 - 20;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
   g += line(topX, topY, topX, topY + vert, SW.thick, P);                          // vertical
   g += line(topX, topY, topX - pest * cos, topY + pest * sin, SW.thick, P);        // pestaña sup a −10°
@@ -1669,10 +1679,14 @@ function generarCALF(params, P, logo) {
   var hy = ny + 56; g += bloqueAccesorios(r, dx, hy, P, TW);
   var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
   var rightBottom = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 40);   // deja lugar a la tabla de accesorios
-  var by = Math.max(360 + iB + 170, rightBottom + 45); g += corteCALF(r, M, by, full, 500, P);
-  var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
-  g += secCALFp1(r, x0, by2, bw, 470, P);
-  g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
+  var by = Math.max(360 + iB + 170, rightBottom + 45);
+  // estira el corte y los plegados hasta el borde inferior de la hoja
+  var boxBot = PG.h - PG.m - 40, vgap = 54, avail = boxBot - by - vgap;
+  var corteH = Math.max(460, Math.round(avail * 0.54)), plegH = Math.max(440, avail - corteH);
+  g += corteCALF(r, M, by, full, corteH, P);
+  var by2 = by + corteH + vgap, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
+  g += secCALFp1(r, x0, by2, bw, plegH, P);
+  g += secCALFp2(r, x0 + bw + gap, by2, bw, plegH, P);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados en chapa 1/8" (≤800) o 3/16" (>800). Largo de plegados = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
 }
 
@@ -1728,7 +1742,8 @@ function plantaPluvial(r, ox, oy, P, k) {
 /* ① Marco: plegado en L 42×42 */
 function secPluvMarco(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa ' + r.espTxt + ' · L 42×42 · plana ' + r.dev, P);
-  var legH = 230, legV = 230, t = 18, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 130;
+  var sc = Math.max(1, Math.min(2.1, (h - 130) / 300)), legH = 230 * sc, legV = 230 * sc, t = 18 * sc;
+  var x0 = ox + (w - legH) / 2 - 10, y0 = oy + 120 + (h - 120 - legV) / 2;
   g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
   g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
   g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
@@ -1740,8 +1755,8 @@ function secPluvMarco(r, ox, oy, w, h, P) {
 function cortePluvial(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '② Corte', 'rejilla apoyada sobre el marco · anclajes de amure', P);
   var cx = ox + w / 2, span = w * 0.56, hw = span / 2, lx = cx - hw, rx = cx + hw;
-  var sc = 1.8, alaV = 42 * sc, foot = 42 * sc, planH = 38.1 * sc, barW = 4.76 * sc * 1.6, i;  // 1½"×3/16" de canto
-  var topY = oy + h * 0.34, botY = topY + alaV, planBot = topY + planH;     // nivel superior común
+  var sc = Math.max(1.8, Math.min(3.2, (h - 120) / 230)), alaV = 42 * sc, foot = 42 * sc, planH = 38.1 * sc, barW = 4.76 * sc * 1.6, i;  // 1½"×3/16" de canto
+  var topY = oy + 120 + (h - 120 - (alaV + 70)) / 2 + 16, botY = topY + alaV, planBot = topY + planH;   // centrado vertical
   var luz = 26, rLx = lx + luz, rRx = rx - luz, rejSpan = rRx - rLx;        // luz visible rejilla↔marco
   g += line(rLx, topY, rRx, topY, SW.thin, P) + line(rLx, planBot, rRx, planBot, SW.thin, P);  // banda rejilla (1½")
   var nb = 8, stp = rejSpan / (nb - 1);                                   // planchuelas de canto (en corte)
@@ -1760,23 +1775,25 @@ function cortePluvial(r, ox, oy, w, h, P) {
 function generarPluvial(params, P, logo) {
   var r = calcularPluvial(params);
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
-  var M = PG.m, full = PG.w - 2 * M, cxp = PG.w / 2, g = '';
+  var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  // PLANTA centrada
-  var kf = Math.min(760 / r.extA, 620 / r.extB), eA = r.extA * kf, eB = r.extB * kf;
-  var pox = cxp - eA / 2, poy = 470;
-  g += tsans(cxp, 330, 'PLANTA', F.h2, 'middle', P, 700, P.accent);
-  g += plantaPluvial(r, pox, poy, P, kf);
-  // ESQUEMAS (① Marco L · ② Corte) centrados debajo de la planta
-  var esqW = 720, esqH = 520, esqGap = 80;
-  var esqTop = poy + eB + 230, x0 = cxp - (esqW * 2 + esqGap) / 2;
-  g += secPluvMarco(r, x0, esqTop, esqW, esqH, P);
-  g += cortePluvial(r, x0 + esqW + esqGap, esqTop, esqW, esqH, P);
-  // DESPIECE centrado, abajo
-  var TW = 1260, dx = cxp - TW / 2, dyTitle = esqTop + esqH + 70;
-  g += tsans(cxp, dyTitle, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'middle', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, dyTitle + 22, P, TW); g += dt.svg;
-  var hy = dyTitle + 22 + dt.h + 46; g += bloqueAccesorios(r, dx, hy, P, TW);
+  // PLANTA (columna izquierda)
+  var kf = Math.min(430 / r.extA, 760 / r.extB), eB = r.extB * kf;
+  g += tsans(M + 180, 342, 'PLANTA', F.h2, 'start', P, 700, P.accent);
+  g += plantaPluvial(r, M + 180, 400, P, kf);
+  // DESPIECE (derecha)
+  var dx = 760, TW = 2030 - dx;
+  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, dx, 320, P, TW); g += dt.svg;
+  var ny = 320 + dt.h + 30, hy = ny + 14; g += bloqueAccesorios(r, dx, hy, P, TW);
+  // ESQUEMAS (① Marco L · ② Corte) al fondo, estirados hasta el borde inferior
+  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
+  var plantaBot = 400 + eB + 190, rightBot = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 20);
+  var by = Math.max(plantaBot, rightBot + 45);
+  var esqW = 920, esqGap = 90, x0 = M + (full - (esqW * 2 + esqGap)) / 2;
+  var esqH = Math.max(540, PG.h - PG.m - 40 - by);
+  g += secPluvMarco(r, x0, by, esqW, esqH, P);
+  g += cortePluvial(r, x0 + esqW + esqGap, by, esqW, esqH, P);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (<800) o 3/16" (≥800), unión a 45°, largo = ext + 15. Rejilla de planchuelas 1½"×3/16". Imprimir en A4.')];
 }
 
