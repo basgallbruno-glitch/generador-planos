@@ -796,7 +796,7 @@ function generarCALF(params, P, logo) {
   var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += secCALFp1(r, x0, by2, bw, 470, P);
   g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
-  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados normalizados (chapa 1/8"). Perfiles cortados al largo exterior + 10 mm de ajuste (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados normalizados (chapa 1/8"). Largo de plegados = int + 2·esp + 2·60 + 2·10 (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
 }
 
 /* ===========================================================================

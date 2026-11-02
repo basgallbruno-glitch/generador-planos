@@ -56,7 +56,8 @@ var C = {
   calfP2Pest: 61, calfP2Vert: 57, calfP2Pie: 30,  // plegado 2: pestaña sup (10°) + vertical + pie inferior
   calfJuegoChapa: 3,                   // juego de la chapa de encofrado por lado (apoya en el pie de 30)
   calfChapaUmbral: 800,                // lado mayor ≥ 800 → N°14; si no, N°16
-  calfMargen: 10,                      // margen extra al largo de los perfiles (corte/ajuste a 45°)
+  calfProyPest: 60,                    // proyección horizontal de la pestaña inclinada del marco (dato de taller)
+  calfMargen: 10,                      // margen de ajuste por lado al largo de los perfiles (corte a 45°)
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -281,22 +282,21 @@ function calcularCamara(p) {
 
 /* ---- Motor CÁMARA TIPO CALF: marco (plegado 1) + tapa (plegado 2 + chapa encofrado) ----
    Dato: siempre interior (hueco). Plegados normalizados y fijos (desarrollos 105 / 139).
-   - Perfiles cortados al largo EXTERIOR (encuentro a 45°) + margen de ajuste (calfMargen):
-     marco = int + 2·proy(pestaña 54) + mg ; tapa = int − 4·esp + 2·proy(pestaña 61) + mg.
-     (la pestaña queda por fuera del hueco; proy = pestaña·cos10°).
+   - Interior = distancia entre las caras interiores de las pestañas verticales del marco.
+   - Largo de los plegados (marco y tapa, mismo criterio, encuentro a 45°):
+     largo = int + 2·esp + 2·60 (proy. horizontal de la pestaña) + 2·10 (ajuste por lado).
    - Chapa de encofrado (placa plana): apoya en el pie de 30 con 3 mm de juego por lado
      → lado chapa = int − 2·esp − 2·3.  N°16 si lado mayor < 800; N°14 si ≥ 800. */
 function calcularCALF(p) {
   var A = p.W, B = p.H;                                   // interior (hueco)
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var esp = C.calfEsp, jc = C.calfJuegoChapa, mg = C.calfMargen;
-  var intA = A, intB = B;
-  // perfiles cortados al largo EXTERIOR (encuentro a 45°) + margen de ajuste. La pestaña queda por fuera del hueco.
-  var cos10 = Math.cos(10 * Math.PI / 180);
-  var projM = Math.round(C.calfP1Pest * cos10), projT = Math.round(C.calfP2Pest * cos10);  // proyección horizontal de la pestaña
-  var marcoA = Math.round(intA + 2 * projM + mg), marcoB = Math.round(intB + 2 * projM + mg);           // plegado 1
-  var tapaA = Math.round(intA - 4 * esp + 2 * projT + mg), tapaB = Math.round(intB - 4 * esp + 2 * projT + mg);  // plegado 2 (vertical embutido 2·esp)
-  var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana, no cambia)
+  var intA = A, intB = B;   // interior = distancia entre caras interiores de las pestañas verticales del marco
+  // largo de los plegados (marco y tapa, mismo criterio): int + 2·esp + 2·proy pestaña + 2·margen (corte a 45°)
+  var larg = function (d) { return Math.round(d + 2 * esp + 2 * C.calfProyPest + 2 * mg); };
+  var marcoA = larg(intA), marcoB = larg(intB);
+  var tapaA = larg(intA), tapaB = larg(intB);
+  var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana)
   var ladoMayor = Math.max(intA, intB);
   var chapa = ladoMayor >= C.calfChapaUmbral ? 14 : 16;
   var nMan = ladoMayor > C.calfChapaUmbral ? 2 : 1;        // manijas U invertida (ajustable); van en accesorios
