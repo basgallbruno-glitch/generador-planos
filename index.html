@@ -391,7 +391,7 @@ function calcularCamara(p) {
    Dato: siempre interior (hueco). Plegados normalizados y fijos (desarrollos 105 / 139).
    - Interior = distancia entre las caras interiores de las pestañas verticales del marco.
    - Largo de los plegados (marco y tapa, mismo criterio, encuentro a 45°):
-     largo = int + 2·esp + 2·60 (proy. horizontal de la pestaña) + 2·10 (ajuste por lado).
+     largo = int + 2·esp + 2·60 (proy. horizontal de la pestaña) + 2·10 (ajuste/lado), redondeado a la decena superior.
    - Chapa de encofrado (placa plana): apoya en el pie de 30 con 3 mm de juego por lado
      → lado chapa = int − 2·esp − 2·3.  N°16 si lado mayor < 800; N°14 si ≥ 800. */
 function calcularCALF(p) {
@@ -400,7 +400,7 @@ function calcularCALF(p) {
   var esp = C.calfEsp, jc = C.calfJuegoChapa, mg = C.calfMargen;
   var intA = A, intB = B;   // interior = distancia entre caras interiores de las pestañas verticales del marco
   // largo de los plegados (marco y tapa, mismo criterio): int + 2·esp + 2·proy pestaña + 2·margen (corte a 45°)
-  var larg = function (d) { return Math.round(d + 2 * esp + 2 * C.calfProyPest + 2 * mg); };
+  var larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfProyPest + 2 * mg) / 10) * 10; };  // a la decena, hacia arriba
   var marcoA = larg(intA), marcoB = larg(intB);
   var tapaA = larg(intA), tapaB = larg(intB);
   var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana)
