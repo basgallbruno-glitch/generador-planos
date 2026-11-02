@@ -748,7 +748,7 @@ function manijaCALF(mx, surfY, chY, P) {
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa 1/8" · desarrollo ' + r.p1Des, P);
+  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des, P);
   var sc = 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc;
   var cornerX = ox + w * 0.58, topY = oy + h * 0.34;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
@@ -762,7 +762,7 @@ function secCALFp1(r, ox, oy, w, h, P) {
 
 /* ③ Plegado 2 (tapa): pestaña 61 (10°) + vertical 57 + pie 30 */
 function secCALFp2(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa 1/8" · desarrollo ' + r.p2Des, P);
+  var g = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p2Des, P);
   var sc = 2.0, vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
   var topX = ox + w * 0.50, topY = oy + h * 0.28;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
@@ -796,7 +796,7 @@ function generarCALF(params, P, logo) {
   var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
   g += secCALFp1(r, x0, by2, bw, 470, P);
   g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
-  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados normalizados (chapa 1/8"). Largo de plegados = int + 2·esp + 2·60 + 2·10 (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados en chapa 1/8" (≤800) o 3/16" (>800). Largo de plegados = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
 }
 
 /* ===========================================================================

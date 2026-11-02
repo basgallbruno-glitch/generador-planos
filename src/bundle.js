@@ -50,7 +50,9 @@ var C = {
   pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
   pluvCorte45: 15,                     // margen que se suma al largo del plegado para el corte a 45°
   // --- Cámara tipo CALF (marco plegado 1 + tapa plegado 2 + chapa encofrado) ---
-  calfEsp: 3.18,                       // chapa 1/8" de ambos plegados
+  calfEsp: 3.18,                       // chapa 1/8" del plegado (lado mayor ≤ 800)
+  calfEspGrande: 4.76,                 // chapa 3/16" del plegado (lado mayor > 800)
+  calfUmbralPleg: 800,                 // lado mayor > 800 → plegado en 3/16"; si no, 1/8"
   calfP1Des: 105, calfP2Des: 139,      // desarrollos normalizados (plegado 1 marco / plegado 2 tapa)
   calfP1Pest: 54, calfP1Vert: 57,      // plegado 1: pestaña sup (10°) + vertical
   calfP2Pest: 61, calfP2Vert: 57, calfP2Pie: 30,  // plegado 2: pestaña sup (10°) + vertical + pie inferior
@@ -290,17 +292,19 @@ function calcularCamara(p) {
 function calcularCALF(p) {
   var A = p.W, B = p.H;                                   // interior (hueco)
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
-  var esp = C.calfEsp, jc = C.calfJuegoChapa, mg = C.calfMargen;
+  var jc = C.calfJuegoChapa, mg = C.calfMargen;
   var intA = A, intB = B;   // interior = distancia entre caras interiores de las pestañas verticales del marco
+  var ladoMayor = Math.max(intA, intB);
+  var esp = ladoMayor > C.calfUmbralPleg ? C.calfEspGrande : C.calfEsp;   // plegado: 1/8" (≤800) o 3/16" (>800)
+  var espTxt = ladoMayor > C.calfUmbralPleg ? '3/16"' : '1/8"';
   // largo de los plegados (marco y tapa, mismo criterio): int + 2·esp + 2·proy pestaña + 2·margen (corte a 45°)
   var larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfProyPest + 2 * mg) / 10) * 10; };  // a la decena, hacia arriba
   var marcoA = larg(intA), marcoB = larg(intB);
   var tapaA = larg(intA), tapaB = larg(intB);
   var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana)
-  var ladoMayor = Math.max(intA, intB);
   var chapa = ladoMayor >= C.calfChapaUmbral ? 14 : 16;
   var nMan = ladoMayor > C.calfChapaUmbral ? 2 : 1;        // manijas U invertida (ajustable); van en accesorios
-  var MAT_PLEG = 'Chapa 1/8"', MAT_CH = 'Chapa N°' + chapa;
+  var MAT_PLEG = 'Chapa ' + espTxt, MAT_CH = 'Chapa N°' + chapa;
   var base = [
     { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: C.calfP1Des, largo: marcoA, mat: MAT_PLEG },
     { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: C.calfP1Des, largo: marcoB, mat: MAT_PLEG },
@@ -317,7 +321,7 @@ function calcularCALF(p) {
     tipoTexto: 'Cámara CALF · plegados 1 y 2',
     intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
-    esp: esp, chapa: chapa, nMan: nMan,
+    esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan,
     p1Des: C.calfP1Des, p2Des: C.calfP2Des,
     p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
     p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,
