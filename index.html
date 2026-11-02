@@ -150,8 +150,10 @@ var C = {
   camChapaUmbral: 1000,              // ≥1 m en algún lado del marco → N°14; si no, N°16
   camLuzFija: 3,                     // luz fija bandeja↔marco (mm); por lado se resta 1·esp + luz
   // --- Cámara pluvial (marco L plegado + rejilla de planchuelas) ---
-  pluvMarcoLeg: 42, pluvMarcoDev: 78,  // marco L 42×42 (desarrollo 39+39 = 78)
-  pluvChapaEsp: 3.18,                  // chapa 1/8" (espesor del plegado)
+  pluvMarcoLeg: 42,                    // marco L 42×42 (el desarrollo se calcula según el espesor)
+  pluvChapaEsp: 3.18,                  // chapa 1/8" del plegado (medida < 800)
+  pluvChapaEspGrande: 4.76,            // chapa 3/16" del plegado (medida ≥ 800)
+  pluvUmbralEsp: 800,                  // medida (lado mayor ext) ≥ 800 → plegado en 3/16"
   pluvPlanchEsp: 4.76,                 // planchuela 3/16" (ancho en planta)
   pluvSepReja: 25,                     // luz libre entre planchuelas (mm); extremos se ajustan
   pluvRefUmbral: 1000,                 // lado mayor de la rejilla ≥ 1 m → 2 refuerzos en los tercios; si no, 1 al medio
@@ -437,7 +439,7 @@ function calcularCALF(p) {
 }
 
 /* ---- Motor CÁMARA PLUVIAL: marco plegado en L + rejilla de planchuelas ----
-   - Marco: plegado en L 42×42 (chapa 1/8"), desarrollo 78. ext = int + 2·ala (plegados hacia afuera).
+   - Marco: plegado en L 42×42, chapa 1/8" (<800) o 3/16" (≥800); desarrollo = 2·(42 − floor(esp)). ext = int + 2·ala.
    - Rejilla: planchuelas 1½"×3/16" de canto; marco perimetral + barras cada 25 mm, ⊥ a la dimensión
      mayor. Apoya sobre el ala del marco → rejilla = ext − 2·esp.
    - Refuerzo opcional (zona transitable): planchuela 1/2"×1/8" por debajo, ⊥ a las barras;
@@ -446,10 +448,14 @@ function calcularPluvial(p) {
   var A = p.W, B = p.H, modo = p.modo || 'ext';
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var refuerzo = !!p.refuerzo;
-  var leg = C.pluvMarcoLeg, esp = C.pluvChapaEsp, sep = C.pluvSepReja, tp = C.pluvPlanchEsp;
+  var leg = C.pluvMarcoLeg, sep = C.pluvSepReja, tp = C.pluvPlanchEsp;
   var extA, extB, intA, intB;
   if (modo === 'int') { intA = A; intB = B; extA = A + 2 * leg; extB = B + 2 * leg; }
   else { extA = A; extB = B; intA = A - 2 * leg; intB = B - 2 * leg; }
+  // espesor del plegado según el tamaño (lado mayor exterior): 1/8" (<800) o 3/16" (≥800)
+  var grande = Math.max(extA, extB) >= C.pluvUmbralEsp;
+  var esp = grande ? C.pluvChapaEspGrande : C.pluvChapaEsp, espTxt = grande ? '3/16"' : '1/8"';
+  var legFlat = leg - Math.floor(esp), dev = 2 * legFlat;       // desarrollo de la L (según espesor)
   // la rejilla apoya sobre el ala del plegado: = ext − 2 esp (= hueco + 2 leg − 2 esp)
   var rejA = Math.round(extA - 2 * esp), rejB = Math.round(extB - 2 * esp);
   var lado = Math.max(rejA, rejB), corto = Math.min(rejA, rejB);
@@ -458,10 +464,10 @@ function calcularPluvial(p) {
   var largoBarra = corto;
   var nRef = refuerzo ? (lado < C.pluvRefUmbral ? 1 : 2) : 0;   // umbral sobre el lado mayor
   var largoRef = lado;
-  var MAT_MARCO = 'Chapa 1/8"', MAT_PL = 'Planch. 1½"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
+  var MAT_MARCO = 'Chapa ' + espTxt, MAT_PL = 'Planch. 1½"×3/16"', MAT_REF = 'Planch. 1/2"×1/8"';
   var base = [
-    { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extA) + C.pluvCorte45, mat: MAT_MARCO },
-    { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: C.pluvMarcoDev, largo: Math.round(extB) + C.pluvCorte45, mat: MAT_MARCO },
+    { pieza: 'M', desc: 'Marco L — lado A', cantUno: 2, ancho: dev, largo: Math.round(extA) + C.pluvCorte45, mat: MAT_MARCO },
+    { pieza: 'M', desc: 'Marco L — lado B', cantUno: 2, ancho: dev, largo: Math.round(extB) + C.pluvCorte45, mat: MAT_MARCO },
     { pieza: 'R', desc: 'Rejilla — marco lado A', cantUno: 2, ancho: null, largo: rejA, mat: MAT_PL },
     { pieza: 'R', desc: 'Rejilla — marco lado B', cantUno: 2, ancho: null, largo: rejB, mat: MAT_PL },
     { pieza: 'R', desc: 'Rejilla — planchuelas', cantUno: nBarras, ancho: null, largo: largoBarra, mat: MAT_PL },
@@ -476,7 +482,7 @@ function calcularPluvial(p) {
     tipoTexto: 'Cámara pluvial · marco L 42×42',
     extA: extA, extB: extB, intA: intA, intB: intB, rejA: rejA, rejB: rejB,
     lado: lado, corto: corto, nBarras: nBarras, largoBarra: largoBarra,
-    nRef: nRef, largoRef: largoRef, leg: leg, esp: esp, sep: sep,
+    nRef: nRef, largoRef: largoRef, leg: leg, esp: esp, espTxt: espTxt, dev: dev, legFlat: legFlat, sep: sep,
     despiece: despiece,
   };
 }
@@ -1680,12 +1686,12 @@ function plantaPluvial(r, ox, oy, P, k) {
 
 /* ① Marco: plegado en L 42×42 */
 function secPluvMarco(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa 1/8" · L 42×42 · plana 78', P);
+  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa ' + r.espTxt + ' · L 42×42 · plana ' + r.dev, P);
   var legH = 230, legV = 230, t = 18, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 130;
   g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
   g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
   g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
-  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo 39 + 39 = 78', F.ty, 'end', P, 700, P.accent);
+  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.legFlat + ' + ' + r.legFlat + ' = ' + r.dev, F.ty, 'end', P, 700, P.accent);
   return g;
 }
 
@@ -1730,7 +1736,7 @@ function generarPluvial(params, P, logo) {
   g += tsans(cxp, dyTitle, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'middle', P, 700, P.accent);
   var dt = despieceTabla(r, dx, dyTitle + 22, P, TW); g += dt.svg;
   var hy = dyTitle + 22 + dt.h + 46; g += bloqueAccesorios(r, dx, hy, P, TW);
-  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (unión a 45°), largo = ext + 15 por corte a 45°. Rejilla de planchuelas. Imprimir en A4.')];
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (<800) o 3/16" (≥800), unión a 45°, largo = ext + 15. Rejilla de planchuelas 1½"×3/16". Imprimir en A4.')];
 }
 
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */

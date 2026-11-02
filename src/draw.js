@@ -854,12 +854,12 @@ function plantaPluvial(r, ox, oy, P, k) {
 
 /* ① Marco: plegado en L 42×42 */
 function secPluvMarco(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa 1/8" · L 42×42 · plana 78', P);
+  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa ' + r.espTxt + ' · L 42×42 · plana ' + r.dev, P);
   var legH = 230, legV = 230, t = 18, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 130;
   g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
   g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
   g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
-  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo 39 + 39 = 78', F.ty, 'end', P, 700, P.accent);
+  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.legFlat + ' + ' + r.legFlat + ' = ' + r.dev, F.ty, 'end', P, 700, P.accent);
   return g;
 }
 
@@ -904,7 +904,7 @@ function generarPluvial(params, P, logo) {
   g += tsans(cxp, dyTitle, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'middle', P, 700, P.accent);
   var dt = despieceTabla(r, dx, dyTitle + 22, P, TW); g += dt.svg;
   var hy = dyTitle + 22 + dt.h + 46; g += bloqueAccesorios(r, dx, hy, P, TW);
-  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (unión a 45°), largo = ext + 15 por corte a 45°. Rejilla de planchuelas. Imprimir en A4.')];
+  return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (<800) o 3/16" (≥800), unión a 45°, largo = ext + 15. Rejilla de planchuelas 1½"×3/16". Imprimir en A4.')];
 }
 
 /* --- REGISTRO DE TIPOS DE PLANO (cada uno: campos + motor + dibujo) --- */
