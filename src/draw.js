@@ -688,21 +688,22 @@ function generarCamara(params, P, logo) {
   r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  // --- fila de dibujos arriba: planta (izq) + corte + bandeja (der) ---
-  var topY = 290, bandH = 760;
-  var kf = Math.min(360 / r.extA, 620 / r.extB), eB = r.extB * kf;
-  g += plantaCamara(r, M + 130, topY + (bandH - eB) / 2, P, kf);
-  var xE = 620, bw = 685, gap = 40;
-  g += corteCamara(r, xE, topY, bw, bandH, P);
-  g += secBandeja(r, xE + bw + gap, topY, bw, bandH, P);
-  // --- despiece a ANCHO COMPLETO abajo (letra grande) ---
-  var ty = topY + bandH + 76;
+  // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
+  var ty = 345;
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
   var ny = ty + dt.h + 40;
   g += tsans(M, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
-  g += bloqueAccesorios(r, M, ny + 56, P, full);
+  // --- 2) fila de dibujos: planta (izq) + corte + bandeja (der) ---
+  var topY = ny + 56, bandH = 760;
+  var kf = Math.min(360 / r.extA, 620 / r.extB), eB = r.extB * kf;
+  g += plantaCamara(r, M + 130, topY + (bandH - eB) / 2, P, kf);
+  var xE = 620, bw = 685, gap = 40;
+  g += corteCamara(r, xE, topY, bw, bandH, P);
+  g += secBandeja(r, xE + bw + gap, topY, bw, bandH, P);
+  // --- 3) accesorios al final ---
+  g += bloqueAccesorios(r, M, topY + bandH + 70, P, full);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Ángulo comprado. Desarrollo = chapa a cortar (deducción = espesor redondeado al entero menor, por doblez). Imprimir en A4.')];
 }
 
@@ -834,21 +835,25 @@ function generarCALF(params, P, logo) {
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
+  // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
+  var ty = 345;
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40); g += dt.svg;
+  var ny = ty + dt.h + 40;
+  g += tsans(M, ny, '+ Malla electrosoldada y hormigón por encima de la chapa, en obra.', F.ty, 'start', P, 500, P.muted || P.text);
+  // --- 2) corte de armado a ancho completo ---
+  var cy = ny + 56;
+  g += corteCALF(r, M, cy, full, 460, P);
+  // --- 3) fila: planta (izq) + plegado 1 + plegado 2 ---
+  var ry = cy + 460 + 50, rowH = 430;
   var eAx = r.intA + 2 * r.proy, eBx = r.intB + 2 * r.proy;                 // exterior del marco (para escalar la planta)
-  var kf = Math.min(470 / eAx, 540 / eBx), iB = eBx * kf;
-  g += plantaCALF(r, M + 180, 360, P, kf);
-  var dx = 760, TW = 2030 - dx;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, 320, P, TW); g += dt.svg;
-  var ny = 320 + dt.h + 40;
-  g += tsans(dx, ny, '+ Malla electrosoldada y hormigón por encima de la chapa, en obra.', F.ty, 'start', P, 500, P.muted || P.text);
-  var hy = ny + 56; g += bloqueAccesorios(r, dx, hy, P, TW);
-  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
-  var rightBottom = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 40);   // deja lugar a la tabla de accesorios
-  var by = Math.max(360 + iB + 170, rightBottom + 45); g += corteCALF(r, M, by, full, 500, P);
-  var by2 = by + 500 + 54, bw = 940, gap = 90, x0 = M + (full - (bw * 2 + gap)) / 2;
-  g += secCALFp1(r, x0, by2, bw, 470, P);
-  g += secCALFp2(r, x0 + bw + gap, by2, bw, 470, P);
+  var kf = Math.min(340 / eAx, (rowH - 155) / eBx);                         // deja lugar para título (arriba) y cota (abajo)
+  g += plantaCALF(r, M + 150, ry + 40, P, kf);
+  var xP = 700, bw = 645, gap = 40;
+  g += secCALFp1(r, xP, ry, bw, rowH, P);
+  g += secCALFp2(r, xP + bw + gap, ry, bw, rowH, P);
+  // --- 4) accesorios al final ---
+  g += bloqueAccesorios(r, M, ry + rowH + 60, P, full);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Plegados en chapa 1/8" (≤800) o 3/16" (>800). Largo de plegados = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.')];
 }
 
@@ -938,21 +943,22 @@ function generarPluvial(params, P, logo) {
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, cxp = PG.w / 2, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  // PLANTA centrada
-  var kf = Math.min(760 / r.extA, 620 / r.extB), eA = r.extA * kf, eB = r.extB * kf;
-  var pox = cxp - eA / 2, poy = 470;
-  g += tsans(cxp, 330, 'PLANTA', F.h2, 'middle', P, 700, P.accent);
+  // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
+  var ty = 345;
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40); g += dt.svg;
+  var ny = ty + dt.h + 56;
+  // --- 2) fila de dibujos: planta (izq) + marco + corte (der) ---
+  var topY = ny, bandH = 640;
+  var kf = Math.min(380 / r.extA, 560 / r.extB), eA = r.extA * kf, eB = r.extB * kf;
+  var pox = M + 180, poy = topY + 50 + (bandH - 50 - eB) / 2;
+  g += tsans(pox + eA / 2, topY + 20, 'PLANTA', F.h2, 'middle', P, 700, P.accent);
   g += plantaPluvial(r, pox, poy, P, kf);
-  // ESQUEMAS (① Marco L · ② Corte) centrados debajo de la planta
-  var esqW = 720, esqH = 520, esqGap = 80;
-  var esqTop = poy + eB + 230, x0 = cxp - (esqW * 2 + esqGap) / 2;
-  g += secPluvMarco(r, x0, esqTop, esqW, esqH, P);
-  g += cortePluvial(r, x0 + esqW + esqGap, esqTop, esqW, esqH, P);
-  // DESPIECE centrado, abajo
-  var TW = 1260, dx = cxp - TW / 2, dyTitle = esqTop + esqH + 70;
-  g += tsans(cxp, dyTitle, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'middle', P, 700, P.accent);
-  var dt = despieceTabla(r, dx, dyTitle + 22, P, TW); g += dt.svg;
-  var hy = dyTitle + 22 + dt.h + 46; g += bloqueAccesorios(r, dx, hy, P, TW);
+  var xE = 760, bw = 615, gap = 40;
+  g += secPluvMarco(r, xE, topY, bw, bandH, P);
+  g += cortePluvial(r, xE + bw + gap, topY, bw, bandH, P);
+  // --- 3) accesorios al final ---
+  g += bloqueAccesorios(r, M, topY + bandH + 70, P, full);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Marco plegado en chapa 1/8" (<800) o 3/16" (≥800), unión a 45°, largo = ext + 15. Rejilla de planchuelas 1½"×3/16". Imprimir en A4.')];
 }
 
