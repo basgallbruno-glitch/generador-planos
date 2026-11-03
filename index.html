@@ -1993,10 +1993,11 @@ function dibujar(){
 const PDFPAL={paper:'#ffffff',line:'#13213a',thin:'#13213a',text:'#13213a',accent:'#0a3f85',hatch:'#eef4fb',muted:'#5b6b82',dim:'#5b6b82',card:'none',head:'#eef4fb'};
 var FONTLINK='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">';
 function planoHTML(p,nombre){
-  var svg=tipoActual().generar(p,PDFPAL,LOGO).join('');
+  var svg=tipoActual().generar(p,PDFPAL,LOGO).map(function(s){return '<div class="pg">'+s+'</div>';}).join('');
   return '<!doctype html><html lang="es"><head><meta charset="utf-8">'+FONTLINK+
     '<title>'+nombre+'</title><style>@page{size:A4 portrait;margin:0}'+
     'html,body{margin:0;padding:0;background:#525659}'+
+    '.pg{break-after:page;page-break-after:always}.pg:last-child{break-after:auto;page-break-after:auto}'+
     'svg{width:210mm;height:297mm;display:block;margin:0 auto;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.4)}'+
     '.bar{position:fixed;top:10px;right:12px}'+
     '.bar button{font:600 14px system-ui,sans-serif;padding:10px 16px;background:#0a3f85;color:#fff;border:none;border-radius:8px;cursor:pointer}'+
