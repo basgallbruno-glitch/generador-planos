@@ -575,7 +575,7 @@ function generarGabinete(params, P, logo) {
   var topY = ny, bandH = 900;
   var kf = Math.min(460 / r.anchoMarco, (bandH - 100) / r.altoMarco);
   g += frenteGabinete(r, M + 150, topY + 40, P, kf, mano);
-  var xE = 650, bw = 660, gap = 40;
+  var xE = M + 150 + r.anchoMarco * kf + 90, gap = 40, bw = (M + full - xE - gap) / 2;   // cajas tras el frente (ancho real)
   g += secGabP1(r, xE, topY, bw, bandH, P);
   g += secGabP2(r, xE + bw + gap, topY, bw, bandH, P);
   // --- 3) accesorios al final ---
