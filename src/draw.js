@@ -446,23 +446,24 @@ function generarMarco(params, P, logo) {
   r.tipoTexto = 'Marco · hoja ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica');
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  // frente del vano + lateral del marco (con altura de cerradura)
-  var kf = Math.min(360 / r.W, 940 / r.H);
-  var fx = M + 90;
-  g += frenteMarco(r, fx, 330, P, kf);
-  g += lateral(r, fx + r.W * kf + 70, 330, P, kf);
-  var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var TW = 2030 - dx;
-  var dt = despieceTabla(r, dx, 320, P, TW);
+  // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
+  var ty = 345;
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
-  var hy = 320 + dt.h + 54;
-  g += bloqueAccesorios(r, dx, hy, P, TW);
-  // ① Marco: perfil grande y legible (hay lugar de sobra)
-  var bw = 880, bx = M + (full - bw) / 2;
-  g += bloquePerfil(bx, 1300, bw, 1420, '① Marco',
+  var ny = ty + dt.h + 56;
+  // --- 2) fila de dibujos: frente del vano + lateral (izq) + ① Marco (der) ---
+  var topY = ny, bandH = 1000;
+  var kf = Math.min(360 / r.W, (bandH - 120) / r.H);
+  var fx = M + 120;
+  g += frenteMarco(r, fx, topY + 50, P, kf);
+  g += lateral(r, fx + r.W * kf + 70, topY + 50, P, kf);
+  var bw = 880, bx = M + full - bw;
+  g += bloquePerfil(bx, topY, bw, bandH, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
+  // --- 3) accesorios al final ---
+  g += bloqueAccesorios(r, M, topY + bandH + 70, P, full);
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
 
