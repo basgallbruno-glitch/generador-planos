@@ -307,7 +307,7 @@ function pesoResumen(r) {   // por material: peso por unidad (kgU) y total del p
   return orden.map(function (m) { return { mat: m, kgU: ceil1(aU[m]), kgT: ceil1(aT[m]) }; });
 }
 
-function despieceTabla(r, ox, oy, P, tw) {
+function despieceTabla(r, ox, oy, P, tw, fsMax) {
   var matDef = 'Chapa N°' + (r.chapa || 18);
   var headers = ['Pieza', 'Descripción', 'Cant', 'Material', 'Ancho×Largo', 'Peso [kg]'];
   var filas = r.despiece.map(function (d) {
@@ -316,30 +316,34 @@ function despieceTabla(r, ox, oy, P, tw) {
     return { c: [d.pieza, d.desc, String(d.cant), d.mat || matDef, med, ps] };
   });
   // ancho de cada columna según el texto más largo (mono ≈ 0.6·fs por carácter + padding)
-  var fs = 27, colW = headers.map(function (h, i) {
+  var fs0 = 27, colW = headers.map(function (h, i) {
     var mx = h.length;
     filas.forEach(function (f) { mx = Math.max(mx, String(f.c[i]).length); });
-    return Math.ceil(mx * fs * 0.6) + 40;
+    return Math.ceil(mx * fs0 * 0.6) + 40;
   });
-  // ajusta al ancho disponible: si sobra, el extra va a Descripción; si falta, encoge fuente y columnas
-  var rh = 68;
+  // ajusta la fuente al ancho disponible: crece para llenarlo (con tope fsMax) o encoge si no entra
+  var fs = fs0, rh = 68;
   if (tw) {
     var s = colW.reduce(function (a, b) { return a + b; }, 0);
-    if (s < tw) { colW[1] += tw - s; }
-    else { var k = tw / s; fs *= k; rh *= Math.max(0.82, k); colW = colW.map(function (c) { return c * k; }); }
+    var k = tw / s, kMax = (fsMax || 40) / fs0;
+    if (k > 1) k = Math.min(k, kMax);                // no agrandar más allá del tope
+    fs *= k; rh *= Math.max(0.82, k); colW = colW.map(function (c) { return c * k; });
+    var s2 = colW.reduce(function (a, b) { return a + b; }, 0);
+    if (s2 < tw) colW[1] += tw - s2;                 // el sobrante (tras el tope) ensancha Descripción
   }
   var t = tabla(ox, oy, colW, filas, P, headers, { fs: fs, rh: rh }), g = t.svg, hy = oy + t.h;
   // resumen de peso por material: por unidad y total del plano (dinámico con la cantidad)
   var pm = pesoResumen(r), nUn = r.total || r.cantidad || 1;
   if (pm.length) {
+    var pf = Math.round(fs * 0.8), pl = Math.round(fs * 0.72), ph = Math.round(fs * 1.25);   // escala el resumen con la fuente de la tabla
     var tot = colW.reduce(function (a, b) { return a + b; }, 0), wU = ox + tot * 0.52, wT = ox + tot * 0.76;
-    hy += 30;
-    g += tsans(ox, hy, nUn > 1 ? ('PESO — por unidad · total (' + nUn + ' u.)') : 'PESO POR UNIDAD', F.lbl, 'start', P, 700, P.accent);
-    hy += 34;
+    hy += ph;
+    g += tsans(ox, hy, nUn > 1 ? ('PESO — por unidad · total (' + nUn + ' u.)') : 'PESO POR UNIDAD', pl, 'start', P, 700, P.accent);
+    hy += ph;
     pm.forEach(function (x) {
-      g += txt(ox + 6, hy, x.mat, F.sm, 'start', P, false, '400') + txt(wU, hy, fmt1(x.kgU) + ' kg', F.sm, 'start', P, false, '700');
-      if (nUn > 1) g += txt(wT, hy, fmt1(x.kgT) + ' kg', F.sm, 'start', P, false, '700');
-      hy += 34;
+      g += txt(ox + 6, hy, x.mat, pf, 'start', P, false, '400') + txt(wU, hy, fmt1(x.kgU) + ' kg', pf, 'start', P, false, '700');
+      if (nUn > 1) g += txt(wT, hy, fmt1(x.kgT) + ' kg', pf, 'start', P, false, '700');
+      hy += ph;
     });
   }
   return { svg: g, h: hy - oy };
@@ -684,22 +688,21 @@ function generarCamara(params, P, logo) {
   r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(470 / r.extA, 900 / r.extB);
-  g += plantaCamara(r, M + 180, 360, P, kf);
-  var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var TW = 2030 - dx;
-  var dt = despieceTabla(r, dx, 320, P, TW);
+  // --- fila de dibujos arriba: planta (izq) + corte + bandeja (der) ---
+  var topY = 290, bandH = 760;
+  var kf = Math.min(360 / r.extA, 620 / r.extB), eB = r.extB * kf;
+  g += plantaCamara(r, M + 130, topY + (bandH - eB) / 2, P, kf);
+  var xE = 620, bw = 685, gap = 40;
+  g += corteCamara(r, xE, topY, bw, bandH, P);
+  g += secBandeja(r, xE + bw + gap, topY, bw, bandH, P);
+  // --- despiece a ANCHO COMPLETO abajo (letra grande) ---
+  var ty = topY + bandH + 76;
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
-  var ny = 320 + dt.h + 40;
-  g += tsans(dx, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
-  var hy = ny + 56;
-  g += bloqueAccesorios(r, dx, hy, P, TW);
-  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); }).length;
-  var accBottom = accItems ? (hy + (accItems + 1) * 68 + 20) : (ny + 40);   // pie de la lista de accesorios
-  var by = Math.max(1120, accBottom + 45), bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;  // los recuadros bajan si la lista crece (alto fijo)
-  g += corteCamara(r, x0, by, bw, 820, P);
-  g += secBandeja(r, x0 + bw + gap, by, bw, 820, P);
+  var ny = ty + dt.h + 40;
+  g += tsans(M, ny, '+ Malla electrosoldada y relleno de hormigón en obra.', F.ty, 'start', P, 500, P.muted || P.text);
+  g += bloqueAccesorios(r, M, ny + 56, P, full);
   return [pagina(g, P, 'Plano preliminar. Cotas en mm. Ángulo comprado. Desarrollo = chapa a cortar (deducción = espesor redondeado al entero menor, por doblez). Imprimir en A4.')];
 }
 
