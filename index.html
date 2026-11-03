@@ -1224,20 +1224,23 @@ function generarPaginas(params, P, logo) {
   // ===================== HOJA 1: dibujos =====================
   var g1 = '';
   g1 += cajetin(r, M, M, full, 185, P, logo);
-  // frente (más grande, ahora que no comparte fila con el despiece)
-  var kf = Math.min(560 / r.W, 900 / r.H);
+  var reb = r.rebajeHoja;
+  // --- fila superior: frente (izq) + ① Marco (der) ---
+  var kf = Math.min(520 / r.W, 880 / r.H);
   g1 += frente(r, M + 150, 330, P, mano, kf);
-  // Perfiles: ① GRANDE a la izquierda; ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
-  var reb = r.rebajeHoja, by = 1300;
-  g1 += bloquePerfil(M, by, 560, 1500, '① Marco',
+  g1 += bloquePerfil(M + 950, 320, 760, 960, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
-  g1 += cruzExt(r, M + 580, by, 650, 1090, P);
-  g1 += cruzInt(r, M + 1250, by, 660, 1090, P);
-  g1 += bloquePerfil(M + 580, by + 1110, 640, 390, '④ Refuerzo (U)',
+  // --- cuadrícula inferior (② ③ ④ ⑤), centrada, sin agrandar ---
+  var by = 1360, gap = 70;
+  var wTop = 650 + gap + 660, x2 = M + (full - wTop) / 2;
+  g1 += cruzExt(r, x2, by, 650, 1090, P);
+  g1 += cruzInt(r, x2 + 650 + gap, by, 660, 1090, P);
+  var by2 = by + 1110, wBot = 640 + gap + 660, x4 = M + (full - wBot) / 2;
+  g1 += bloquePerfil(x4, by2, 640, 390, '④ Refuerzo (U)',
     r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
     [reb, 25, reb], ['L', 'L'], [0, -1], P);
-  g1 += bloquePerfil(M + 1250, by + 1110, 660, 390, '⑤ Perfil inferior (U)',
+  g1 += bloquePerfil(x4 + 640 + gap, by2, 660, 390, '⑤ Perfil inferior (U)',
     'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
     [20, reb, 20], ['L', 'L'], [0, -1], P);
 
