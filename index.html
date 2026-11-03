@@ -1219,39 +1219,41 @@ function generarPaginas(params, P, logo) {
   r.rotulo = params.rotulo;
   r.herrajes = params.herrajes || [];
   var mano = params.drawMano || 'izq';
-  var M = PG.m, full = PG.w - 2 * M, g = '';
+  var M = PG.m, full = PG.w - 2 * M;
 
-  // Cajetín slim
-  g += cajetin(r, M, M, full, 185, P, logo);
-
-  // Fila A: frente (con cota de picaporte) + despiece
-  var kf = Math.min(420 / r.W, 820 / r.H);
-  g += frente(r, M + 90, 330, P, mano, kf);
-  var dx = 760;
-  g += tsans(dx, 300, 'DESPIECE — ' + r.total + ' puertas (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
-  var TW = 2030 - dx;
-  var dt = despieceTabla(r, dx, 320, P, TW);
-  g += dt.svg;
-  // Planilla de herrajes, debajo del despiece
-  var hy = 320 + dt.h + 54;
-  g += bloqueAccesorios(r, dx, hy, P, TW);
-
-  // Fila B: ① GRANDE a la izquierda (escala alta -> cotas centradas y sin amontonarse).
-  // ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
+  // ===================== HOJA 1: dibujos =====================
+  var g1 = '';
+  g1 += cajetin(r, M, M, full, 185, P, logo);
+  // frente (más grande, ahora que no comparte fila con el despiece)
+  var kf = Math.min(560 / r.W, 900 / r.H);
+  g1 += frente(r, M + 150, 330, P, mano, kf);
+  // Perfiles: ① GRANDE a la izquierda; ② ③ arriba a la derecha; ④ ⑤ abajo a la derecha.
   var reb = r.rebajeHoja, by = 1300;
-  g += bloquePerfil(M, by, 560, 1500, '① Marco',
+  g1 += bloquePerfil(M, by, 560, 1500, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
-  g += cruzExt(r, M + 580, by, 650, 1090, P);
-  g += cruzInt(r, M + 1250, by, 660, 1090, P);
-  g += bloquePerfil(M + 580, by + 1110, 640, 390, '④ Refuerzo (U)',
+  g1 += cruzExt(r, M + 580, by, 650, 1090, P);
+  g1 += cruzInt(r, M + 1250, by, 660, 1090, P);
+  g1 += bloquePerfil(M + 580, by + 1110, 640, 390, '④ Refuerzo (U)',
     r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
     [reb, 25, reb], ['L', 'L'], [0, -1], P);
-  g += bloquePerfil(M + 1250, by + 1110, 660, 390, '⑤ Perfil inferior (U)',
+  g1 += bloquePerfil(M + 1250, by + 1110, 660, 390, '⑤ Perfil inferior (U)',
     'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
     [20, reb, 20], ['L', 'L'], [0, -1], P);
 
-  return [pagina(g, P, 'Perfiles fuera de escala: las medidas son las longitudes de cada tramo (mm). Plana/desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
+  // ===================== HOJA 2: despiece (letra grande) =====================
+  var g2 = '';
+  g2 += cajetin(r, M, M, full, 185, P, logo);
+  var ty = 345;
+  g2 += tsans(M, ty - 24, 'DESPIECE — ' + r.total + ' puertas (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
+  g2 += dt.svg;
+  g2 += bloqueAccesorios(r, M, ty + dt.h + 56, P, full);
+
+  return [
+    pagina(g1, P, 'Perfiles fuera de escala: las medidas son las longitudes de cada tramo (mm). Plana/desarrollo = medida de la chapa a cortar. Hoja 1 de 2. Imprimir en A4.'),
+    pagina(g2, P, 'Despiece y pesos. Hoja 2 de 2. Imprimir en A4.')
+  ];
 }
 
 /* --- Frente del marco (sin hoja): vano + apertura --- */
