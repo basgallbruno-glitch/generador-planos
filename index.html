@@ -1398,19 +1398,21 @@ function generarGabinete(params, P, logo) {
   var mano = params.drawMano || 'izq';
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var kf = Math.min(520 / r.anchoMarco, 1000 / r.altoMarco);
-  g += frenteGabinete(r, M + 120, 330, P, kf, mano);
-  var dx = 760;
-  g += tsans(dx, 300, (r.nHojas === 2 ? 'DESPIECE — ' + r.total + ' gabinetes (doble hoja)' : 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)'), F.h2, 'start', P, 700, P.accent);
-  var TW = 2030 - dx;
-  var dt = despieceTabla(r, dx, 320, P, TW);
+  // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
+  var ty = 345;
+  g += tsans(M, ty - 24, (r.nHojas === 2 ? 'DESPIECE — ' + r.total + ' gabinetes (doble hoja)' : 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)'), F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
-  var hy = 320 + dt.h + 54;
-  g += bloqueAccesorios(r, dx, hy, P, TW);
-  // Perfiles: ② P1 y ③ P2 (el marco estructural es caño comprado, no se grafica)
-  var by = 1500, bw = 760, gap = 60, x0 = M + (full - (bw * 2 + gap)) / 2;
-  g += secGabP1(r, x0, by, bw, 900, P);
-  g += secGabP2(r, x0 + bw + gap, by, bw, 900, P);
+  var ny = ty + dt.h + 56;
+  // --- 2) fila de dibujos: frente (izq) + ② P1 + ③ P2 (der) ---
+  var topY = ny, bandH = 900;
+  var kf = Math.min(460 / r.anchoMarco, (bandH - 100) / r.altoMarco);
+  g += frenteGabinete(r, M + 150, topY + 40, P, kf, mano);
+  var xE = 650, bw = 660, gap = 40;
+  g += secGabP1(r, xE, topY, bw, bandH, P);
+  g += secGabP2(r, xE + bw + gap, topY, bw, bandH, P);
+  // --- 3) accesorios al final ---
+  g += bloqueAccesorios(r, M, topY + bandH + 80, P, full);
   return [pagina(g, P, 'Perfiles fuera de escala (cotas en mm). Plana = ancho de la chapa a cortar. El marco estructural es caño comprado (unión a 45°). Imprimir en A4.')];
 }
 
