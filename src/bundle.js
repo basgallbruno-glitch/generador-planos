@@ -265,6 +265,8 @@ function calcularCamara(p) {
   var devB = Math.round(bandB + 2 * h - 4 * ded);
   // tirador (bulón para izar la tapa): 2 en los tercios si el marco > 1,2 m; si no, 1 centrado
   var nTir = (Math.max(extA, extB) > 1200) ? 2 : 1;
+  // agarre: default tirador; si el lado mayor (ingresado) ≤ 500 se puede elegir manija
+  var agarre = (Math.max(A, B) <= 500 && p.agarre === 'manija') ? 'manija' : 'tirador';
   var MAT_ANG = 'Áng. 2"×3/16"', MAT_CH = 'Chapa N°' + chapa;
   var base = [
     { pieza: 'M', desc: 'Marco ángulo — lado A', cantUno: 2, ancho: null, largo: Math.round(extA), mat: MAT_ANG },
@@ -280,7 +282,7 @@ function calcularCamara(p) {
     tipoTexto: 'Cámara cloacal · áng. 2"×3/16"',
     extA: extA, extB: extB, intA: intA, intB: intB,
     bandA: Math.round(bandA), bandB: Math.round(bandB),
-    h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir,
+    h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir, agarre: agarre,
     despiece: despiece,
   };
 }
@@ -307,6 +309,8 @@ function calcularCALF(p) {
   var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana)
   var chapa = ladoMayor >= C.calfChapaUmbral ? 14 : 16;
   var nMan = ladoMayor > C.calfChapaUmbral ? 2 : 1;        // manijas U invertida (ajustable); van en accesorios
+  // agarre: default manija; si el lado mayor (interior, ingresado) ≤ 500 se puede elegir tirador (bulón central)
+  var agarre = (Math.max(A, B) <= 500 && p.agarre === 'tirador') ? 'tirador' : 'manija';
   var MAT_PLEG = 'Chapa ' + espTxt, MAT_CH = 'Chapa N°' + chapa;
   var base = [
     { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: C.calfP1Des, largo: marcoA, mat: MAT_PLEG },
@@ -324,7 +328,7 @@ function calcularCALF(p) {
     tipoTexto: 'Cámara CALF · plegados 1 y 2',
     intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
-    esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, proy: C.calfProyPest,
+    esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, agarre: agarre, proy: C.calfProyPest,
     p1Des: C.calfP1Des, p2Des: C.calfP2Des,
     p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
     p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,

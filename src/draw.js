@@ -601,17 +601,20 @@ function plantaCamara(r, ox, oy, P, k) {
   var cxm = ox + eA / 2, cym = oy + eB / 2, mstep = Math.max(26, 110 * k), xx, yy;
   for (xx = tx + mstep; xx < tx + bA - 2; xx += mstep) g += line(xx, ty, xx, ty + bB, SW.dim, P, 0, P.muted || P.line);
   for (yy = ty + mstep; yy < ty + bB - 2; yy += mstep) g += line(tx, yy, tx + bA, yy, SW.dim, P, 0, P.muted || P.line);
-  // tiradores (bulón para izar): 1 centrado, o 2 en los tercios del lado largo (marco > 1,2 m)
-  var tir = [];
-  if (r.nTir >= 2) {
-    if (r.extA >= r.extB) { tir.push([ox + eA / 3, cym]); tir.push([ox + 2 * eA / 3, cym]); }
-    else { tir.push([cxm, oy + eB / 3]); tir.push([cxm, oy + 2 * eB / 3]); }
-  } else { tir.push([cxm, cym]); }
-  tir.forEach(function (c) {
-    g += '<circle cx="' + c[0].toFixed(1) + '" cy="' + c[1].toFixed(1) + '" r="12" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-    g += line(c[0] - 19, c[1], c[0] + 19, c[1], SW.thin, P) + line(c[0], c[1] - 19, c[0], c[1] + 19, SW.thin, P);
-  });
-  g += tsans(tir[0][0] + 22, tir[0][1] - 20, 'tirador', 17, 'start', P, 600, P.accent);
+  // agarre de la tapa: manija (si se eligió, ≤500) o tirador (default)
+  if (r.agarre === 'manija') {
+    g += agarrePlantaManija(cxm, cym, r.extA >= r.extB, P);
+    g += tsans(cxm + 44, cym - 16, 'manija', 17, 'start', P, 600, P.accent);
+  } else {
+    // tiradores (bulón para izar): 1 centrado, o 2 en los tercios del lado largo (marco > 1,2 m)
+    var tir = [];
+    if (r.nTir >= 2) {
+      if (r.extA >= r.extB) { tir.push([ox + eA / 3, cym]); tir.push([ox + 2 * eA / 3, cym]); }
+      else { tir.push([cxm, oy + eB / 3]); tir.push([cxm, oy + 2 * eB / 3]); }
+    } else { tir.push([cxm, cym]); }
+    tir.forEach(function (c) { g += agarrePlantaTirador(c[0], c[1], P); });
+    g += tsans(tir[0][0] + 22, tir[0][1] - 20, 'tirador', 17, 'start', P, 600, P.accent);
+  }
   // cota del modo ingresado: exterior si el dato es exterior, interior si es interior
   var floorY = oy + eB;
   if (r.modo === 'int') {
@@ -652,14 +655,15 @@ function corteCamara(r, ox, oy, w, h, P) {
   g += line(xL + t2, cyTop - 12, bXL, cyTop - 12, SW.dim, P, '8 6', P.dim || P.line);
   g += txt((xL + t2 + bXL) / 2, cyTop - 20, 'luz', F.sm, 'middle', P, false, '500', P.muted || P.text);
   g += txt(cx, cyBot + 34, 'malla + hormigón (en obra)', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // tirador(es) (bulón): 1 centrado o 2 en los tercios, igual que en planta
-  var hY = bTop - 30, nY = seat + 24, sp = bXR - bXL, tcs = r.nTir >= 2 ? [bXL + sp / 3, bXL + 2 * sp / 3] : [cx];
-  tcs.forEach(function (tcx) {
-    g += line(tcx, nY, tcx, hY, SW.thick, P);
-    g += '<rect x="' + (tcx - 18).toFixed(1) + '" y="' + (hY - 13).toFixed(1) + '" width="36" height="13" fill="' + P.line + '"/>';
-    g += '<rect x="' + (tcx - 13).toFixed(1) + '" y="' + seat.toFixed(1) + '" width="26" height="14" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
-  });
-  g += txt(tcs[0] + 30, hY - 2, 'tirador', F.sm, 'start', P, false, '600');
+  // agarre de la tapa: manija (∩) si se eligió (≤500), o tirador(es) (bulón) por default
+  if (r.agarre === 'manija') {
+    g += manijaCALF(cx, bTop, seat, P);
+    g += txt(cx + 58, bTop - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
+  } else {
+    var hY = bTop - 30, sp = bXR - bXL, tcs = r.nTir >= 2 ? [bXL + sp / 3, bXL + 2 * sp / 3] : [cx];
+    tcs.forEach(function (tcx) { g += agarreCorteTirador(tcx, hY, seat, P); });
+    g += txt(tcs[0] + 30, hY - 2, 'tirador', F.sm, 'start', P, false, '600');
+  }
   g += tsans(ox + 24, oy + h - 22, 'luz = 3 mm fija (bandeja ↔ marco)', F.ty, 'start', P, 500, P.muted || P.text);
   return g;
 }
@@ -733,17 +737,20 @@ function plantaCALF(r, ox, oy, P, k) {
   var mstep = Math.max(26, 110 * k), xx, yy;                               // malla sobre la chapa
   for (xx = cx0 + mstep; xx < cx0 + cA - 2; xx += mstep) g += line(xx, cy0, xx, cy0 + cB, SW.dim, P, 0, P.muted || P.line);
   for (yy = cy0 + mstep; yy < cy0 + cB - 2; yy += mstep) g += line(cx0, yy, cx0 + cA, yy, SW.dim, P, 0, P.muted || P.line);
-  var cxm = ix + iA / 2, cym = iy + iB / 2, horizLong = r.intA >= r.intB, man = [];  // manijas U invertida
-  if (r.nMan >= 2) {
-    if (horizLong) { man.push([ix + iA / 3, cym]); man.push([ix + 2 * iA / 3, cym]); }
-    else { man.push([cxm, iy + iB / 3]); man.push([cxm, iy + 2 * iB / 3]); }
-  } else man.push([cxm, cym]);
-  man.forEach(function (c) {
-    var hw2 = 34, ft = 13;
-    if (horizLong) { g += line(c[0] - hw2, c[1], c[0] + hw2, c[1], SW.thick, P) + line(c[0] - hw2, c[1] - ft, c[0] - hw2, c[1] + ft, SW.thin, P) + line(c[0] + hw2, c[1] - ft, c[0] + hw2, c[1] + ft, SW.thin, P); }
-    else { g += line(c[0], c[1] - hw2, c[0], c[1] + hw2, SW.thick, P) + line(c[0] - ft, c[1] - hw2, c[0] + ft, c[1] - hw2, SW.thin, P) + line(c[0] - ft, c[1] + hw2, c[0] + ft, c[1] + hw2, SW.thin, P); }
-  });
-  g += tsans(man[0][0] + 44, man[0][1] - 16, 'manija', 17, 'start', P, 600, P.accent);
+  var cxm = ix + iA / 2, cym = iy + iB / 2, horizLong = r.intA >= r.intB;
+  // agarre de la tapa: tirador (bulón) si se eligió (≤500), o manija (U invertida) por default
+  if (r.agarre === 'tirador') {
+    g += agarrePlantaTirador(cxm, cym, P);
+    g += tsans(cxm + 22, cym - 20, 'tirador', 17, 'start', P, 600, P.accent);
+  } else {
+    var man = [];
+    if (r.nMan >= 2) {
+      if (horizLong) { man.push([ix + iA / 3, cym]); man.push([ix + 2 * iA / 3, cym]); }
+      else { man.push([cxm, iy + iB / 3]); man.push([cxm, iy + 2 * iB / 3]); }
+    } else man.push([cxm, cym]);
+    man.forEach(function (c) { g += agarrePlantaManija(c[0], c[1], horizLong, P); });
+    g += tsans(man[0][0] + 44, man[0][1] - 16, 'manija', 17, 'start', P, 600, P.accent);
+  }
   var floorY = oy + eB;                                                    // cota de la MEDIDA INTERIOR (cara interior)
   g += dimH(ix, ix + iA, floorY + 95, String(Math.round(r.intA)), P, iy + iB);
   g += dimV(iy, iy + iB, ox - 95, String(Math.round(r.intB)), P, ix);
@@ -777,14 +784,20 @@ function corteCALF(r, ox, oy, w, h, P) {
   var my = chY - vert * 0.30, dd;
   for (dd = tL + 16; dd < tR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
   g += line(tL + 12, my, tR - 12, my, SW.dim, P, 0, P.dim || P.line);
-  // manija(s) ⌀16 en ∩: atraviesan la chapa y topan con una tuerca por debajo (con juego para levantar)
-  var sp = tR - tL, mcs = r.nMan >= 2 ? [tL + sp / 3, tL + 2 * sp / 3] : [cx];
-  mcs.forEach(function (m) { g += manijaCALF(m, topY - 4, chY, P); });
-  g += txt(mcs[mcs.length - 1] + 52, chY + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
   g += txt(ox + 40, topY - 64, 'malla + hormigón (en obra)', F.sm, 'start', P, false, '500', P.muted || P.text);
   g += txt(cx, chY + 92, 'chapa de encofrado · tuerca de tope', F.sm, 'middle', P, false, '600');
-  g += txt(mcs[mcs.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
-  g += txt(mcs[mcs.length - 1] + 58, topY - 66, 'desliza en caño 3/4"', 17, 'start', P, false, '500', P.muted || P.text);
+  // agarre de la tapa: tirador (bulón central) si se eligió (≤500), o manija(s) ⌀16 en ∩ por default
+  if (r.agarre === 'tirador') {
+    g += agarreCorteTirador(cx, topY - 48, chY, P);
+    g += txt(cx + 40, topY - 48, 'tirador (bulón)', F.sm, 'start', P, false, '600');
+    g += txt(cx + 52, chY + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
+  } else {
+    var sp = tR - tL, mcs = r.nMan >= 2 ? [tL + sp / 3, tL + 2 * sp / 3] : [cx];
+    mcs.forEach(function (m) { g += manijaCALF(m, topY - 4, chY, P); });
+    g += txt(mcs[mcs.length - 1] + 52, chY + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
+    g += txt(mcs[mcs.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
+    g += txt(mcs[mcs.length - 1] + 58, topY - 66, 'desliza en caño 3/4"', 17, 'start', P, false, '500', P.muted || P.text);
+  }
   g += txt(xWL - p1 * cos * 0.5, topY + p1 * sin * 0.5 - 12, '54', F.sm, 'middle', P, false, '600');
   g += txt(tR + p2 * cos * 0.5 + 6, tTop + p2 * sin * 0.5 - 8, '61', F.sm, 'start', P, false, '600', AC);
   g += tsans(ox + 24, oy + h - 20, 'plegado 1 = marco · plegado 2 = tapa (azul)', F.ty, 'start', P, 500, P.muted || P.text);
@@ -805,6 +818,26 @@ function manijaCALF(mx, surfY, chY, P) {
     g += line(lx + nutW / 2 + 4, chY, lx + nutW / 2 + 4, chY + nutGap, SW.dim, P, 0, P.dim || P.line);  // marca del juego
   });
   return g;
+}
+
+/* ---- Agarre de la tapa: manija (∩) o tirador (bulón central). Cámaras ≤500 ---- */
+/* Tirador (bulón central para izar): vástago + cabeza arriba + tuerca en la superficie */
+function agarreCorteTirador(cx, headY, surfY, P) {
+  var g = line(cx, surfY + 26, cx, headY, SW.thick, P);
+  g += '<rect x="' + (cx - 18).toFixed(1) + '" y="' + (headY - 13).toFixed(1) + '" width="36" height="13" fill="' + P.line + '"/>';   // cabeza del bulón
+  g += '<rect x="' + (cx - 13).toFixed(1) + '" y="' + surfY.toFixed(1) + '" width="26" height="14" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';  // tuerca de tope
+  return g;
+}
+/* Tirador en planta: círculo con cruz (bulón visto desde arriba) */
+function agarrePlantaTirador(cx, cy, P) {
+  return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="12" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>'
+    + line(cx - 19, cy, cx + 19, cy, SW.thin, P) + line(cx, cy - 19, cx, cy + 19, SW.thin, P);
+}
+/* Manija en planta: barra (U invertida vista desde arriba) con patas a los extremos */
+function agarrePlantaManija(cx, cy, horizLong, P) {
+  var hw2 = 34, ft = 13;
+  if (horizLong) return line(cx - hw2, cy, cx + hw2, cy, SW.thick, P) + line(cx - hw2, cy - ft, cx - hw2, cy + ft, SW.thin, P) + line(cx + hw2, cy - ft, cx + hw2, cy + ft, SW.thin, P);
+  return line(cx, cy - hw2, cx, cy + hw2, SW.thick, P) + line(cx - ft, cy - hw2, cx + ft, cy - hw2, SW.thin, P) + line(cx - ft, cy + hw2, cx + ft, cy + hw2, SW.thin, P);
 }
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
@@ -1040,7 +1073,8 @@ var TIPOS = [
       { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']] },
       { id: 'W', label: 'Lado A (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
       { id: 'H', label: 'Lado B (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 }
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'tirador', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; } }
     ],
     calcular: function (p) { return calcularCamara(p); },
     generar: function (p, P, logo) { return generarCamara(p, P, logo); }
@@ -1062,7 +1096,8 @@ var TIPOS = [
     campos: [
       { id: 'W', label: 'Lado A interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
       { id: 'H', label: 'Lado B interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 }
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
+      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'manija', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; } }
     ],
     calcular: function (p) { return calcularCALF(p); },
     generar: function (p, P, logo) { return generarCALF(p, P, logo); }

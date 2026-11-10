@@ -137,14 +137,14 @@ function renderCampos(){
   let h='';
   t.campos.forEach(c=>{
     if(c.type==='number'){
-      h+='<div class="field"><label for="f_'+c.id+'">'+escH(c.label)+'</label><input id="f_'+c.id+'" type="number" value="'+c.value+'" step="'+(c.step||1)+'"'+(c.min!=null?' min="'+c.min+'"':'')+(c.max!=null?' max="'+c.max+'"':'')+'></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label><input id="f_'+c.id+'" type="number" value="'+c.value+'" step="'+(c.step||1)+'"'+(c.min!=null?' min="'+c.min+'"':'')+(c.max!=null?' max="'+c.max+'"':'')+'></div>';
     } else if(c.type==='select'){
-      h+='<div class="field"><label for="f_'+c.id+'">'+escH(c.label)+'</label><select id="f_'+c.id+'">'+c.options.map(o=>'<option value="'+o[0]+'"'+(o[0]===c.value?' selected':'')+'>'+escH(o[1])+'</option>').join('')+'</select></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label><select id="f_'+c.id+'">'+c.options.map(o=>'<option value="'+o[0]+'"'+(o[0]===c.value?' selected':'')+'>'+escH(o[1])+'</option>').join('')+'</select></div>';
     } else if(c.type==='seg'){
       segState[c.id]=c.value;
-      h+='<div class="field"><label>'+escH(c.label)+'</label><div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label><div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
     } else if(c.type==='check'){
-      h+='<div class="field" style="flex-direction:row;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>';
+      h+='<div class="field" id="fld_'+c.id+'" style="flex-direction:row;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
@@ -193,6 +193,7 @@ function validarGen(p){
 }
 function dibujar(){
   const t=tipoActual(), p=getParams();
+  t.campos.forEach(c=>{ if(c.cond){ const el=document.getElementById('fld_'+c.id); if(el) el.style.display=c.cond(p)?'':'none'; } });
   const w=document.getElementById('warn'), msg=validarGen(p);
   w.hidden=!msg; w.textContent=msg;
   if(!(p.W>0)||!(p.H>0)||p.W-60<=0) return;
