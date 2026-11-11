@@ -225,6 +225,23 @@ function cruzInt(r, ox, oy, w, h, P) {
   return g;
 }
 
+/* Nivel de piso terminado (NPT): línea + rayado de piso (en los tramos exteriores) + marca */
+function nivelPiso(fx0, fx1, y, P, labelSide) {
+  var x1 = fx0 - 46, x2 = fx1 + 46, g = line(x1, y, x2, y, SW.thick, P), x;
+  for (x = x1 + 6; x < fx0 - 2; x += 15) g += line(x + 11, y, x, y + 13, SW.thin, P, 0, P.muted || P.line);
+  for (x = fx1 + 6; x < x2 - 2; x += 15) g += line(x + 11, y, x, y + 13, SW.thin, P, 0, P.muted || P.line);
+  if (labelSide === 'none') return g;
+  if (labelSide === 'left') return g + tsans(x1 - 6, y + 5, 'N.P.T.', 16, 'end', P, 700, P.accent);
+  return g + tsans(x2 + 6, y + 5, 'N.P.T.', 16, 'start', P, 700, P.accent);
+}
+/* Extensión enterrada de las jambas (bajo el NPT): bandas rayadas + fondo real */
+function parteEnterrada(x0, xr, y, ent, bw, P) {
+  if (!ent) return '';
+  var g = rect(x0, y, bw, ent, SW.thin, P, P.hatch);
+  if (xr - bw > x0 + bw) g += rect(xr - bw, y, bw, ent, SW.thin, P, P.hatch);
+  return g + line(x0, y + ent, xr, y + ent, SW.thick, P);
+}
+
 /* --- Frente (factor k = unidades por mm), vano acotado --- */
 function frente(r, ox, oy, P, mano, k) {
   var W = r.W * k, H = r.H * k, g = '';
@@ -237,13 +254,16 @@ function frente(r, ox, oy, P, mano, k) {
   var top = hy, bot = hy + hh, lft = hx, rgt = hx + hw, mid = (top + bot) / 2;
   if (mano === 'izq') { g += line(lft, top, rgt, mid, SW.dim, P, '18 12', P.accent) + line(lft, bot, rgt, mid, SW.dim, P, '18 12', P.accent); }
   else { g += line(rgt, top, lft, mid, SW.dim, P, '18 12', P.accent) + line(rgt, bot, lft, mid, SW.dim, P, '18 12', P.accent); }
-  var floorY = y0 + H, cerrY = floorY - r.picaporte * k;
+  var floorY = y0 + H, ent = (r.enterrar || 0) * k, frameBot = floorY + ent;
+  var cerrY = floorY - r.picaporte * k;                                     // picaporte a 1020 sobre el NPT
   var cerrX = mano === 'izq' ? rgt - 20 : lft + 20;
   g += '<circle cx="' + cerrX.toFixed(1) + '" cy="' + cerrY.toFixed(1) + '" r="9" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   g += line(cerrX - 16, cerrY, cerrX + 16, cerrY, SW.thin, P) + line(cerrX, cerrY - 16, cerrX, cerrY + 16, SW.thin, P);
-  g += dimH(x0, x0 + W, floorY + 60, String(r.W), P, floorY);
+  g += parteEnterrada(x0, x0 + W, floorY, ent, 30 * k, P);                  // jambas bajo el NPT (para enterrar)
+  g += nivelPiso(x0, x0 + W, floorY, P);
+  g += dimH(x0, x0 + W, frameBot + 64, String(r.W), P, frameBot);
   g += dimV(y0, floorY, x0 - 60, String(r.H), P, x0);
-  g += dimV(cerrY, floorY, x0 + W + 60, String(r.picaporte), P, x0 + W);   // altura del picaporte (variable)
+  g += dimV(cerrY, frameBot, x0 + W + 60, String(r.picaporte + (r.enterrar || 0)), P, x0 + W);   // picaporte desde el pie de la jamba (1020 / 1050)
   return g;
 }
 
@@ -252,11 +272,12 @@ function lateral(r, ox, oy, P, k) {
   var w = r.marco.espesor * k, h = r.H * k, g = '';
   g += tsans(ox, oy - 18, 'LATERAL', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, w, h, SW.thick, P);
-  var bot = oy + h, cy = bot - r.picaporte * k, cx = ox + w * 0.5;
+  var bot = oy + h, ent = (r.enterrar || 0) * k, frameBot = bot + ent, cy = bot - r.picaporte * k, cx = ox + w * 0.5;
   // agujero de cerradura (en la jamba, a la altura de cerradero)
   g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="11" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   g += line(cx - 18, cy, cx + 18, cy, SW.thin, P) + line(cx, cy - 18, cx, cy + 18, SW.thin, P);
-  g += dimV(cy, bot, ox + w + 55, String(r.picaporte), P, ox + w);
+  if (ent) { g += rect(ox, bot, w, ent, SW.thin, P, P.hatch) + line(ox, frameBot, ox + w, frameBot, SW.thick, P); }  // tramo de jamba enterrado (el NPT se marca en el frente)
+  g += dimV(cy, frameBot, ox + w + 55, String(r.picaporte + (r.enterrar || 0)), P, ox + w);   // cerradero desde el pie (1020 / 1050)
   return g;
 }
 
@@ -432,8 +453,10 @@ function frenteMarco(r, ox, oy, P, k) {
   g += tsans(ox, oy - 18, 'FRENTE (marco)', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, W, H, SW.thick, P);
   g += rect(ox + 30 * k, oy + 30 * k, W - 60 * k, H - 30 * k, SW.thick, P);  // apertura (luz)
-  var floorY = oy + H;
-  g += dimH(ox, ox + W, floorY + 60, String(r.W), P, floorY);
+  var floorY = oy + H, ent = (r.enterrar || 0) * k, frameBot = floorY + ent;
+  g += parteEnterrada(ox, ox + W, floorY, ent, 30 * k, P);                   // jambas bajo el NPT (para enterrar)
+  g += nivelPiso(ox, ox + W, floorY, P, 'left');                             // etiqueta a la izquierda (el lateral va a la derecha)
+  g += dimH(ox, ox + W, frameBot + 64, String(r.W), P, frameBot);
   g += dimV(oy, floorY, ox - 60, String(r.H), P, ox);
   return g;
 }
@@ -553,7 +576,10 @@ function frenteGabinete(r, ox, oy, P, k, mano) {
     var lcx = hj.m === 'der' ? hx + p1K + 10 : hx + hojaW - p1K - 10;
     g += '<circle cx="' + lcx.toFixed(1) + '" cy="' + mid.toFixed(1) + '" r="9" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
   });
-  g += dimH(ox, ox + mw, floorY + 60, String(r.anchoMarco), P, floorY);   // ancho del estructural
+  var ent = (r.enterrar || 0) * k, frameBot = floorY + ent;
+  g += parteEnterrada(ox, ox + mw, floorY, ent, cantoK, P);                // jambas bajo el NPT (para enterrar)
+  g += nivelPiso(ox, ox + mw, floorY, P);
+  g += dimH(ox, ox + mw, frameBot + 64, String(r.anchoMarco), P, frameBot);   // ancho del estructural
   g += dimV(oy, floorY, ox - 70, String(r.altoMarco), P, ox);             // alto del estructural
   return g;
 }
@@ -1061,7 +1087,8 @@ var TIPOS = [
       { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
       { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
       { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
-      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] }
+      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
     calcular: function (p) { return calcularGabinete(p); },
     generar: function (p, P, logo) { return generarGabinete(p, P, logo); }
@@ -1075,7 +1102,8 @@ var TIPOS = [
       { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
       { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
       { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
-      { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] }
+      { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
     ],
     calcular: function (p) { p.nHojas = 2; return calcularGabinete(p); },
     generar: function (p, P, logo) { p.nHojas = 2; return generarGabinete(p, P, logo); }
