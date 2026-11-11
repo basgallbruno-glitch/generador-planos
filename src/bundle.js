@@ -314,10 +314,13 @@ function calcularCALF(p) {
   var esp, espTxt, desMarco, desTapa, luz, larg;
   var sum = function (a, b) { return a + b; };
   if (usaNuevo) {
-    esp = C.calfEspGrande; espTxt = '3/16"'; luz = C.calfReglLuz;                 // 3/16", luz 7 mm por lado
-    desMarco = C.calfReglMarco.reduce(sum, 0) + (pestExtra ? C.calfReglPestExtra : 0);  // 193 (+30 con pestaña)
-    desTapa = C.calfReglTapa.reduce(sum, 0);                                      // 195
-    larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfReglMarco[0] + 2 * mg) / 10) * 10; };  // proy = tramo horizontal (40)
+    esp = C.calfEspGrande; espTxt = '3/16"'; luz = C.calfReglLuz;                 // 3/16", luz 7 mm marco↔tapa
+    var ded = Math.floor(esp);                                                    // deducción por pliegue (espesor al entero menor) — mismo criterio
+    var lensM = pestExtra ? [C.calfReglMarco[0], C.calfReglMarco[1], C.calfReglPestExtra, C.calfReglMarco[2]] : C.calfReglMarco;  // 40/93/(30)/60
+    var lensT = C.calfReglTapa;                                                   // 40/95/60
+    desMarco = lensM.reduce(sum, 0) - (lensM.length - 1) * ded;                   // desarrollo = Σ tramos − pliegues·ded
+    desTapa = lensT.reduce(sum, 0) - (lensT.length - 1) * ded;
+    larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfProyPest + 2 * mg) / 10) * 10; };  // largo: mismo criterio de siempre (proy 60)
   } else {
     esp = ladoMayor > C.calfUmbralPleg ? C.calfEspGrande : C.calfEsp;             // 1/8" (≤800) o 3/16" (>800)
     espTxt = ladoMayor > C.calfUmbralPleg ? '3/16"' : '1/8"'; luz = jc;
