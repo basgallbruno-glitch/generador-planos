@@ -62,6 +62,13 @@ var C = {
   calfChapaUmbral: 800,                // lado mayor ≥ 800 → N°14; si no, N°16
   calfProyPest: 60,                    // proyección horizontal de la pestaña inclinada del marco (dato de taller)
   calfMargen: 10,                      // margen de ajuste por lado al largo de los perfiles (corte a 45°)
+  // Plegado reglamentario (3 tramos: horizontal + vertical + inclinado 10°), chapa 3/16"
+  calfReglMarco: [40, 93, 60],         // marco: tramo horizontal / vertical / inclinado 10°
+  calfReglTapa: [40, 95, 60],          // tapa: igual silueta, vertical 2 mm mayor (luz)
+  calfReglPestExtra: 30,               // pestaña horizontal interior extra al pie del vertical (dim en [800,1000))
+  calfReglLuz: 7,                      // luz entre marco y tapa, por lado
+  calfReglUmbral: 1000,                // ≥ 1000 → plegado reglamentario sí o sí
+  calfReglUmbralPest: 800,             // [800,1000) → plegado reglamentario + pestaña de apoyo
 };
 
 /* ---- Perfil ① marco (muro de mampostería): longitudes desde muro + tipo de hoja ---- */
@@ -300,23 +307,38 @@ function calcularCALF(p) {
   var jc = C.calfJuegoChapa, mg = C.calfMargen;
   var intA = A, intB = B;   // interior = distancia entre caras interiores de las pestañas verticales del marco
   var ladoMayor = Math.max(intA, intB);
-  var esp = ladoMayor > C.calfUmbralPleg ? C.calfEspGrande : C.calfEsp;   // plegado: 1/8" (≤800) o 3/16" (>800)
-  var espTxt = ladoMayor > C.calfUmbralPleg ? '3/16"' : '1/8"';
-  // largo de los plegados (marco y tapa, mismo criterio): int + 2·esp + 2·proy pestaña + 2·margen (corte a 45°)
-  var larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfProyPest + 2 * mg) / 10) * 10; };  // a la decena, hacia arriba
+  // régimen de plegado: reglamentario (3 tramos, 3/16") si se marca o si alguna dim ≥ 800; si no, el plegado clásico
+  var regla = !!p.reglamentaria;
+  var usaNuevo = regla || ladoMayor >= C.calfReglUmbralPest;                      // ≥800 o reglamentaria → plegado nuevo
+  var pestExtra = ladoMayor >= C.calfReglUmbralPest && ladoMayor < C.calfReglUmbral;  // [800,1000) → pestaña de apoyo en el marco
+  var esp, espTxt, desMarco, desTapa, luz, larg;
+  var sum = function (a, b) { return a + b; };
+  if (usaNuevo) {
+    esp = C.calfEspGrande; espTxt = '3/16"'; luz = C.calfReglLuz;                 // 3/16", luz 7 mm por lado
+    desMarco = C.calfReglMarco.reduce(sum, 0) + (pestExtra ? C.calfReglPestExtra : 0);  // 193 (+30 con pestaña)
+    desTapa = C.calfReglTapa.reduce(sum, 0);                                      // 195
+    larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfReglMarco[0] + 2 * mg) / 10) * 10; };  // proy = tramo horizontal (40)
+  } else {
+    esp = ladoMayor > C.calfUmbralPleg ? C.calfEspGrande : C.calfEsp;             // 1/8" (≤800) o 3/16" (>800)
+    espTxt = ladoMayor > C.calfUmbralPleg ? '3/16"' : '1/8"'; luz = jc;
+    desMarco = C.calfP1Des; desTapa = C.calfP2Des;
+    larg = function (d) { return Math.ceil((d + 2 * esp + 2 * C.calfProyPest + 2 * mg) / 10) * 10; };
+  }
   var marcoA = larg(intA), marcoB = larg(intB);
-  var tapaA = larg(intA), tapaB = larg(intB);
-  var chapaA = Math.round(intA - 2 * esp - 2 * jc), chapaB = Math.round(intB - 2 * esp - 2 * jc);  // encofrado (placa plana)
+  var intTapaA = usaNuevo ? intA - 2 * luz : intA, intTapaB = usaNuevo ? intB - 2 * luz : intB;   // la tapa nido 7 mm adentro del marco
+  var tapaA = larg(intTapaA), tapaB = larg(intTapaB);
+  var chapaA = Math.round(intTapaA - 2 * esp - 2 * jc), chapaB = Math.round(intTapaB - 2 * esp - 2 * jc);  // encofrado dentro de la tapa
   var chapa = ladoMayor >= C.calfChapaUmbral ? 14 : 16;
   var nMan = ladoMayor > C.calfChapaUmbral ? 2 : 1;        // manijas U invertida (ajustable); van en accesorios
   // agarre: default manija; si el lado mayor (interior, ingresado) ≤ 500 se puede elegir tirador (bulón central)
   var agarre = (Math.max(A, B) <= 500 && p.agarre === 'tirador') ? 'tirador' : 'manija';
   var MAT_PLEG = 'Chapa ' + espTxt, MAT_CH = 'Chapa N°' + chapa;
+  var pestTxt = pestExtra ? ' + pestaña 30' : '';
   var base = [
-    { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: C.calfP1Des, largo: marcoA, mat: MAT_PLEG },
-    { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: C.calfP1Des, largo: marcoB, mat: MAT_PLEG },
-    { pieza: 'T', desc: 'Tapa (plegado 2) — lado A', cantUno: 2, ancho: C.calfP2Des, largo: tapaA, mat: MAT_PLEG },
-    { pieza: 'T', desc: 'Tapa (plegado 2) — lado B', cantUno: 2, ancho: C.calfP2Des, largo: tapaB, mat: MAT_PLEG },
+    { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: desMarco, largo: marcoA, mat: MAT_PLEG },
+    { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: desMarco, largo: marcoB, mat: MAT_PLEG },
+    { pieza: 'T', desc: 'Tapa (plegado 2) — lado A', cantUno: 2, ancho: desTapa, largo: tapaA, mat: MAT_PLEG },
+    { pieza: 'T', desc: 'Tapa (plegado 2) — lado B', cantUno: 2, ancho: desTapa, largo: tapaB, mat: MAT_PLEG },
     { pieza: 'T', desc: 'Tapa — chapa de encofrado', cantUno: 1, ancho: chapaB, largo: chapaA, mat: MAT_CH },
   ];   // las manijas van en accesorios, no en el despiece
   var despiece = base.map(function (d) {
@@ -325,13 +347,16 @@ function calcularCALF(p) {
   return {
     tipoPlano: 'calf', W: A, H: B, modo: 'int', cantidad: cant, total: cant,
     cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
-    tipoTexto: 'Cámara CALF · plegados 1 y 2',
+    tipoTexto: 'Cámara CALF · ' + (regla ? 'reglamentaria' : (usaNuevo ? 'plegado reglamentario (≥800)' : 'estándar')),
     intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
     esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, agarre: agarre, proy: C.calfProyPest,
-    p1Des: C.calfP1Des, p2Des: C.calfP2Des,
+    p1Des: desMarco, p2Des: desTapa,
     p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
     p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,
+    reglamentaria: regla, usaNuevo: usaNuevo, pestExtra: pestExtra, luz: luz,
+    tramosMarco: usaNuevo ? C.calfReglMarco : null, tramosTapa: usaNuevo ? C.calfReglTapa : null,
+    pestExtraLen: C.calfReglPestExtra,
     despiece: despiece,
   };
 }
