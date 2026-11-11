@@ -846,8 +846,7 @@ function agarrePlantaManija(cx, cy, horizLong, P) {
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
-  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.marcoPie30 ? ' (pie 30)' : '');
-  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', sub, P);
+  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des, P);
   var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc;
   var cornerX = ox + w * (r.usaNuevo ? 0.46 : 0.58), topY = oy + h * (r.usaNuevo ? 0.26 : 0.34);
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), by = topY + vert;
@@ -907,7 +906,7 @@ function generarCALF(params, P, logo) {
   // --- 4) accesorios al final ---
   g += bloqueAccesorios(r, M, ry + rowH + 60, P, full);
   var pie = r.usaNuevo
-    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.marcoPie30 ? ', pie del marco 30 en vez de 40 (no reglamentaria, dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
+    ? 'Plano preliminar. Cotas en mm. Plegado grande (mismo plegado que el chico: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado. Desarrollo con deducción por pliegue. Imprimir en A4.'
     : 'Plano preliminar. Cotas en mm. Plegado estándar en chapa 1/8" (<800). Largo = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.';
   return [pagina(g, P, pie)];
 }
