@@ -43,7 +43,7 @@ var C = {
   camChapaUmbral: 1000,              // ≥1 m en algún lado del marco → N°14; si no, N°16
   camLuzFija: 3,                     // luz fija bandeja↔marco (mm); por lado se resta 1·esp + luz
   // --- Cámara pluvial (marco L plegado + rejilla de planchuelas) ---
-  pluvMarcoLeg: 42,                    // marco L 42×42 (el desarrollo se calcula según el espesor)
+  pluvMarcoLeg: 45,                    // marco L 45×45 (el desarrollo se calcula según el espesor)
   pluvChapaEsp: 3.18,                  // chapa 1/8" del plegado (medida < 800)
   pluvChapaEspGrande: 4.76,            // chapa 3/16" del plegado (medida ≥ 800)
   pluvUmbralEsp: 800,                  // medida (lado mayor ext) ≥ 800 → plegado en 3/16"
@@ -405,7 +405,7 @@ function calcularPluvial(p) {
   return {
     tipoPlano: 'pluvial', W: A, H: B, modo: modo, cantidad: cant, total: cant, refuerzo: refuerzo,
     cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
-    tipoTexto: 'Cámara pluvial · marco L 42×42',
+    tipoTexto: 'Cámara pluvial · marco L ' + leg + '×' + leg,
     extA: extA, extB: extB, intA: intA, intB: intB, rejA: rejA, rejB: rejB,
     lado: lado, corto: corto, nBarras: nBarras, largoBarra: largoBarra,
     nRef: nRef, largoRef: largoRef, leg: leg, esp: esp, espTxt: espTxt, dev: dev, legFlat: legFlat, sep: sep,

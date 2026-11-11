@@ -988,11 +988,11 @@ function plantaPluvial(r, ox, oy, P, k) {
 
 /* ① Marco: plegado en L 42×42 */
 function secPluvMarco(r, ox, oy, w, h, P) {
-  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa ' + r.espTxt + ' · L 42×42 · plana ' + r.dev, P);
+  var g = gabBox(ox, oy, w, h, '① Marco (plegado L)', 'chapa ' + r.espTxt + ' · L ' + r.leg + '×' + r.leg + ' · plana ' + r.dev, P);
   var legH = 230, legV = 230, t = 18, x0 = ox + (w - legH) / 2 - 10, y0 = oy + 130;
   g += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + t) + ' ' + y0 + ' L' + (x0 + t) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV - t) + ' L' + (x0 + legH) + ' ' + (y0 + legV) + ' L' + x0 + ' ' + (y0 + legV) + ' Z" fill="' + (P.hatch || 'none') + '" stroke="' + P.line + '" stroke-width="' + SW.thick + '"/>';
-  g += txt(x0 - 16, y0 + legV / 2, '42', F.num, 'end', P, true, '600');
-  g += txt(x0 + legH * 0.6, y0 + legV + 22, '42', F.num, 'middle', P, false, '600');
+  g += txt(x0 - 16, y0 + legV / 2, String(r.leg), F.num, 'end', P, true, '600');
+  g += txt(x0 + legH * 0.6, y0 + legV + 22, String(r.leg), F.num, 'middle', P, false, '600');
   g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.legFlat + ' + ' + r.legFlat + ' = ' + r.dev, F.ty, 'end', P, 700, P.accent);
   return g;
 }
