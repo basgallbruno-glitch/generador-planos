@@ -462,10 +462,13 @@ function calcularCALF(p) {
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
     esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, agarre: agarre, proy: C.calfProyPest,
     p1Des: desMarco, p2Des: desTapa,
-    p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
-    p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,
+    p1Pest: usaNuevo ? C.calfReglMarco[2] : C.calfP1Pest,   // pestaña inclinada (arriba)
+    p1Vert: usaNuevo ? C.calfReglMarco[1] : C.calfP1Vert,   // vertical
+    p1Pie: usaNuevo ? C.calfReglMarco[0] : 0,               // pie horizontal (abajo); el marco estándar no tiene
+    p2Pest: usaNuevo ? C.calfReglTapa[2] : C.calfP2Pest,
+    p2Vert: usaNuevo ? C.calfReglTapa[1] : C.calfP2Vert,
+    p2Pie: usaNuevo ? C.calfReglTapa[0] : C.calfP2Pie,
     reglamentaria: regla, usaNuevo: usaNuevo, pestExtra: pestExtra, luz: luz,
-    tramosMarco: usaNuevo ? C.calfReglMarco : null, tramosTapa: usaNuevo ? C.calfReglTapa : null,
     pestExtraLen: C.calfReglPestExtra,
     despiece: despiece,
   };
@@ -1626,72 +1629,34 @@ function plantaCALF(r, ox, oy, P, k) {
 /* Corte de armado: marco (plegado 1) contra la pared + tapa (plegado 2) + chapa + malla/hormigón + manija */
 function corteCALF(r, ox, oy, w, h, P) {
   var g = gabBox(ox, oy, w, h, '① Corte de armado', 'marco (plegado 1) + tapa (plegado 2, azul) + chapa de encofrado · malla + hormigón · fuera de escala', P);
-  var cx = ox + w / 2, sc = 2.3;
-  if (r.usaNuevo) {
-    var AC = P.accent, s2 = 2.0, incN = 10 * Math.PI / 180, cosN = Math.cos(incN), sinN = Math.sin(incN);
-    var vM = r.tramosMarco[1], vT = r.tramosTapa[1], luz = r.luz, pe = r.pestExtra, peL = r.pestExtraLen;
-    var AW = w * 0.40, xWL = cx - AW / 2, xWR = cx + AW / 2;
-    var topY = oy + h * 0.44, botY = topY + vM * s2, tBotY = topY + vT * s2, wallW = 70;
-    g += rect(xWL - 62 * s2 - wallW, topY, wallW, vM * s2 + 60, SW.thin, P, P.hatch) + rect(xWR + 62 * s2, topY, wallW, vM * s2 + 60, SW.thin, P, P.hatch);
-    g += txt(xWL - 62 * s2 - wallW / 2, botY + 80, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
-    g += txt(xWR + 62 * s2 + wallW / 2, botY + 80, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
-    var marco = function (xV, ins) {           // ins = sentido hacia adentro (+1 izq, −1 der); afuera = −ins
-      var out = -ins;
-      var s = line(xV, topY, xV, botY, SW.thick, P);                                        // vertical
-      s += line(xV, topY, xV + out * 60 * cosN * s2, topY - 60 * sinN * s2, SW.thick, P);    // inclinado 60 arriba (afuera + arriba)
-      s += line(xV, botY, xV + out * 40 * s2, botY, SW.thick, P);                            // horizontal 40 abajo (afuera)
-      if (pe) s += line(xV, botY, xV + ins * peL * s2, botY, SW.thick, P);                   // pestaña 30 adentro
-      return s;
-    };
-    var tapa = function (xV, ins) {
-      var out = -ins, xT = xV + ins * luz * s2;
-      var s = line(xT, topY, xT, tBotY, SW.thick, P, 0, AC);                                 // vertical (azul)
-      s += line(xT, topY, xT + out * 60 * cosN * s2, topY - 60 * sinN * s2, SW.thick, P, 0, AC);  // inclinado 60 arriba
-      s += line(xT, tBotY, xT + out * 40 * s2, tBotY, SW.thick, P, 0, AC);                   // horizontal 40 abajo
-      return s;
-    };
-    g += marco(xWL, 1) + marco(xWR, -1) + tapa(xWL, 1) + tapa(xWR, -1);
-    g += txt((xWL + xWL + luz * s2) / 2, topY + 40, 'luz ' + luz, 15, 'middle', P, false, '600', AC);
-    var tipL = xWL + luz * s2, tipR = xWR - luz * s2, chYn = tBotY - 4;                      // chapa de encofrado dentro de la tapa, sobre el pie
-    g += line(tipL, chYn, tipR, chYn, SW.thick, P);
-    var myn = chYn - vM * s2 * 0.26, ddn;
-    for (ddn = tipL + 16; ddn < tipR - 10; ddn += 48) g += '<circle cx="' + ddn.toFixed(1) + '" cy="' + myn.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
-    g += line(tipL + 12, myn, tipR - 12, myn, SW.dim, P, 0, P.dim || P.line);
-    g += txt(ox + 40, topY - 64, 'malla + hormigón (en obra)', F.sm, 'start', P, false, '500', P.muted || P.text);
-    g += txt(cx, chYn + 74, 'chapa de encofrado · tuerca de tope', F.sm, 'middle', P, false, '600');
-    if (r.agarre === 'tirador') {
-      g += agarreCorteTirador(cx, topY - 48, chYn, P);
-      g += txt(cx + 40, topY - 48, 'tirador (bulón)', F.sm, 'start', P, false, '600');
-      g += txt(cx + 52, chYn + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
-    } else {
-      var spn = tipR - tipL, mcsn = r.nMan >= 2 ? [tipL + spn / 3, tipL + 2 * spn / 3] : [cx];
-      mcsn.forEach(function (m) { g += manijaCALF(m, topY - 4, chYn, P); });
-      g += txt(mcsn[mcsn.length - 1] + 52, chYn + 11, 'juego', 16, 'start', P, false, '500', P.muted || P.text);
-      g += txt(mcsn[mcsn.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
-    }
-    g += tsans(ox + 24, oy + h - 20, 'plegado reglamentario · marco (negro) + tapa (azul) · luz ' + luz + (pe ? ' · marco c/pestaña 30' : ''), F.ty, 'start', P, 500, P.muted || P.text);
-    return g;
-  }
-  var esp = Math.max(8, 3.18 * sc), vert = 57 * sc, pie = 30 * sc, p1 = 54 * sc, p2 = 61 * sc;
+  var cx = ox + w / 2, sc = r.usaNuevo ? 1.5 : 2.3, AC = P.accent;
+  var esp = Math.max(8, r.esp * sc);
+  var vertM = (r.p1Vert || 57) * sc, vertT = (r.p2Vert || 57) * sc;
+  var p1 = (r.p1Pest || 54) * sc, p2 = (r.p2Pest || 61) * sc, pie = (r.p2Pie || 30) * sc, pieM = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
   var AW = w * 0.46, xWL = cx - AW / 2, xWR = cx + AW / 2;
-  var topY = oy + h * 0.42, botY = topY + vert;
-  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), AC = P.accent;
+  var topY = oy + h * 0.40, botMY = topY + vertM;
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
   var wallW = 72;                                                            // muro a cada lado
-  g += rect(xWL - wallW, topY, wallW, vert + 46, SW.thin, P, P.hatch) + rect(xWR, topY, wallW, vert + 46, SW.thin, P, P.hatch);
-  g += txt(xWL - wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  g += txt(xWR + wallW / 2, topY + vert + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
-  // marco plegado 1: vertical contra la pared + pestaña 54 hacia afuera y abajo (−10°)
-  g += line(xWL, topY, xWL, botY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY + p1 * sin, SW.thick, P);
-  g += line(xWR, topY, xWR, botY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY + p1 * sin, SW.thick, P);
-  // tapa plegado 2 (azul): pestaña 61 lapa hacia afuera y abajo, vertical adentro, pie 30 hacia adentro
-  var gap = esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = botY;
+  g += rect(xWL - wallW, topY, wallW, vertM + 46, SW.thin, P, P.hatch) + rect(xWR, topY, wallW, vertM + 46, SW.thin, P, P.hatch);
+  g += txt(xWL - wallW / 2, topY + vertM + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  g += txt(xWR + wallW / 2, topY + vertM + 72, 'muro', F.sm, 'middle', P, false, '500', P.muted || P.text);
+  // marco: vertical + pestaña (arriba, −10°) + pie (abajo, adentro) cuando es reglamentario
+  g += line(xWL, topY, xWL, botMY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY + p1 * sin, SW.thick, P);
+  g += line(xWR, topY, xWR, botMY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY + p1 * sin, SW.thick, P);
+  if (pieM) {
+    g += line(xWL, botMY, xWL + pieM, botMY, SW.thick, P) + line(xWR, botMY, xWR - pieM, botMY, SW.thick, P);
+    if (peX) g += line(xWL + pieM, botMY, xWL + pieM + peX, botMY, SW.thick, P) + line(xWR - pieM, botMY, xWR - pieM - peX, botMY, SW.thick, P);
+  }
+  // tapa plegado 2 (azul): pestaña arriba + vertical + pie abajo (adentro), anidada con la luz
+  var gap = r.usaNuevo ? r.luz * sc : esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = tTop + vertT;
   g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
   g += line(tR, tTop, tR, tBot, SW.thick, P, 0, AC) + line(tR, tBot, tR - pie, tBot, SW.thick, P, 0, AC) + line(tR, tTop, tR + p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
-  // chapa de encofrado apoyada sobre casi todo el pie
+  if (r.usaNuevo) g += txt((xWL + tL) / 2, tTop + 34, 'luz ' + r.luz, 15, 'middle', P, false, '600', AC);
+  // chapa de encofrado apoyada sobre el pie de la tapa
   var chL = tL + 6, chR = tR - 6, chY = tBot - esp * 0.6;
   g += line(chL, chY, chR, chY, SW.thick, P);
   // malla + hormigón por encima de la chapa (llega casi al extremo de la tapa)
-  var my = chY - vert * 0.30, dd;
+  var my = chY - vertM * 0.30, dd;
   for (dd = tL + 16; dd < tR - 10; dd += 48) g += '<circle cx="' + dd.toFixed(1) + '" cy="' + my.toFixed(1) + '" r="5" fill="' + P.line + '"/>';
   g += line(tL + 12, my, tR - 12, my, SW.dim, P, 0, P.dim || P.line);
   g += txt(ox + 40, topY - 64, 'malla + hormigón (en obra)', F.sm, 'start', P, false, '500', P.muted || P.text);
@@ -1708,8 +1673,8 @@ function corteCALF(r, ox, oy, w, h, P) {
     g += txt(mcs[mcs.length - 1] + 58, topY - 92, 'manija ⌀16', F.sm, 'start', P, false, '600');
     g += txt(mcs[mcs.length - 1] + 58, topY - 66, 'desliza en caño 3/4"', 17, 'start', P, false, '500', P.muted || P.text);
   }
-  g += txt(xWL - p1 * cos * 0.5, topY + p1 * sin * 0.5 - 12, '54', F.sm, 'middle', P, false, '600');
-  g += txt(tR + p2 * cos * 0.5 + 6, tTop + p2 * sin * 0.5 - 8, '61', F.sm, 'start', P, false, '600', AC);
+  g += txt(xWL - p1 * cos * 0.5, topY + p1 * sin * 0.5 - 12, String(r.p1Pest || 54), F.sm, 'middle', P, false, '600');
+  g += txt(tR + p2 * cos * 0.5 + 6, tTop + p2 * sin * 0.5 - 8, String(r.p2Pest || 61), F.sm, 'start', P, false, '600', AC);
   g += tsans(ox + 24, oy + h - 20, 'plegado 1 = marco · plegado 2 = tapa (azul)', F.ty, 'start', P, 500, P.muted || P.text);
   return g;
 }
@@ -1743,25 +1708,6 @@ function agarrePlantaTirador(cx, cy, P) {
   return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="12" fill="' + P.paper + '" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>'
     + line(cx - 19, cy, cx + 19, cy, SW.thin, P) + line(cx, cy - 19, cx, cy + 19, SW.thin, P);
 }
-/* Silueta del plegado reglamentario (3 tramos): inclinado 60 a 10° ARRIBA + vertical + horizontal 40 ABAJO.
-   ins = sentido hacia el interior de la cámara (+1 / −1); afuera = −ins.
-   pestExtra agrega una pestaña horizontal de 30 hacia adentro al pie del vertical. Devuelve el svg con cotas. */
-function siluetaReglada(vx, topY, sc, vertLen, pestExtra, pestLen, ins, P, color) {
-  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), h0 = 40, incLen = 60;
-  var botY = topY + vertLen * sc, col = color || P.line, out = -ins;
-  var g = line(vx, topY, vx, botY, SW.thick, P, 0, col);                       // vertical
-  var ix = vx + out * incLen * cos * sc, iy = topY - incLen * sin * sc;        // inclinado 60 arriba (afuera + arriba)
-  g += line(vx, topY, ix, iy, SW.thick, P, 0, col);
-  var hx = vx + out * h0 * sc;                                                 // horizontal 40 abajo (afuera)
-  g += line(vx, botY, hx, botY, SW.thick, P, 0, col);
-  if (pestExtra) g += line(vx, botY, vx + ins * pestLen * sc, botY, SW.thick, P, 0, col);  // pestaña 30 (adentro)
-  g += txt((vx + ix) / 2, iy - 12, '60', F.num, 'middle', P, false, '600', col);
-  g += txt(vx + ins * 16, topY + vertLen * sc * 0.5, String(vertLen), F.num, ins > 0 ? 'start' : 'end', P, true, '600', col);
-  g += txt((vx + hx) / 2, botY + 24, '40', F.num, 'middle', P, false, '600', col);
-  if (pestExtra) g += txt(vx + ins * pestLen * sc * 0.5, botY - 14, String(pestLen), F.num, 'middle', P, false, '600', col);
-  return g;
-}
-
 /* Manija en planta: barra (U invertida vista desde arriba) con patas a los extremos */
 function agarrePlantaManija(cx, cy, horizLong, P) {
   var hw2 = 34, ft = 13;
@@ -1771,46 +1717,39 @@ function agarrePlantaManija(cx, cy, horizLong, P) {
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
-  if (r.usaNuevo) {
-    var sub1 = 'chapa 3/16" · desarrollo ' + r.p1Des + (r.pestExtra ? ' (c/pestaña 30)' : '');
-    var g1 = gabBox(ox, oy, w, h, '② Plegado 1 — marco', sub1, P);
-    var scm = 2.0, vxm = ox + w * 0.56, topYm = oy + h * 0.32;
-    g1 += siluetaReglada(vxm, topYm, scm, r.tramosMarco[1], r.pestExtra, r.pestExtraLen, 1, P, null);
-    g1 += tsans(ox + w - 26, oy + h - 20, 'horiz. 40 · vert. ' + r.tramosMarco[1] + ' · inclin. 60 a 10°' + (r.pestExtra ? ' · pestaña 30' : ''), F.ty, 'end', P, 700, P.accent);
-    return g1;
-  }
-  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des, P);
-  var sc = 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc;
-  var cornerX = ox + w * 0.58, topY = oy + h * 0.34;
-  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
-  g += line(cornerX, topY, cornerX, topY + vert, SW.thick, P);                    // vertical
-  g += line(cornerX, topY, cornerX - pest * cos, topY + pest * sin, SW.thick, P);  // pestaña a −10°
+  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.pestExtra ? ' (c/pestaña ' + r.pestExtraLen + ')' : '');
+  var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', sub, P);
+  var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
+  var cornerX = ox + w * (r.usaNuevo ? 0.46 : 0.58), topY = oy + h * (r.usaNuevo ? 0.26 : 0.34);
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), by = topY + vert;
+  g += line(cornerX, topY, cornerX, by, SW.thick, P);                              // vertical
+  g += line(cornerX, topY, cornerX - pest * cos, topY + pest * sin, SW.thick, P);  // pestaña arriba (−10°)
   g += txt(cornerX + 16, topY + vert / 2, String(r.p1Vert), F.num, 'start', P, true, '600');
   g += txt(cornerX - pest * cos * 0.5, topY + pest * sin * 0.5 - 14, String(r.p1Pest), F.num, 'middle', P, false, '600');
-  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p1Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
+  if (pie) {
+    g += line(cornerX, by, cornerX + pie, by, SW.thick, P);                        // pie abajo (adentro)
+    g += txt(cornerX + pie * 0.5, by + 26, String(r.p1Pie), F.num, 'middle', P, false, '600');
+    if (peX) { g += line(cornerX + pie, by, cornerX + pie + peX, by, SW.thick, P); g += txt(cornerX + pie + peX * 0.5, by - 14, String(r.pestExtraLen), F.num, 'middle', P, false, '600'); }
+  }
+  var cap = r.usaNuevo ? ('pie ' + r.p1Pie + ' · vert. ' + r.p1Vert + ' · pestaña ' + r.p1Pest + ' a 10°' + (r.pestExtra ? ' · apoyo ' + r.pestExtraLen : '')) : ('desarrollo ' + r.p1Des + ' · pestaña a 10°');
+  g += tsans(ox + w - 26, oy + h - 20, cap, F.ty, 'end', P, 700, P.accent);
   return g;
 }
 
 /* ③ Plegado 2 (tapa): pestaña 61 (10°) + vertical 57 + pie 30 */
 function secCALFp2(r, ox, oy, w, h, P) {
-  if (r.usaNuevo) {
-    var g1 = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa 3/16" · desarrollo ' + r.p2Des, P);
-    var sct = 2.0, vxt = ox + w * 0.56, topYt = oy + h * 0.32;
-    g1 += siluetaReglada(vxt, topYt, sct, r.tramosTapa[1], false, 0, 1, P, P.accent);
-    g1 += tsans(ox + w - 26, oy + h - 20, 'horiz. 40 · vert. ' + r.tramosTapa[1] + ' · inclin. 60 a 10°', F.ty, 'end', P, 700, P.accent);
-    return g1;
-  }
   var g = gabBox(ox, oy, w, h, '③ Plegado 2 — tapa', 'chapa ' + r.espTxt + ' · desarrollo ' + r.p2Des, P);
-  var sc = 2.0, vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
-  var topX = ox + w * 0.50, topY = oy + h * 0.28;
-  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
-  g += line(topX, topY, topX, topY + vert, SW.thick, P);                          // vertical
+  var sc = r.usaNuevo ? 1.6 : 2.0, vert = r.p2Vert * sc, pest = r.p2Pest * sc, pie = r.p2Pie * sc;
+  var topX = ox + w * (r.usaNuevo ? 0.46 : 0.50), topY = oy + h * (r.usaNuevo ? 0.26 : 0.28);
+  var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), by = topY + vert;
+  g += line(topX, topY, topX, by, SW.thick, P);                                   // vertical
   g += line(topX, topY, topX - pest * cos, topY + pest * sin, SW.thick, P);        // pestaña sup a −10°
-  g += line(topX, topY + vert, topX + pie, topY + vert, SW.thick, P);             // pie inferior hacia adentro
+  g += line(topX, by, topX + pie, by, SW.thick, P);                               // pie inferior hacia adentro
   g += txt(topX + 16, topY + vert / 2, String(r.p2Vert), F.num, 'start', P, true, '600');
   g += txt(topX - pest * cos * 0.5, topY + pest * sin * 0.5 - 14, String(r.p2Pest), F.num, 'middle', P, false, '600');
-  g += txt(topX + pie * 0.5, topY + vert + 28, String(r.p2Pie), F.num, 'middle', P, false, '600');
-  g += tsans(ox + w - 26, oy + h - 20, 'desarrollo ' + r.p2Des + ' · pestaña a 10°', F.ty, 'end', P, 700, P.accent);
+  g += txt(topX + pie * 0.5, by + 28, String(r.p2Pie), F.num, 'middle', P, false, '600');
+  var cap = r.usaNuevo ? ('pie ' + r.p2Pie + ' · vert. ' + r.p2Vert + ' · pestaña ' + r.p2Pest + ' a 10°') : ('desarrollo ' + r.p2Des + ' · pestaña a 10°');
+  g += tsans(ox + w - 26, oy + h - 20, cap, F.ty, 'end', P, 700, P.accent);
   return g;
 }
 
@@ -1840,7 +1779,7 @@ function generarCALF(params, P, logo) {
   // --- 4) accesorios al final ---
   g += bloqueAccesorios(r, M, ry + rowH + 60, P, full);
   var pie = r.usaNuevo
-    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (3 tramos: horiz. 40 + vert. 93/95 + inclin. 60 a 10°), chapa 3/16", luz 7 mm por lado' + (r.pestExtra ? ', marco con pestaña de apoyo 30 (dim. en 800–1000)' : '') + '. Desarrollo = suma de tramos. Imprimir en A4.'
+    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.pestExtra ? ', marco con pestaña de apoyo ' + r.pestExtraLen + ' (dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
     : 'Plano preliminar. Cotas en mm. Plegado estándar en chapa 1/8" (<800). Largo = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.';
   return [pagina(g, P, pie)];
 }

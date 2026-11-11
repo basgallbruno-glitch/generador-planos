@@ -355,10 +355,13 @@ function calcularCALF(p) {
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
     esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, agarre: agarre, proy: C.calfProyPest,
     p1Des: desMarco, p2Des: desTapa,
-    p1Pest: C.calfP1Pest, p1Vert: C.calfP1Vert,
-    p2Pest: C.calfP2Pest, p2Vert: C.calfP2Vert, p2Pie: C.calfP2Pie,
+    p1Pest: usaNuevo ? C.calfReglMarco[2] : C.calfP1Pest,   // pestaña inclinada (arriba)
+    p1Vert: usaNuevo ? C.calfReglMarco[1] : C.calfP1Vert,   // vertical
+    p1Pie: usaNuevo ? C.calfReglMarco[0] : 0,               // pie horizontal (abajo); el marco estándar no tiene
+    p2Pest: usaNuevo ? C.calfReglTapa[2] : C.calfP2Pest,
+    p2Vert: usaNuevo ? C.calfReglTapa[1] : C.calfP2Vert,
+    p2Pie: usaNuevo ? C.calfReglTapa[0] : C.calfP2Pie,
     reglamentaria: regla, usaNuevo: usaNuevo, pestExtra: pestExtra, luz: luz,
-    tramosMarco: usaNuevo ? C.calfReglMarco : null, tramosTapa: usaNuevo ? C.calfReglTapa : null,
     pestExtraLen: C.calfReglPestExtra,
     despiece: despiece,
   };
