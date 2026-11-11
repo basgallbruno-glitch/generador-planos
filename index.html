@@ -416,14 +416,15 @@ function calcularCALF(p) {
   var ladoMayor = Math.max(intA, intB);
   // régimen de plegado: reglamentario (3 tramos, 3/16") si se marca o si alguna dim ≥ 800; si no, el plegado clásico
   var regla = !!p.reglamentaria;
-  var usaNuevo = regla || ladoMayor >= C.calfReglUmbralPest;                      // ≥800 o reglamentaria → plegado nuevo
-  var pestExtra = ladoMayor >= C.calfReglUmbralPest && ladoMayor < C.calfReglUmbral;  // [800,1000) → pestaña de apoyo en el marco
+  var usaNuevo = regla || ladoMayor >= C.calfReglUmbralPest;                      // ≥800 o reglamentaria → plegado reglamentario
+  var marcoPie30 = !regla && ladoMayor >= C.calfReglUmbralPest && ladoMayor < C.calfReglUmbral;  // no reglamentaria y [800,1000): el pie del marco es 30 EN VEZ de 40
+  var pieMarco = marcoPie30 ? C.calfReglPestExtra : C.calfReglMarco[0];           // 30 o 40
   var esp, espTxt, desMarco, desTapa, luz, larg;
   var sum = function (a, b) { return a + b; };
   if (usaNuevo) {
     esp = C.calfEspGrande; espTxt = '3/16"'; luz = C.calfReglLuz;                 // 3/16", luz 7 mm marco↔tapa
     var ded = Math.floor(esp);                                                    // deducción por pliegue (espesor al entero menor) — mismo criterio
-    var lensM = pestExtra ? [C.calfReglMarco[0], C.calfReglMarco[1], C.calfReglPestExtra, C.calfReglMarco[2]] : C.calfReglMarco;  // 40/93/(30)/60
+    var lensM = [pieMarco, C.calfReglMarco[1], C.calfReglMarco[2]];               // pie (40/30) · vertical 93 · pestaña 60
     var lensT = C.calfReglTapa;                                                   // 40/95/60
     desMarco = lensM.reduce(sum, 0) - (lensM.length - 1) * ded;                   // desarrollo = Σ tramos − pliegues·ded
     desTapa = lensT.reduce(sum, 0) - (lensT.length - 1) * ded;
@@ -443,7 +444,6 @@ function calcularCALF(p) {
   // agarre: default manija; si el lado mayor (interior, ingresado) ≤ 500 se puede elegir tirador (bulón central)
   var agarre = (Math.max(A, B) <= 500 && p.agarre === 'tirador') ? 'tirador' : 'manija';
   var MAT_PLEG = 'Chapa ' + espTxt, MAT_CH = 'Chapa N°' + chapa;
-  var pestTxt = pestExtra ? ' + pestaña 30' : '';
   var base = [
     { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: desMarco, largo: marcoA, mat: MAT_PLEG },
     { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: desMarco, largo: marcoB, mat: MAT_PLEG },
@@ -464,12 +464,11 @@ function calcularCALF(p) {
     p1Des: desMarco, p2Des: desTapa,
     p1Pest: usaNuevo ? C.calfReglMarco[2] : C.calfP1Pest,   // pestaña inclinada (arriba)
     p1Vert: usaNuevo ? C.calfReglMarco[1] : C.calfP1Vert,   // vertical
-    p1Pie: usaNuevo ? C.calfReglMarco[0] : 0,               // pie horizontal (abajo); el marco estándar no tiene
+    p1Pie: usaNuevo ? pieMarco : 0,                         // pie horizontal del marco (40, o 30 si no-regla en 800–1000); el estándar no tiene
     p2Pest: usaNuevo ? C.calfReglTapa[2] : C.calfP2Pest,
     p2Vert: usaNuevo ? C.calfReglTapa[1] : C.calfP2Vert,
     p2Pie: usaNuevo ? C.calfReglTapa[0] : C.calfP2Pie,
-    reglamentaria: regla, usaNuevo: usaNuevo, pestExtra: pestExtra, luz: luz,
-    pestExtraLen: C.calfReglPestExtra,
+    reglamentaria: regla, usaNuevo: usaNuevo, marcoPie30: marcoPie30, luz: luz,
     despiece: despiece,
   };
 }
@@ -1632,7 +1631,7 @@ function corteCALF(r, ox, oy, w, h, P) {
   var cx = ox + w / 2, sc = r.usaNuevo ? 1.5 : 2.3, AC = P.accent;
   var esp = Math.max(8, r.esp * sc);
   var vertM = (r.p1Vert || 57) * sc, vertT = (r.p2Vert || 57) * sc;
-  var p1 = (r.p1Pest || 54) * sc, p2 = (r.p2Pest || 61) * sc, pie = (r.p2Pie || 30) * sc, pieM = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
+  var p1 = (r.p1Pest || 54) * sc, p2 = (r.p2Pest || 61) * sc, pie = (r.p2Pie || 30) * sc, pieM = (r.p1Pie || 0) * sc;
   var AW = w * 0.46, xWL = cx - AW / 2, xWR = cx + AW / 2;
   var topY = oy + h * 0.40, botMY = topY + vertM;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
@@ -1643,10 +1642,7 @@ function corteCALF(r, ox, oy, w, h, P) {
   // marco: vertical + pestaña (arriba, −10°) + pie (abajo, adentro) cuando es reglamentario
   g += line(xWL, topY, xWL, botMY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY + p1 * sin, SW.thick, P);
   g += line(xWR, topY, xWR, botMY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY + p1 * sin, SW.thick, P);
-  if (pieM) {
-    g += line(xWL, botMY, xWL + pieM, botMY, SW.thick, P) + line(xWR, botMY, xWR - pieM, botMY, SW.thick, P);
-    if (peX) g += line(xWL + pieM, botMY, xWL + pieM + peX, botMY, SW.thick, P) + line(xWR - pieM, botMY, xWR - pieM - peX, botMY, SW.thick, P);
-  }
+  if (pieM) g += line(xWL, botMY, xWL + pieM, botMY, SW.thick, P) + line(xWR, botMY, xWR - pieM, botMY, SW.thick, P);  // pie del marco (adentro)
   // tapa plegado 2 (azul): pestaña arriba + vertical + pie abajo (adentro), anidada con la luz
   var gap = r.usaNuevo ? r.luz * sc : esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = tTop + vertT;
   g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
@@ -1717,9 +1713,9 @@ function agarrePlantaManija(cx, cy, horizLong, P) {
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
-  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.pestExtra ? ' (c/pestaña ' + r.pestExtraLen + ')' : '');
+  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.marcoPie30 ? ' (pie 30)' : '');
   var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', sub, P);
-  var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
+  var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc;
   var cornerX = ox + w * (r.usaNuevo ? 0.46 : 0.58), topY = oy + h * (r.usaNuevo ? 0.26 : 0.34);
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), by = topY + vert;
   g += line(cornerX, topY, cornerX, by, SW.thick, P);                              // vertical
@@ -1729,9 +1725,8 @@ function secCALFp1(r, ox, oy, w, h, P) {
   if (pie) {
     g += line(cornerX, by, cornerX + pie, by, SW.thick, P);                        // pie abajo (adentro)
     g += txt(cornerX + pie * 0.5, by + 26, String(r.p1Pie), F.num, 'middle', P, false, '600');
-    if (peX) { g += line(cornerX + pie, by, cornerX + pie + peX, by, SW.thick, P); g += txt(cornerX + pie + peX * 0.5, by - 14, String(r.pestExtraLen), F.num, 'middle', P, false, '600'); }
   }
-  var cap = r.usaNuevo ? ('pie ' + r.p1Pie + ' · vert. ' + r.p1Vert + ' · pestaña ' + r.p1Pest + ' a 10°' + (r.pestExtra ? ' · apoyo ' + r.pestExtraLen : '')) : ('desarrollo ' + r.p1Des + ' · pestaña a 10°');
+  var cap = r.usaNuevo ? ('pie ' + r.p1Pie + ' · vert. ' + r.p1Vert + ' · pestaña ' + r.p1Pest + ' a 10°') : ('desarrollo ' + r.p1Des + ' · pestaña a 10°');
   g += tsans(ox + w - 26, oy + h - 20, cap, F.ty, 'end', P, 700, P.accent);
   return g;
 }
@@ -1779,7 +1774,7 @@ function generarCALF(params, P, logo) {
   // --- 4) accesorios al final ---
   g += bloqueAccesorios(r, M, ry + rowH + 60, P, full);
   var pie = r.usaNuevo
-    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.pestExtra ? ', marco con pestaña de apoyo ' + r.pestExtraLen + ' (dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
+    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.marcoPie30 ? ', pie del marco 30 en vez de 40 (no reglamentaria, dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
     : 'Plano preliminar. Cotas en mm. Plegado estándar en chapa 1/8" (<800). Largo = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.';
   return [pagina(g, P, pie)];
 }

@@ -764,7 +764,7 @@ function corteCALF(r, ox, oy, w, h, P) {
   var cx = ox + w / 2, sc = r.usaNuevo ? 1.5 : 2.3, AC = P.accent;
   var esp = Math.max(8, r.esp * sc);
   var vertM = (r.p1Vert || 57) * sc, vertT = (r.p2Vert || 57) * sc;
-  var p1 = (r.p1Pest || 54) * sc, p2 = (r.p2Pest || 61) * sc, pie = (r.p2Pie || 30) * sc, pieM = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
+  var p1 = (r.p1Pest || 54) * sc, p2 = (r.p2Pest || 61) * sc, pie = (r.p2Pie || 30) * sc, pieM = (r.p1Pie || 0) * sc;
   var AW = w * 0.46, xWL = cx - AW / 2, xWR = cx + AW / 2;
   var topY = oy + h * 0.40, botMY = topY + vertM;
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc);
@@ -775,10 +775,7 @@ function corteCALF(r, ox, oy, w, h, P) {
   // marco: vertical + pestaña (arriba, −10°) + pie (abajo, adentro) cuando es reglamentario
   g += line(xWL, topY, xWL, botMY, SW.thick, P) + line(xWL, topY, xWL - p1 * cos, topY + p1 * sin, SW.thick, P);
   g += line(xWR, topY, xWR, botMY, SW.thick, P) + line(xWR, topY, xWR + p1 * cos, topY + p1 * sin, SW.thick, P);
-  if (pieM) {
-    g += line(xWL, botMY, xWL + pieM, botMY, SW.thick, P) + line(xWR, botMY, xWR - pieM, botMY, SW.thick, P);
-    if (peX) g += line(xWL + pieM, botMY, xWL + pieM + peX, botMY, SW.thick, P) + line(xWR - pieM, botMY, xWR - pieM - peX, botMY, SW.thick, P);
-  }
+  if (pieM) g += line(xWL, botMY, xWL + pieM, botMY, SW.thick, P) + line(xWR, botMY, xWR - pieM, botMY, SW.thick, P);  // pie del marco (adentro)
   // tapa plegado 2 (azul): pestaña arriba + vertical + pie abajo (adentro), anidada con la luz
   var gap = r.usaNuevo ? r.luz * sc : esp, tL = xWL + gap, tR = xWR - gap, tTop = topY - 6, tBot = tTop + vertT;
   g += line(tL, tTop, tL, tBot, SW.thick, P, 0, AC) + line(tL, tBot, tL + pie, tBot, SW.thick, P, 0, AC) + line(tL, tTop, tL - p2 * cos, tTop + p2 * sin, SW.thick, P, 0, AC);
@@ -849,9 +846,9 @@ function agarrePlantaManija(cx, cy, horizLong, P) {
 
 /* ② Plegado 1 (marco): pestaña 54 (10°) + vertical 57 */
 function secCALFp1(r, ox, oy, w, h, P) {
-  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.pestExtra ? ' (c/pestaña ' + r.pestExtraLen + ')' : '');
+  var sub = 'chapa ' + r.espTxt + ' · desarrollo ' + r.p1Des + (r.marcoPie30 ? ' (pie 30)' : '');
   var g = gabBox(ox, oy, w, h, '② Plegado 1 — marco', sub, P);
-  var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc, peX = (r.pestExtra ? r.pestExtraLen : 0) * sc;
+  var sc = r.usaNuevo ? 1.6 : 2.3, vert = r.p1Vert * sc, pest = r.p1Pest * sc, pie = (r.p1Pie || 0) * sc;
   var cornerX = ox + w * (r.usaNuevo ? 0.46 : 0.58), topY = oy + h * (r.usaNuevo ? 0.26 : 0.34);
   var inc = 10 * Math.PI / 180, cos = Math.cos(inc), sin = Math.sin(inc), by = topY + vert;
   g += line(cornerX, topY, cornerX, by, SW.thick, P);                              // vertical
@@ -861,9 +858,8 @@ function secCALFp1(r, ox, oy, w, h, P) {
   if (pie) {
     g += line(cornerX, by, cornerX + pie, by, SW.thick, P);                        // pie abajo (adentro)
     g += txt(cornerX + pie * 0.5, by + 26, String(r.p1Pie), F.num, 'middle', P, false, '600');
-    if (peX) { g += line(cornerX + pie, by, cornerX + pie + peX, by, SW.thick, P); g += txt(cornerX + pie + peX * 0.5, by - 14, String(r.pestExtraLen), F.num, 'middle', P, false, '600'); }
   }
-  var cap = r.usaNuevo ? ('pie ' + r.p1Pie + ' · vert. ' + r.p1Vert + ' · pestaña ' + r.p1Pest + ' a 10°' + (r.pestExtra ? ' · apoyo ' + r.pestExtraLen : '')) : ('desarrollo ' + r.p1Des + ' · pestaña a 10°');
+  var cap = r.usaNuevo ? ('pie ' + r.p1Pie + ' · vert. ' + r.p1Vert + ' · pestaña ' + r.p1Pest + ' a 10°') : ('desarrollo ' + r.p1Des + ' · pestaña a 10°');
   g += tsans(ox + w - 26, oy + h - 20, cap, F.ty, 'end', P, 700, P.accent);
   return g;
 }
@@ -911,7 +907,7 @@ function generarCALF(params, P, logo) {
   // --- 4) accesorios al final ---
   g += bloqueAccesorios(r, M, ry + rowH + 60, P, full);
   var pie = r.usaNuevo
-    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.pestExtra ? ', marco con pestaña de apoyo ' + r.pestExtraLen + ' (dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
+    ? 'Plano preliminar. Cotas en mm. Plegado reglamentario (mismo plegado que el estándar: pestaña + vertical + pie), chapa 3/16", luz marco↔tapa 7 mm y tapa↔chapa 3 mm por lado' + (r.marcoPie30 ? ', pie del marco 30 en vez de 40 (no reglamentaria, dim. en 800–1000)' : '') + '. Desarrollo con deducción por pliegue. Imprimir en A4.'
     : 'Plano preliminar. Cotas en mm. Plegado estándar en chapa 1/8" (<800). Largo = int + 2·esp + 2·60 + 2·10, a la decena (encuentro a 45°). Chapa de encofrado N°16/N°14 según el lado mayor. Imprimir en A4.';
   return [pagina(g, P, pie)];
 }

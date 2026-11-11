@@ -309,14 +309,15 @@ function calcularCALF(p) {
   var ladoMayor = Math.max(intA, intB);
   // régimen de plegado: reglamentario (3 tramos, 3/16") si se marca o si alguna dim ≥ 800; si no, el plegado clásico
   var regla = !!p.reglamentaria;
-  var usaNuevo = regla || ladoMayor >= C.calfReglUmbralPest;                      // ≥800 o reglamentaria → plegado nuevo
-  var pestExtra = ladoMayor >= C.calfReglUmbralPest && ladoMayor < C.calfReglUmbral;  // [800,1000) → pestaña de apoyo en el marco
+  var usaNuevo = regla || ladoMayor >= C.calfReglUmbralPest;                      // ≥800 o reglamentaria → plegado reglamentario
+  var marcoPie30 = !regla && ladoMayor >= C.calfReglUmbralPest && ladoMayor < C.calfReglUmbral;  // no reglamentaria y [800,1000): el pie del marco es 30 EN VEZ de 40
+  var pieMarco = marcoPie30 ? C.calfReglPestExtra : C.calfReglMarco[0];           // 30 o 40
   var esp, espTxt, desMarco, desTapa, luz, larg;
   var sum = function (a, b) { return a + b; };
   if (usaNuevo) {
     esp = C.calfEspGrande; espTxt = '3/16"'; luz = C.calfReglLuz;                 // 3/16", luz 7 mm marco↔tapa
     var ded = Math.floor(esp);                                                    // deducción por pliegue (espesor al entero menor) — mismo criterio
-    var lensM = pestExtra ? [C.calfReglMarco[0], C.calfReglMarco[1], C.calfReglPestExtra, C.calfReglMarco[2]] : C.calfReglMarco;  // 40/93/(30)/60
+    var lensM = [pieMarco, C.calfReglMarco[1], C.calfReglMarco[2]];               // pie (40/30) · vertical 93 · pestaña 60
     var lensT = C.calfReglTapa;                                                   // 40/95/60
     desMarco = lensM.reduce(sum, 0) - (lensM.length - 1) * ded;                   // desarrollo = Σ tramos − pliegues·ded
     desTapa = lensT.reduce(sum, 0) - (lensT.length - 1) * ded;
@@ -336,7 +337,6 @@ function calcularCALF(p) {
   // agarre: default manija; si el lado mayor (interior, ingresado) ≤ 500 se puede elegir tirador (bulón central)
   var agarre = (Math.max(A, B) <= 500 && p.agarre === 'tirador') ? 'tirador' : 'manija';
   var MAT_PLEG = 'Chapa ' + espTxt, MAT_CH = 'Chapa N°' + chapa;
-  var pestTxt = pestExtra ? ' + pestaña 30' : '';
   var base = [
     { pieza: 'M', desc: 'Marco (plegado 1) — lado A', cantUno: 2, ancho: desMarco, largo: marcoA, mat: MAT_PLEG },
     { pieza: 'M', desc: 'Marco (plegado 1) — lado B', cantUno: 2, ancho: desMarco, largo: marcoB, mat: MAT_PLEG },
@@ -357,12 +357,11 @@ function calcularCALF(p) {
     p1Des: desMarco, p2Des: desTapa,
     p1Pest: usaNuevo ? C.calfReglMarco[2] : C.calfP1Pest,   // pestaña inclinada (arriba)
     p1Vert: usaNuevo ? C.calfReglMarco[1] : C.calfP1Vert,   // vertical
-    p1Pie: usaNuevo ? C.calfReglMarco[0] : 0,               // pie horizontal (abajo); el marco estándar no tiene
+    p1Pie: usaNuevo ? pieMarco : 0,                         // pie horizontal del marco (40, o 30 si no-regla en 800–1000); el estándar no tiene
     p2Pest: usaNuevo ? C.calfReglTapa[2] : C.calfP2Pest,
     p2Vert: usaNuevo ? C.calfReglTapa[1] : C.calfP2Vert,
     p2Pie: usaNuevo ? C.calfReglTapa[0] : C.calfP2Pie,
-    reglamentaria: regla, usaNuevo: usaNuevo, pestExtra: pestExtra, luz: luz,
-    pestExtraLen: C.calfReglPestExtra,
+    reglamentaria: regla, usaNuevo: usaNuevo, marcoPie30: marcoPie30, luz: luz,
     despiece: despiece,
   };
 }
