@@ -1047,16 +1047,16 @@ var TIPOS = [
   {
     id: 'puerta-doble-faz', nombre: 'Puerta metálica doble faz',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 2000 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 1500, max: 2800 },
-      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: '', step: 1, min: 0, max: 99 },
-      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 99 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 900, step: 10, min: 400, max: 2000, help: 'Luz libre de pared a pared.' },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800, help: 'Luz libre del piso al dintel.' },
+      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: 1, step: 1, min: 0, max: 99, help: 'Cuántas puertas de mano izquierda.' },
+      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: 0, step: 1, min: 0, max: 99, help: 'Cuántas de mano derecha.' },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
-      { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']] },
-      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
-      { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
-      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
+      { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']], help: 'Define el tramo del marco donde apoya la hoja.' },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
+      { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al picaporte. Normal 1020.' },
+      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']], help: 'Cuál de las dos se muestra en el frente.' },
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],
     calcular: function (p) { return calcularDespiece(p); },
     generar: function (p, P, logo) { return generarPaginas(p, P, logo); }
@@ -1064,14 +1064,14 @@ var TIPOS = [
   {
     id: 'marco', nombre: 'Marco de puerta (solo marco)',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 2000 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 1500, max: 2800 },
-      { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: '', step: 1, min: 1, max: 99 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 900, step: 10, min: 400, max: 2000, help: 'Luz libre de pared a pared.' },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800, help: 'Luz libre del piso al dintel.' },
+      { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: 1, step: 1, min: 1, max: 99, help: 'Cuántos marcos iguales.' },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
-      { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']] },
-      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: '', step: 5, min: 60, max: 400 },
-      { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: '', step: 10, min: 600, max: 1400 },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
+      { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']], help: 'Tipo de hoja que va a recibir el marco.' },
+      { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
+      { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al cerradero. Normal 1020.' },
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],
     calcular: function (p) { return calcularMarco(p); },
     generar: function (p, P, logo) { return generarMarco(p, P, logo); }
@@ -1079,16 +1079,16 @@ var TIPOS = [
   {
     id: 'gabinete', nombre: 'Gabinete con tablillas (una hoja)',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 200, max: 2500 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
-      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: '', step: 1, min: 0, max: 999 },
-      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: '', step: 1, min: 0, max: 999 },
-      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
-      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
-      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 600, step: 10, min: 200, max: 2500, help: 'Luz libre del hueco.' },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 1800, step: 10, min: 300, max: 3000, help: 'Alto libre del hueco.' },
+      { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: 1, step: 1, min: 0, max: 999, help: 'Cuántos de mano izquierda.' },
+      { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: 0, step: 1, min: 0, max: 999, help: 'Cuántos de mano derecha.' },
+      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200, help: 'Lado del caño que entra al muro.' },
+      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100, help: 'Lado del caño visto de frente.' },
+      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6, help: 'Espesor de pared del caño.' },
       { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
-      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']] },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
+      { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']], help: 'Cuál se muestra en el frente.' },
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" prolonga las jambas.' }
     ],
     calcular: function (p) { return calcularGabinete(p); },
     generar: function (p, P, logo) { return generarGabinete(p, P, logo); }
@@ -1096,14 +1096,14 @@ var TIPOS = [
   {
     id: 'gabinete-doble', nombre: 'Gabinete con tablillas (doble hoja)',
     campos: [
-      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: '', step: 10, min: 400, max: 3000 },
-      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: '', step: 10, min: 300, max: 3000 },
-      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: '', step: 1, min: 1, max: 999 },
-      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200 },
-      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100 },
-      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6 },
+      { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 1200, step: 10, min: 400, max: 3000, help: 'Luz libre del hueco.' },
+      { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 1800, step: 10, min: 300, max: 3000, help: 'Alto libre del hueco.' },
+      { id: 'cantidad', label: 'Cantidad de gabinetes', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántos iguales.' },
+      { id: 'estrA', label: 'Caño — profundidad (mm)', type: 'number', value: 50, step: 5, min: 20, max: 200, help: 'Lado del caño que entra al muro.' },
+      { id: 'estrB', label: 'Caño — canto al frente (mm)', type: 'number', value: 20, step: 5, min: 10, max: 100, help: 'Lado del caño visto de frente.' },
+      { id: 'estrEsp', label: 'Caño — espesor (mm)', type: 'number', value: 1.6, step: 0.1, min: 0.8, max: 6, help: 'Espesor de pared del caño.' },
       { id: 'chapa', label: 'Chapa plegados (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
-      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']] }
+      { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" prolonga las jambas.' }
     ],
     calcular: function (p) { p.nHojas = 2; return calcularGabinete(p); },
     generar: function (p, P, logo) { p.nHojas = 2; return generarGabinete(p, P, logo); }
@@ -1111,11 +1111,11 @@ var TIPOS = [
   {
     id: 'camara', nombre: 'Cámara cloacal (marco + tapa)',
     campos: [
-      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']] },
-      { id: 'W', label: 'Lado A (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'H', label: 'Lado B (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
-      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'tirador', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; } }
+      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']], help: '¿Los lados son por fuera del marco o la luz interior?' },
+      { id: 'W', label: 'Lado A (mm)', type: 'number', value: 600, step: 10, min: 100, max: 2500, help: 'Un lado de la cámara.' },
+      { id: 'H', label: 'Lado B (mm)', type: 'number', value: 600, step: 10, min: 100, max: 2500, help: 'El otro lado.' },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas iguales.' },
+      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'tirador', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; }, help: 'Solo si el lado mayor es ≤500 mm.' }
     ],
     calcular: function (p) { return calcularCamara(p); },
     generar: function (p, P, logo) { return generarCamara(p, P, logo); }
@@ -1123,11 +1123,11 @@ var TIPOS = [
   {
     id: 'pluvial', nombre: 'Cámara pluvial (marco + rejilla)',
     campos: [
-      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']] },
-      { id: 'W', label: 'Lado A (mm)', type: 'number', value: '', step: 10, min: 100, max: 3000 },
-      { id: 'H', label: 'Lado B (mm)', type: 'number', value: '', step: 10, min: 100, max: 3000 },
-      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
-      { id: 'refuerzo', label: 'Rejilla con refuerzo (zona transitable)', type: 'check', value: false }
+      { id: 'modo', label: 'Medida dada', type: 'seg', value: 'ext', options: [['ext', 'Exterior'], ['int', 'Interior']], help: '¿Los lados son por fuera del marco o la luz interior?' },
+      { id: 'W', label: 'Lado A (mm)', type: 'number', value: 600, step: 10, min: 100, max: 3000, help: 'Un lado de la cámara.' },
+      { id: 'H', label: 'Lado B (mm)', type: 'number', value: 400, step: 10, min: 100, max: 3000, help: 'El otro lado.' },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas iguales.' },
+      { id: 'refuerzo', label: 'Rejilla con refuerzo (zona transitable)', type: 'check', value: false, help: 'Marcar si pasan vehículos o cargas sobre la rejilla.' }
     ],
     calcular: function (p) { return calcularPluvial(p); },
     generar: function (p, P, logo) { return generarPluvial(p, P, logo); }
@@ -1135,11 +1135,11 @@ var TIPOS = [
   {
     id: 'calf', nombre: 'Cámara tipo CALF (marco + tapa)',
     campos: [
-      { id: 'W', label: 'Lado A interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'H', label: 'Lado B interior (mm)', type: 'number', value: '', step: 10, min: 100, max: 2500 },
-      { id: 'cantidad', label: 'Cantidad', type: 'number', value: '', step: 1, min: 1, max: 999 },
-      { id: 'reglamentaria', label: 'Reglamentaria (plegado 3 tramos)', type: 'check', value: false },
-      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'manija', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; } }
+      { id: 'W', label: 'Lado A interior (mm)', type: 'number', value: 500, step: 10, min: 100, max: 2500, help: 'Luz interior de la cámara.' },
+      { id: 'H', label: 'Lado B interior (mm)', type: 'number', value: 500, step: 10, min: 100, max: 2500, help: 'El otro lado interior.' },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas iguales.' },
+      { id: 'reglamentaria', label: 'Reglamentaria (plegado 3 tramos)', type: 'check', value: false, help: 'Fuerza el plegado grande sin importar el tamaño.' },
+      { id: 'agarre', label: 'Agarre tapa (≤500)', type: 'seg', value: 'manija', options: [['manija', 'Manija'], ['tirador', 'Tirador']], cond: function (p) { return Math.max(+p.W, +p.H) <= 500; }, help: 'Solo si el lado mayor es ≤500 mm.' }
     ],
     calcular: function (p) { return calcularCALF(p); },
     generar: function (p, P, logo) { return generarCALF(p, P, logo); }

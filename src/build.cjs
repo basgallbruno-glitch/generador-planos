@@ -44,6 +44,7 @@ h1{font-size:20px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .field:last-child{margin-bottom:0}
 label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.hint{font-size:12px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;line-height:1.35;margin-top:-1px;opacity:.85}
 input,select,textarea{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--border);border-radius:8px;
   background:var(--bg);color:var(--fg)}
 textarea{resize:vertical;min-height:72px;line-height:1.4}
@@ -136,15 +137,16 @@ function renderCampos(){
   Object.keys(segState).forEach(k=>delete segState[k]);
   let h='';
   t.campos.forEach(c=>{
+    const hint=c.help?'<small class="hint">'+escH(c.help)+'</small>':'';
     if(c.type==='number'){
-      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label><input id="f_'+c.id+'" type="number" value="'+c.value+'" step="'+(c.step||1)+'"'+(c.min!=null?' min="'+c.min+'"':'')+(c.max!=null?' max="'+c.max+'"':'')+'></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label>'+hint+'<input id="f_'+c.id+'" type="number" value="'+c.value+'" step="'+(c.step||1)+'"'+(c.min!=null?' min="'+c.min+'"':'')+(c.max!=null?' max="'+c.max+'"':'')+'></div>';
     } else if(c.type==='select'){
-      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label><select id="f_'+c.id+'">'+c.options.map(o=>'<option value="'+o[0]+'"'+(o[0]===c.value?' selected':'')+'>'+escH(o[1])+'</option>').join('')+'</select></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label>'+hint+'<select id="f_'+c.id+'">'+c.options.map(o=>'<option value="'+o[0]+'"'+(o[0]===c.value?' selected':'')+'>'+escH(o[1])+'</option>').join('')+'</select></div>';
     } else if(c.type==='seg'){
       segState[c.id]=c.value;
-      h+='<div class="field" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label><div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
     } else if(c.type==='check'){
-      h+='<div class="field" id="fld_'+c.id+'" style="flex-direction:row;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>';
+      h+='<div class="field" id="fld_'+c.id+'"><div style="display:flex;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>'+hint+'</div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
