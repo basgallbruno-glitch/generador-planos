@@ -36,8 +36,11 @@ const mkHtml = (DL) => `<title>Generador de planos - Carpintería metálica</tit
 body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,sans-serif;margin:0}
 .wrap{display:flex;gap:20px;align-items:flex-start;padding-block:20px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.panel{flex:0 0 300px;position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:18px}
+.panel{flex:0 0 460px;position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:18px}
 .sheet{flex:1 1 auto;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}
+.grid2 .wide{grid-column:1/-1}
+.grid2 .field{margin-bottom:12px}
 h1{font-size:20px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:13px;margin:0}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
@@ -88,14 +91,16 @@ td.n{text-align:right;font-family:'IBM Plex Mono',monospace}
     </div>
     <div class="card">
       <div class="field"><label for="tipo">Tipo de plano</label><select id="tipo"></select></div>
-      <div id="campos"></div>
+      <div id="campos" class="grid2"></div>
     </div>
     <div class="card">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Rótulo (editable)</div>
-      <div class="field"><label for="rPlano">Plano</label><input id="rPlano" type="text" value=""></div>
-      <div class="field"><label for="rObra">Obra</label><input id="rObra" type="text" value=""></div>
-      <div class="field"><label for="rOt">OT</label><input id="rOt" type="text" value=""></div>
-      <div class="field"><label for="rFecha">Fecha</label><input id="rFecha" type="text" value="" placeholder="dd-mm-aaaa"></div>
+      <div class="grid2">
+        <div class="field"><label for="rPlano">Plano</label><input id="rPlano" type="text" value=""></div>
+        <div class="field"><label for="rObra">Obra</label><input id="rObra" type="text" value=""></div>
+        <div class="field"><label for="rOt">OT</label><input id="rOt" type="text" value=""></div>
+        <div class="field"><label for="rFecha">Fecha</label><input id="rFecha" type="text" value="" placeholder="dd-mm-aaaa"></div>
+      </div>
     </div>
     <div class="card">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Accesorios</div>
@@ -103,13 +108,6 @@ td.n{text-align:right;font-family:'IBM Plex Mono',monospace}
       <button id="pdf" class="pdfbtn">Imprimir / Guardar PDF (A4)</button>
     </div>
     <div id="warn" class="warn" hidden></div>
-    <div class="card">
-      <table id="tabla"><thead><tr><th>Pieza</th><th>Desc.</th><th class="n">Cant</th><th class="n">Ancho×Largo</th></tr></thead><tbody></tbody></table>
-    </div>
-    <div class="card note">
-      <b>Tipos disponibles</b>: puerta metálica doble faz y marco de puerta (solo marco). El motor se irá ampliando con otros tipos (tapas de cámara, etc.).<br><br>
-      <b>Alcance</b>: perfiles fuera de escala con sus desarrollos, cajetín y accesorios editables, y export a PDF A4.
-    </div>
     <button id="theme" class="themebtn">Cambiar tema</button>
   </div>
   <div class="sheet"><div class="draw" id="draw"></div></div>
@@ -144,9 +142,9 @@ function renderCampos(){
       h+='<div class="field" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label>'+hint+'<select id="f_'+c.id+'">'+c.options.map(o=>'<option value="'+o[0]+'"'+(o[0]===c.value?' selected':'')+'>'+escH(o[1])+'</option>').join('')+'</select></div>';
     } else if(c.type==='seg'){
       segState[c.id]=c.value;
-      h+='<div class="field" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
+      h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
     } else if(c.type==='check'){
-      h+='<div class="field" id="fld_'+c.id+'"><div style="display:flex;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>'+hint+'</div>';
+      h+='<div class="field wide" id="fld_'+c.id+'"><div style="display:flex;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>'+hint+'</div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
@@ -199,12 +197,10 @@ function dibujar(){
   const w=document.getElementById('warn'), msg=validarGen(p);
   w.hidden=!msg; w.textContent=msg;
   if(!(p.W>0)||!(p.H>0)||p.W-60<=0) return;
-  let r, pags;
-  try{ r=t.calcular(p); pags=t.generar(p,palette(),LOGO); }
+  let pags;
+  try{ pags=t.generar(p,palette(),LOGO); }
   catch(e){ console.error(e); return; }
   document.getElementById('draw').innerHTML=pags.map(s=>'<div class="page">'+s+'</div>').join('');
-  const tb=document.querySelector('#tabla tbody');
-  tb.innerHTML=(r.despiece||[]).map(d=>'<tr><td>'+d.pieza+'</td><td>'+d.desc+'</td><td class="n">'+d.cant+'</td><td class="n">'+d.ancho+'×'+d.largo+'</td></tr>').join('');
 }
 // PDF: frente/lateral a 1:ESCALA. Paleta clara fija (papel). Funciona en deployment real;
 // dentro del sandbox del artifact la descarga puede quedar bloqueada.
