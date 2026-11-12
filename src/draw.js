@@ -244,9 +244,19 @@ function parteEnterrada(x0, xr, y, ent, bw, P) {
 
 /* --- Frente (factor k = unidades por mm), vano acotado --- */
 function frente(r, ox, oy, P, mano, k) {
-  var W = r.W * k, H = r.H * k, g = '';
-  g += tsans(ox, oy - 18, 'FRENTE — mano ' + (mano === 'izq' ? 'izq' : 'der'), F.h2, 'start', P, 700, P.accent);
-  var x0 = ox, y0 = oy;
+  var W = r.W * k, H = r.H * k, pf = (r.altoPanoFijo || 0) * k, g = '';
+  var x0 = ox, topY = oy, y0 = oy + pf;   // topY = cara exterior del marco sup · y0 = techo del cajón / dintel de la puerta
+  g += tsans(ox, topY - 18, 'FRENTE — mano ' + (mano === 'izq' ? 'izq' : 'der'), F.h2, 'start', P, 700, P.accent);
+  if (pf > 0) {
+    g += rect(x0, topY, W, pf, SW.thick, P);                               // marco del paño fijo
+    var gx = x0 + 30 * k, gy = topY + 30 * k, gw = W - 60 * k, gh = pf - 30 * k;
+    g += rect(gx, gy, gw, gh, SW.thin, P, P.hatch);                        // vidrio
+    g += line(gx, gy, gx + gw, gy + gh, SW.dim, P, '14 10', P.accent);
+    g += line(gx, gy + gh, gx + gw, gy, SW.dim, P, '14 10', P.accent);
+    g += tsans(x0 + W / 2, gy + 22, 'VIDRIO', F.ty, 'middle', P, 600, P.muted || P.text);
+    g += line(x0 + 30 * k, y0, x0 + W - 30 * k, y0, SW.thick, P);          // cajón (divisor paño/puerta)
+    g += dimV(topY, y0, x0 - 60, String(r.altoPanoFijo), P, x0);           // cota del paño fijo (techo cajón → marco sup)
+  }
   g += rect(x0, y0, W, H, SW.thick, P);
   g += rect(x0 + 30 * k, y0 + 30 * k, W - 60 * k, H - 30 * k, SW.thin, P);
   var hx = x0 + (30 - 11) * k, hy = y0 + (30 - 15 + 4) * k, hw = (r.W - 60 + 22) * k, hh = (r.H - 30 - 4 - 7 + 15) * k;
@@ -414,7 +424,7 @@ function generarPaginas(params, P, logo) {
   g1 += cajetin(r, M, M, full, 185, P, logo);
   var reb = r.rebajeHoja;
   // --- fila superior: frente (izq) + ① Marco (der) ---
-  var kf = Math.min(520 / r.W, 880 / r.H);
+  var kf = Math.min(520 / r.W, 880 / (r.H + (r.altoPanoFijo || 0)));
   g1 += frente(r, M + 150, 330, P, mano, kf);
   g1 += bloquePerfil(M + 950, 320, 760, 960, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
@@ -424,13 +434,29 @@ function generarPaginas(params, P, logo) {
   var wTop = 650 + gap + 660, x2 = M + (full - wTop) / 2;
   g1 += cruzExt(r, x2, by, 650, 1090, P);
   g1 += cruzInt(r, x2 + 650 + gap, by, 660, 1090, P);
-  var by2 = by + 1110, wBot = 640 + gap + 660, x4 = M + (full - wBot) / 2;
-  g1 += bloquePerfil(x4, by2, 640, 390, '④ Refuerzo (U)',
-    r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
-    [reb, 25, reb], ['L', 'L'], [0, -1], P);
-  g1 += bloquePerfil(x4 + 640 + gap, by2, 660, 390, '⑤ Perfil inferior (U)',
-    'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
-    [20, reb, 20], ['L', 'L'], [0, -1], P);
+  var by2 = by + 1110;
+  if (r.altoPanoFijo > 0) {
+    // 4 columnas: ④ ⑤ + cajón superior e inferior del paño fijo
+    var g4 = 40, bw4 = (full - 3 * g4) / 4;
+    g1 += bloquePerfil(M, by2, bw4, 390, '④ Refuerzo (U)',
+      r.nRef + '/hoja · desarr. ' + r.refAncho, [reb, 25, reb], ['L', 'L'], [0, -1], P);
+    g1 += bloquePerfil(M + (bw4 + g4), by2, bw4, 390, '⑤ Perfil inf. (U)',
+      'largo ' + r.p5Largo + ' · desarr. ' + r.p5Ancho, [20, reb, 20], ['L', 'L'], [0, -1], P);
+    g1 += bloquePerfil(M + 2 * (bw4 + g4), by2, bw4, 390, '⑥ Cajón sup.',
+      'desarr. ' + r.cajonSup.dev + ' · largo ' + r.cajonSup.largo,
+      r.cajonSup.segs, r.cajonSup.turns, r.cajonSup.h0, P);
+    g1 += bloquePerfil(M + 3 * (bw4 + g4), by2, bw4, 390, '⑥ Cajón inf.',
+      'desarr. ' + r.cajonInf.dev + ' · largo ' + r.cajonInf.largo,
+      r.cajonInf.segs, r.cajonInf.turns, r.cajonInf.h0, P);
+  } else {
+    var wBot = 640 + gap + 660, x4 = M + (full - wBot) / 2;
+    g1 += bloquePerfil(x4, by2, 640, 390, '④ Refuerzo (U)',
+      r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
+      [reb, 25, reb], ['L', 'L'], [0, -1], P);
+    g1 += bloquePerfil(x4 + 640 + gap, by2, 660, 390, '⑤ Perfil inferior (U)',
+      'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
+      [20, reb, 20], ['L', 'L'], [0, -1], P);
+  }
 
   // ===================== HOJA 2: despiece (letra grande) =====================
   var g2 = '';
@@ -1055,6 +1081,7 @@ var TIPOS = [
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']], help: 'Define el tramo del marco donde apoya la hoja.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al picaporte. Normal 1020.' },
+      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio sobre la puerta + cajón divisor.' },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']], help: 'Cuál de las dos se muestra en el frente.' },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],

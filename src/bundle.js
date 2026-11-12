@@ -117,6 +117,7 @@ function calcularDespiece(p) {
   var cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
   var cantDer = Math.max(0, p.cantDer == null ? 0 : p.cantDer);
   var total = Math.max(1, cantIzq + cantDer);
+  var panoFijo = Math.max(0, p.altoPanoFijo == null ? 0 : p.altoPanoFijo);  // alto del paño fijo superior (0 = puerta sola)
   var luz = W - 2 * C.alaMarco;                 // 790
   var caraExt = luz + 2 * C.solapeHoja;         // 812
   var hojaExtAncho = desarrollar([C.pestanaExtHoja, caraExt, C.pestanaExtHoja], 2, chapa); // 838
@@ -145,14 +146,28 @@ function calcularDespiece(p) {
   var hojaExtLargo = desarrollar([caraAltoExt, C.pestanaExtHoja], 1, chapa); // 2037
   var refLargo = caraIntAlto - C.paredPerfil5 - C.luzRefuerzoInf;  // cara H (③) − pared ⑤ − 10 luz
 
+  // --- cajón del paño fijo (doble plegado que encastra; solo si hay paño fijo) ---
+  // superior: U invertida [35,30,35] (fija) · inferior: 11 tramos, verticales t3 = rebaje de hoja (35/31)
+  var cajonSup = { segs: [35, C.alaMarco, 35], turns: ['L', 'L'], h0: [0, -1], endVal: 1, largo: luz };
+  var cajonInf = {
+    segs: [10, 16, 15, 15, rebajeHoja, C.alaMarco, rebajeHoja, 15, 15, 16, 10],
+    turns: ['L', 'R', 'R', 'L', 'R', 'R', 'L', 'R', 'R', 'L'], h0: [0, -1], endVal: 0, largo: luz
+  };
+  cajonSup.dev = suma(restarDed(cajonSup.segs, deduccionPliegues(cajonSup.segs, cajonSup.turns, cajonSup.h0, cajonSup.endVal)));
+  cajonInf.dev = suma(restarDed(cajonInf.segs, deduccionPliegues(cajonInf.segs, cajonInf.turns, cajonInf.h0, cajonInf.endVal)));
+
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
-    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + enterrar },
+    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + panoFijo + enterrar },
     { pieza: 'P.2', desc: 'Tapa', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo },
     { pieza: 'P.3', desc: 'Bandeja', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo },
     { pieza: 'P.4', desc: 'Refuerzo vertical', cant: nRef, ancho: refAncho, largo: refLargo },
     { pieza: 'P.5', desc: 'Perfil interior', cant: 1, ancho: p5Ancho, largo: p5Largo },
   ];
+  if (panoFijo > 0) {
+    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — superior', cant: 1, ancho: cajonSup.dev, largo: cajonSup.largo });
+    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — inferior', cant: 1, ancho: cajonInf.dev, largo: cajonInf.largo });
+  }
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cant, cant: d.cant * total, ancho: d.ancho, largo: d.largo };
   });
@@ -164,6 +179,7 @@ function calcularDespiece(p) {
     rebajeHoja: rebajeHoja, caraIntAncho: caraIntAncho, caraIntAlto: caraIntAlto,
     nRef: nRef, p5Largo: p5Largo, refAncho: refAncho, p5Ancho: p5Ancho,
     segIntAncho: segIntAncho, segIntAlto: segIntAlto,
+    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf,
     hojaExtAncho: hojaExtAncho, hojaExtLargo: hojaExtLargo, despiece: despiece,
   };
 }
