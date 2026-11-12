@@ -106,6 +106,19 @@ function perfilMarco(muro, tipoHoja) {
   };
 }
 
+/* ---- Cajón del paño fijo (doble plegado que encastra): superior U fija + inferior 11 tramos ----
+   rebaje = t3 de la hoja (35 metálica / 31 madera) · largo = luz interior (ancho vano − 60). */
+function cajonPanoFijo(rebaje, luz) {
+  var sup = { segs: [35, C.alaMarco, 35], turns: ['L', 'L'], h0: [0, -1], endVal: 1, largo: luz };
+  var inf = {
+    segs: [10, 16, 15, 15, rebaje, C.alaMarco, rebaje, 15, 15, 16, 10],
+    turns: ['L', 'R', 'R', 'L', 'R', 'R', 'L', 'R', 'R', 'L'], h0: [0, 1], endVal: 0, largo: luz
+  };
+  sup.dev = suma(restarDed(sup.segs, deduccionPliegues(sup.segs, sup.turns, sup.h0, sup.endVal)));
+  inf.dev = suma(restarDed(inf.segs, deduccionPliegues(inf.segs, inf.turns, inf.h0, inf.endVal)));
+  return { sup: sup, inf: inf };
+}
+
 /* ---- Motor de despiece: W×H×chapa -> piezas + cotas derivadas ---- */
 function calcularDespiece(p) {
   var W = p.W, H = p.H, chapa = p.chapa || 18;
@@ -147,14 +160,7 @@ function calcularDespiece(p) {
   var refLargo = caraIntAlto - C.paredPerfil5 - C.luzRefuerzoInf;  // cara H (③) − pared ⑤ − 10 luz
 
   // --- cajón del paño fijo (doble plegado que encastra; solo si hay paño fijo) ---
-  // superior: U invertida [35,30,35] (fija) · inferior: 11 tramos, verticales t3 = rebaje de hoja (35/31)
-  var cajonSup = { segs: [35, C.alaMarco, 35], turns: ['L', 'L'], h0: [0, -1], endVal: 1, largo: luz };
-  var cajonInf = {
-    segs: [10, 16, 15, 15, rebajeHoja, C.alaMarco, rebajeHoja, 15, 15, 16, 10],
-    turns: ['L', 'R', 'R', 'L', 'R', 'R', 'L', 'R', 'R', 'L'], h0: [0, -1], endVal: 0, largo: luz
-  };
-  cajonSup.dev = suma(restarDed(cajonSup.segs, deduccionPliegues(cajonSup.segs, cajonSup.turns, cajonSup.h0, cajonSup.endVal)));
-  cajonInf.dev = suma(restarDed(cajonInf.segs, deduccionPliegues(cajonInf.segs, cajonInf.turns, cajonInf.h0, cajonInf.endVal)));
+  var caj = cajonPanoFijo(rebajeHoja, luz), cajonSup = caj.sup, cajonInf = caj.inf;
 
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
@@ -193,11 +199,17 @@ function calcularMarco(p) {
   var pisoTerminado = p.pisoTerminado == null ? true : p.pisoTerminado;
   var enterrar = pisoTerminado ? 0 : 30;
   var cantidad = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var panoFijo = Math.max(0, p.altoPanoFijo == null ? 0 : p.altoPanoFijo);
   var luz = W - 2 * C.alaMarco;
+  var caj = cajonPanoFijo(marco.t3, luz), cajonSup = caj.sup, cajonInf = caj.inf;
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cantUno: 1, ancho: marco.desarrollo, largo: luz },
-    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cantUno: 2, ancho: marco.desarrollo, largo: H + enterrar },
+    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cantUno: 2, ancho: marco.desarrollo, largo: H + panoFijo + enterrar },
   ];
+  if (panoFijo > 0) {
+    base.push({ pieza: 'P.2', desc: 'Cajón paño fijo — superior', cantUno: 1, ancho: cajonSup.dev, largo: cajonSup.largo });
+    base.push({ pieza: 'P.2', desc: 'Cajón paño fijo — inferior', cantUno: 1, ancho: cajonInf.dev, largo: cajonInf.largo });
+  }
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cantidad, ancho: d.ancho, largo: d.largo };
   });
@@ -206,6 +218,7 @@ function calcularMarco(p) {
     picaporte: p.picaporte == null ? 1020 : p.picaporte,
     cantidadTexto: cantidad + ' marco' + (cantidad === 1 ? '' : 's'),
     muro: muro, tipoHoja: tipoHoja, marco: marco, pisoTerminado: pisoTerminado, enterrar: enterrar,
+    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf,
     luz: luz, despiece: despiece,
   };
 }

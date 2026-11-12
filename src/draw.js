@@ -152,6 +152,19 @@ function seccion(segs, turns, h0, cx, cy, box, P) {
   return g;
 }
 
+/* --- Cajón del paño fijo: superior (U, chico) + inferior (11 tramos, grande y legible) --- */
+function cajonPanoFijoBloque(r, ox, oy, full, P, h) {
+  h = h || 620;
+  var gap = 60, supW = 640, infW = full - supW - gap;
+  var g = bloquePerfil(ox, oy, supW, h, '⑥ Cajón sup. (U invertida)',
+    'desarr. ' + r.cajonSup.dev + ' · largo ' + r.cajonSup.largo,
+    r.cajonSup.segs, r.cajonSup.turns, r.cajonSup.h0, P);
+  g += bloquePerfil(ox + supW + gap, oy, infW, h, '⑥ Cajón inf. (encastre)',
+    'desarr. ' + r.cajonInf.dev + ' · largo ' + r.cajonInf.largo + ' · verticales ' + r.cajonInf.segs[4] + ' (hoja)',
+    r.cajonInf.segs, r.cajonInf.turns, r.cajonInf.h0, P);
+  return { svg: g, bottom: oy + h };
+}
+
 /* --- Bloque perfil: título + caption + sección con longitudes (sin tabla) --- */
 function bloquePerfil(ox, oy, w, h, titulo, caption, segs, turns, h0, P) {
   var g = rect(ox, oy, w, h, SW.thin, P, P.card || 'none');
@@ -435,28 +448,13 @@ function generarPaginas(params, P, logo) {
   g1 += cruzExt(r, x2, by, 650, 1090, P);
   g1 += cruzInt(r, x2 + 650 + gap, by, 660, 1090, P);
   var by2 = by + 1110;
-  if (r.altoPanoFijo > 0) {
-    // 4 columnas: ④ ⑤ + cajón superior e inferior del paño fijo
-    var g4 = 40, bw4 = (full - 3 * g4) / 4;
-    g1 += bloquePerfil(M, by2, bw4, 390, '④ Refuerzo (U)',
-      r.nRef + '/hoja · desarr. ' + r.refAncho, [reb, 25, reb], ['L', 'L'], [0, -1], P);
-    g1 += bloquePerfil(M + (bw4 + g4), by2, bw4, 390, '⑤ Perfil inf. (U)',
-      'largo ' + r.p5Largo + ' · desarr. ' + r.p5Ancho, [20, reb, 20], ['L', 'L'], [0, -1], P);
-    g1 += bloquePerfil(M + 2 * (bw4 + g4), by2, bw4, 390, '⑥ Cajón sup.',
-      'desarr. ' + r.cajonSup.dev + ' · largo ' + r.cajonSup.largo,
-      r.cajonSup.segs, r.cajonSup.turns, r.cajonSup.h0, P);
-    g1 += bloquePerfil(M + 3 * (bw4 + g4), by2, bw4, 390, '⑥ Cajón inf.',
-      'desarr. ' + r.cajonInf.dev + ' · largo ' + r.cajonInf.largo,
-      r.cajonInf.segs, r.cajonInf.turns, r.cajonInf.h0, P);
-  } else {
-    var wBot = 640 + gap + 660, x4 = M + (full - wBot) / 2;
-    g1 += bloquePerfil(x4, by2, 640, 390, '④ Refuerzo (U)',
-      r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
-      [reb, 25, reb], ['L', 'L'], [0, -1], P);
-    g1 += bloquePerfil(x4 + 640 + gap, by2, 660, 390, '⑤ Perfil inferior (U)',
-      'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
-      [20, reb, 20], ['L', 'L'], [0, -1], P);
-  }
+  var wBot = 640 + gap + 660, x4 = M + (full - wBot) / 2;
+  g1 += bloquePerfil(x4, by2, 640, 390, '④ Refuerzo (U)',
+    r.nRef + '/hoja · largo ' + r.despiece[4].largo + ' · desarr. ' + r.refAncho,
+    [reb, 25, reb], ['L', 'L'], [0, -1], P);
+  g1 += bloquePerfil(x4 + 640 + gap, by2, 660, 390, '⑤ Perfil inferior (U)',
+    'largo ' + r.p5Largo + ' (int−4) · desarr. ' + r.p5Ancho,
+    [20, reb, 20], ['L', 'L'], [0, -1], P);
 
   // ===================== HOJA 2: despiece (letra grande) =====================
   var g2 = '';
@@ -465,7 +463,9 @@ function generarPaginas(params, P, logo) {
   g2 += tsans(M, ty - 24, 'DESPIECE — ' + r.total + ' puertas (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g2 += dt.svg;
-  g2 += bloqueAccesorios(r, M, ty + dt.h + 56, P, full);
+  var ay = ty + dt.h + 56;
+  if (r.altoPanoFijo > 0) { var cjb = cajonPanoFijoBloque(r, M, ay, full, P); g2 += cjb.svg; ay = cjb.bottom + 56; }
+  g2 += bloqueAccesorios(r, M, ay, P, full);
 
   return [
     pagina(g1, P, 'Perfiles fuera de escala: las medidas son las longitudes de cada tramo (mm). Plana/desarrollo = medida de la chapa a cortar. Hoja 1 de 2. Imprimir en A4.'),
@@ -475,15 +475,26 @@ function generarPaginas(params, P, logo) {
 
 /* --- Frente del marco (sin hoja): vano + apertura --- */
 function frenteMarco(r, ox, oy, P, k) {
-  var W = r.W * k, H = r.H * k, g = '';
-  g += tsans(ox, oy - 18, 'FRENTE (marco)', F.h2, 'start', P, 700, P.accent);
-  g += rect(ox, oy, W, H, SW.thick, P);
-  g += rect(ox + 30 * k, oy + 30 * k, W - 60 * k, H - 30 * k, SW.thick, P);  // apertura (luz)
-  var floorY = oy + H, ent = (r.enterrar || 0) * k, frameBot = floorY + ent;
+  var W = r.W * k, H = r.H * k, pf = (r.altoPanoFijo || 0) * k, g = '';
+  var topY = oy, y0 = oy + pf;   // topY = marco sup · y0 = techo del cajón
+  g += tsans(ox, topY - 18, 'FRENTE (marco)', F.h2, 'start', P, 700, P.accent);
+  if (pf > 0) {
+    g += rect(ox, topY, W, pf, SW.thick, P);
+    var gx = ox + 30 * k, gy = topY + 30 * k, gw = W - 60 * k, gh = pf - 30 * k;
+    g += rect(gx, gy, gw, gh, SW.thin, P, P.hatch);
+    g += line(gx, gy, gx + gw, gy + gh, SW.dim, P, '14 10', P.accent);
+    g += line(gx, gy + gh, gx + gw, gy, SW.dim, P, '14 10', P.accent);
+    g += tsans(ox + W / 2, gy + 22, 'VIDRIO', F.ty, 'middle', P, 600, P.muted || P.text);
+    g += line(ox + 30 * k, y0, ox + W - 30 * k, y0, SW.thick, P);   // cajón
+    g += dimV(topY, y0, ox - 60, String(r.altoPanoFijo), P, ox);
+  }
+  g += rect(ox, y0, W, H, SW.thick, P);
+  g += rect(ox + 30 * k, y0 + 30 * k, W - 60 * k, H - 30 * k, SW.thick, P);  // apertura (luz)
+  var floorY = y0 + H, ent = (r.enterrar || 0) * k, frameBot = floorY + ent;
   g += parteEnterrada(ox, ox + W, floorY, ent, 30 * k, P);                   // jambas bajo el NPT (para enterrar)
   g += nivelPiso(ox, ox + W, floorY, P, 'left');                             // etiqueta a la izquierda (el lateral va a la derecha)
   g += dimH(ox, ox + W, frameBot + 64, String(r.W), P, frameBot);
-  g += dimV(oy, floorY, ox - 60, String(r.H), P, ox);
+  g += dimV(y0, floorY, ox - 60, String(r.H), P, ox);
   return g;
 }
 
@@ -502,8 +513,8 @@ function generarMarco(params, P, logo) {
   g += dt.svg;
   var ny = ty + dt.h + 56;
   // --- 2) fila de dibujos: frente del vano + lateral (izq) + ① Marco (der) ---
-  var topY = ny, bandH = 1000;
-  var kf = Math.min(360 / r.W, (bandH - 120) / r.H);
+  var topY = ny, bandH = r.altoPanoFijo > 0 ? 820 : 1000;
+  var kf = Math.min(360 / r.W, (bandH - 120) / (r.H + (r.altoPanoFijo || 0)));
   var fx = M + 120;
   g += frenteMarco(r, fx, topY + 50, P, kf);
   g += lateral(r, fx + r.W * kf + 70, topY + 50, P, kf);
@@ -511,8 +522,10 @@ function generarMarco(params, P, logo) {
   g += bloquePerfil(bx, topY, bw, bandH, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
-  // --- 3) accesorios al final ---
-  g += bloqueAccesorios(r, M, topY + bandH + 70, P, full);
+  // --- 3) cajón del paño fijo (si corresponde) + accesorios al final ---
+  var ny2 = topY + bandH + 70;
+  if (r.altoPanoFijo > 0) { var cjb = cajonPanoFijoBloque(r, M, ny2, full, P, 470); g += cjb.svg; ny2 = cjb.bottom + 56; }
+  g += bloqueAccesorios(r, M, ny2, P, full);
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
 
@@ -1098,6 +1111,7 @@ var TIPOS = [
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']], help: 'Tipo de hoja que va a recibir el marco.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al cerradero. Normal 1020.' },
+      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio arriba + cajón divisor.' },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],
     calcular: function (p) { return calcularMarco(p); },

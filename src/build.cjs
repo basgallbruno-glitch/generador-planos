@@ -39,9 +39,10 @@ body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,
 .panel{flex:0 0 460px;position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:18px}
 .phead{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 0 10px;display:flex;flex-direction:column;gap:10px}
 .sheet{flex:1 1 auto;min-width:0}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:stretch}
 .grid2 .wide{grid-column:1/-1}
 .grid2 .field{margin-bottom:12px}
+.grid2 .field>input,.grid2 .field>select,.grid2 .field>.seg{margin-top:auto}
 h1{font-size:20px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:13px;margin:0}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
