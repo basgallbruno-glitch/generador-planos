@@ -1534,7 +1534,34 @@ function generarPlegado(params, P, logo) {
   return [pagina(g, P, 'Creador de plegados (nivel 1). Dobleces a 90°; la deducción por ángulo es trabajo aparte. Desarrollo = chapa a cortar. Imprimir en A4.')];
 }
 
-/* --- Hoja A4: BANDEJA (tipo del creador): dos secciones --- */
+/* --- Bandeja: chapa plana en planta (fondo + solapas hacia afuera + esquinas en muesca) --- */
+function partesSeccion(segs) {
+  var idx = 0, i;
+  for (i = 1; i < segs.length; i++) if (segs[i] > segs[idx]) idx = i;   // base = tramo más largo
+  return { base: segs[idx], before: segs.slice(0, idx).reverse(), after: segs.slice(idx + 1) };
+}
+function bandejaPlano(ox, oy, w, h, r, P) {
+  var pa = partesSeccion(r.secAncho.segs), pb = partesSeccion(r.secLargo.segs);
+  var g = rect(ox, oy, w, h, SW.thin, P);
+  g += tsans(ox + 24, oy + 42, r.nombre + ' — chapa plana (planta)', F.h2, 'start', P, 700, P.accent);
+  g += tsans(ox + 24, oy + 70, 'fondo ' + pa.base + ' × ' + pb.base + ' mm · las solapas se doblan hacia afuera · esquinas en muesca', F.ty, 'start', P, 400, P.muted);
+  var cx = ox + w / 2, cy = oy + h / 2 + 24, hW = 300, vH = 210;
+  function wv(t) { return Math.max(28, Math.min(74, t * 0.55)); }
+  var off, i, s;
+  // solapas derecha (ancho.after) e izquierda (ancho.before): bandas verticales
+  off = 0; for (i = 0; i < pa.after.length; i++) { s = wv(pa.after[i]); g += rect(cx + hW + off, cy - vH, s, 2 * vH, SW.thin, P); g += txt(cx + hW + off + s / 2, cy, String(pa.after[i]), F.ty, 'middle', P, false, '500'); off += s; }
+  off = 0; for (i = 0; i < pa.before.length; i++) { s = wv(pa.before[i]); g += rect(cx - hW - off - s, cy - vH, s, 2 * vH, SW.thin, P); g += txt(cx - hW - off - s / 2, cy, String(pa.before[i]), F.ty, 'middle', P, false, '500'); off += s; }
+  // solapas arriba (largo.before) y abajo (largo.after): bandas horizontales
+  off = 0; for (i = 0; i < pb.before.length; i++) { s = wv(pb.before[i]); g += rect(cx - hW, cy - vH - off - s, 2 * hW, s, SW.thin, P); g += txt(cx, cy - vH - off - s / 2 + 5, String(pb.before[i]), F.ty, 'middle', P, false, '500'); off += s; }
+  off = 0; for (i = 0; i < pb.after.length; i++) { s = wv(pb.after[i]); g += rect(cx - hW, cy + vH + off, 2 * hW, s, SW.thin, P); g += txt(cx, cy + vH + off + s / 2 + 5, String(pb.after[i]), F.ty, 'middle', P, false, '500'); off += s; }
+  // fondo (encima de las bandas)
+  g += rect(cx - hW, cy - vH, 2 * hW, 2 * vH, SW.thick, P);
+  g += txt(cx, cy - 6, String(pa.base) + ' × ' + String(pb.base), F.num, 'middle', P, false, '700');
+  g += txt(cx, cy + 22, 'fondo', F.ty, 'middle', P, false, '400', P.muted || P.text);
+  return g;
+}
+
+/* --- Hoja A4: BANDEJA (tipo del creador): planta de la chapa --- */
 function generarBandeja(params, P, logo) {
   var r = calcularBandeja(params);
   r.rotulo = params.rotulo; r.herrajes = [];
@@ -1542,14 +1569,9 @@ function generarBandeja(params, P, logo) {
   g += cajetin(r, M, M, full, 185, P, logo);
   var ty = 345;
   if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
-    var half = (full - 40) / 2, bh = 900;
-    g += bloquePerfil(M, ty, half, bh, (r.nombre) + ' — sección ANCHO',
-      'desarrollo ' + r.secAncho.dev + ' · ' + r.secAncho.n + ' tramos',
-      r.secAncho.segs, r.secAncho.turns, r.secAncho.h0, P);
-    g += bloquePerfil(M + half + 40, ty, half, bh, (r.nombre) + ' — sección LARGO',
-      'desarrollo ' + r.secLargo.dev + ' · ' + r.secLargo.n + ' tramos',
-      r.secLargo.segs, r.secLargo.turns, r.secLargo.h0, P);
-    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
+    var bh = 940;
+    g += bandejaPlano(M, ty, full, bh, r, P);
+    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas). Desarrollo ancho ' + r.secAncho.dev + ' · largo ' + r.secLargo.dev + '.', F.h2, 'start', P, 600, P.text);
     ty += bh + 120;
   } else {
     g += tsans(M + 10, ty + 30, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
