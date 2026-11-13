@@ -252,7 +252,7 @@ function calcularPlegado(p) {
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Plegado').trim() || 'Plegado';
   var mat = 'Chapa N°' + chapa;
-  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: cant, cant: cant, ancho: dev, largo: largo, mat: mat }];
+  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: dev, largo: largo, mat: mat }];
   return {
     tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     segs: segs, turns: turns, h0: [0, -1], endVal: endVal,
@@ -283,7 +283,7 @@ function calcularBandeja(p) {
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Bandeja').trim() || 'Bandeja';
   var mat = 'Chapa N°' + chapa;
-  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: cant, cant: cant, ancho: A.dev, largo: B.dev, mat: mat }];
+  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: A.dev, largo: B.dev, mat: mat }];
   return {
     tipoPlano: 'bandeja', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     secAncho: A, secLargo: B, endVal: endVal,
