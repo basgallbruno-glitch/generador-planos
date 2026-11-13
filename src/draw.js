@@ -429,6 +429,8 @@ function generarPaginas(params, P, logo) {
   var r = calcularDespiece(params);
   r.rotulo = params.rotulo;
   r.herrajes = params.herrajes || [];
+  r.tipoTexto = 'Doble faz · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') +
+    (r.chapaMarco === r.chapaHoja ? ' · N°' + r.chapaHoja : ' · marco N°' + r.chapaMarco + ' / hoja N°' + r.chapaHoja);
   var mano = params.drawMano || 'izq';
   var M = PG.m, full = PG.w - 2 * M;
 
@@ -440,7 +442,7 @@ function generarPaginas(params, P, logo) {
   var kf = Math.min(520 / r.W, 880 / (r.H + (r.altoPanoFijo || 0)));
   g1 += frente(r, M + 150, 330, P, mano, kf);
   g1 += bloquePerfil(M + 950, 320, 760, 960, '① Marco',
-    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · N°' + (r.chapaMarco || r.chapa) + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   // --- cuadrícula inferior (② ③ ④ ⑤), centrada, sin agrandar ---
   var by = 1360, gap = 70;
@@ -520,7 +522,7 @@ function generarMarco(params, P, logo) {
   g += lateral(r, fx + r.W * kf + 70, topY + 50, P, kf);
   var bw = 880, bx = M + full - bw;
   g += bloquePerfil(bx, topY, bw, bandH, '① Marco',
-    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · desarr. ' + r.marco.desarrollo,
+    'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · N°' + (r.chapaMarco || r.chapa) + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   // --- 3) cajón del paño fijo (si corresponde) + accesorios al final ---
   var ny2 = topY + bandH + 70;
@@ -1090,7 +1092,8 @@ var TIPOS = [
       { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800, help: 'Luz libre del piso al dintel.' },
       { id: 'cantIzq', label: 'Cant. mano izq', type: 'number', value: 1, step: 1, min: 0, max: 99, help: 'Cuántas puertas de mano izquierda.' },
       { id: 'cantDer', label: 'Cant. mano der', type: 'number', value: 0, step: 1, min: 0, max: 99, help: 'Cuántas de mano derecha.' },
-      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
+      { id: 'chapaMarco', label: 'Chapa marco (N°)', type: 'select', value: '16', options: [['16', 'N° 16 (≈1,6 mm)'], ['18', 'N° 18 (≈1,2 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Chapa del marco. Común N°16.' },
+      { id: 'chapaHoja', label: 'Chapa hoja (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Chapa de tapa, bandeja y refuerzos. Común N°18.' },
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']], help: 'Define el tramo del marco donde apoya la hoja.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al picaporte. Normal 1020.' },

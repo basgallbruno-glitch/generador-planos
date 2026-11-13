@@ -78,26 +78,28 @@ var C = {
 // (vecinos del mismo lado de la recta del tramo → forma U), 1 mm si uno abre y otro
 // cierra (forma Z). Extremos (un solo pliegue): endVal (pestaña), a confirmar por perfil.
 // endVal: número (ambas pestañas igual) o [inicio, fin] (1 = cierra, 0 = pata abierta)
-function deduccionPliegues(lens, turns, h0, endVal) {
+function deduccionPliegues(lens, turns, h0, endVal, bd) {
+  bd = bd == null ? 1 : bd;   // mm descontados por pliegue (espesor redondeado); 1 = chapa 18/16, 2 = chapa 14
   var ev = Array.isArray(endVal) ? endVal : [endVal, endVal];
   var p = turtlePts(lens.slice(), turns, h0), n = lens.length, d = [];
   for (var i = 0; i < n; i++) {
-    if (i === 0) { d.push(ev[0]); continue; }
-    if (i === n - 1) { d.push(ev[1]); continue; }
+    if (i === 0) { d.push(ev[0] * bd); continue; }
+    if (i === n - 1) { d.push(ev[1] * bd); continue; }
     var ax = p[i + 1].x - p[i].x, ay = p[i + 1].y - p[i].y;
     var pvx = p[i - 1].x - p[i].x, pvy = p[i - 1].y - p[i].y;
     var nvx = p[i + 2].x - p[i + 1].x, nvy = p[i + 2].y - p[i + 1].y;
     var sPrev = Math.sign(ax * pvy - ay * pvx), sNext = Math.sign(ax * nvy - ay * nvx);
-    d.push(sPrev === sNext ? 2 : 1);
+    d.push((sPrev === sNext ? 2 : 1) * bd);
   }
   return d;
 }
-function perfilMarco(muro, tipoHoja) {
+function bdChapa(chapa) { var t = TABLA_DEDUCCION[chapa]; return (t && t[90]) || 1; }
+function perfilMarco(muro, tipoHoja, chapa) {
   var t3 = tipoHoja === 'madera' ? C.t3Madera : C.t3Metalica;
   var espesor = muro + C.margenMuro;        // = muro terminado (margenMuro provisorio = 0)
   var t7 = espesor - t3 - 15;               // espesor = t3 + 15 + t7
   var segs = [15, 30, t3, 15, 15, 15, t7, 30, 15];
-  var ded = deduccionPliegues(segs, C.marcoTurns, [0, -1], 1);  // pestañas del marco descuentan 1
+  var ded = deduccionPliegues(segs, C.marcoTurns, [0, -1], 1, bdChapa(chapa || 18));  // pestañas del marco descuentan 1·bd
   var dev = segs.map(function (s, i) { return s - ded[i]; });
   var desarrollo = dev.reduce(function (a, b) { return a + b; }, 0);
   return {
@@ -108,23 +110,29 @@ function perfilMarco(muro, tipoHoja) {
 
 /* ---- Cajón del paño fijo (doble plegado que encastra): superior U fija + inferior 11 tramos ----
    rebaje = t3 de la hoja (35 metálica / 31 madera) · largo = luz interior (ancho vano − 60). */
-function cajonPanoFijo(rebaje, luz) {
+function cajonPanoFijo(rebaje, luz, chapa) {
+  var bd = bdChapa(chapa || 18);
   var sup = { segs: [35, C.alaMarco, 35], turns: ['L', 'L'], h0: [0, -1], endVal: 1, largo: luz };
   var inf = {
     segs: [10, 16, 15, 15, rebaje, C.alaMarco, rebaje, 15, 15, 16, 10],
     turns: ['L', 'R', 'R', 'L', 'R', 'R', 'L', 'R', 'R', 'L'], h0: [0, 1], endVal: 0, largo: luz
   };
-  sup.dev = suma(restarDed(sup.segs, deduccionPliegues(sup.segs, sup.turns, sup.h0, sup.endVal)));
-  inf.dev = suma(restarDed(inf.segs, deduccionPliegues(inf.segs, inf.turns, inf.h0, inf.endVal)));
+  sup.dev = suma(restarDed(sup.segs, deduccionPliegues(sup.segs, sup.turns, sup.h0, sup.endVal, bd)));
+  inf.dev = suma(restarDed(inf.segs, deduccionPliegues(inf.segs, inf.turns, inf.h0, inf.endVal, bd)));
   return { sup: sup, inf: inf };
 }
 
 /* ---- Motor de despiece: W×H×chapa -> piezas + cotas derivadas ---- */
 function calcularDespiece(p) {
-  var W = p.W, H = p.H, chapa = p.chapa || 18;
+  var W = p.W, H = p.H;
+  var chapaMarco = p.chapaMarco || p.chapa || 18;   // marco y hoja pueden ser de distinta chapa
+  var chapaHoja = p.chapaHoja || p.chapa || 18;
+  var chapa = chapaHoja;                             // chapa "principal" para refs genéricas
+  var bdH = bdChapa(chapaHoja);                      // mm/pliegue de la hoja
+  var matMarco = 'Chapa N°' + chapaMarco, matHoja = 'Chapa N°' + chapaHoja;
   var muro = p.espesorMuro == null ? 150 : p.espesorMuro;
   var tipoHoja = p.tipoHoja || 'metalica';
-  var marco = perfilMarco(muro, tipoHoja);
+  var marco = perfilMarco(muro, tipoHoja, chapaMarco);
   var pisoTerminado = p.pisoTerminado == null ? true : p.pisoTerminado;
   var enterrar = pisoTerminado ? 0 : 30;   // +30 en jambas para enterrar si el piso no está terminado
   var cantIzq = Math.max(0, p.cantIzq == null ? 1 : p.cantIzq);
@@ -141,18 +149,18 @@ function calcularDespiece(p) {
   var caraIntAlto = H - C.revealDintel - C.juegoIntInf;        // alto - 30 - 8
   var segIntAncho = [pe, re, caraIntAncho, re, pe];
   var segIntAlto = [pe, re, caraIntAlto];
-  var devIntAncho = restarDed(segIntAncho, deduccionPliegues(segIntAncho, ['L', 'R', 'R', 'L'], [1, 0], 0));
-  var devIntAlto = restarDed(segIntAlto, deduccionPliegues(segIntAlto, ['L', 'R'], [0, -1], [0, 1]));
+  var devIntAncho = restarDed(segIntAncho, deduccionPliegues(segIntAncho, ['L', 'R', 'R', 'L'], [1, 0], 0, bdH));
+  var devIntAlto = restarDed(segIntAlto, deduccionPliegues(segIntAlto, ['L', 'R'], [0, -1], [0, 1], bdH));
   var hojaIntAncho = suma(devIntAncho);  // 880 (San Martin)
   var hojaIntLargo = suma(devIntAlto);   // 2056
   var caraInt = caraIntAncho;
   // ④ refuerzo (U simple): paredes = rebaje, base 25; paredes abiertas (−0), base U (−2)
   var seg4 = [rebajeHoja, C.baseRefuerzo, rebajeHoja];
-  var refAncho = suma(seg4) - 2;                               // 93
+  var refAncho = suma(seg4) - 2 * bdH;                         // 93 (chapa 18)
   var nRef = Math.max(1, Math.ceil(caraIntAncho / C.maxSepRefuerzo) - 1);  // cada ≤160, por hoja
   // ⑤ perfil interior (U): paredes 20, base = rebaje
   var seg5 = [C.paredPerfil5, rebajeHoja, C.paredPerfil5];
-  var p5Ancho = suma(seg5) - 2;                               // 73
+  var p5Ancho = suma(seg5) - 2 * bdH;                         // 73 (chapa 18)
   var p5Largo = caraIntAncho - C.juegoPerfil5;               // 788
 
   var caraAltoExt = H - C.revealDintel - C.luzSuperior - C.luzInferior + C.solapeVertHoja; // 2050-30-4-7+15=2024
@@ -160,25 +168,25 @@ function calcularDespiece(p) {
   var refLargo = caraIntAlto - C.paredPerfil5 - C.luzRefuerzoInf;  // cara H (③) − pared ⑤ − 10 luz
 
   // --- cajón del paño fijo (doble plegado que encastra; solo si hay paño fijo) ---
-  var caj = cajonPanoFijo(rebajeHoja, luz), cajonSup = caj.sup, cajonInf = caj.inf;
+  var caj = cajonPanoFijo(rebajeHoja, luz, chapaHoja), cajonSup = caj.sup, cajonInf = caj.inf;
 
   var base = [
-    { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz },
-    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + panoFijo + enterrar },
-    { pieza: 'P.2', desc: 'Tapa', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo },
-    { pieza: 'P.3', desc: 'Bandeja', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo },
-    { pieza: 'P.4', desc: 'Refuerzo vertical', cant: nRef, ancho: refAncho, largo: refLargo },
-    { pieza: 'P.5', desc: 'Perfil interior', cant: 1, ancho: p5Ancho, largo: p5Largo },
+    { pieza: 'P.1', desc: 'Marco — dintel', cant: 1, ancho: marco.desarrollo, largo: luz, mat: matMarco },
+    { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cant: 2, ancho: marco.desarrollo, largo: H + panoFijo + enterrar, mat: matMarco },
+    { pieza: 'P.2', desc: 'Tapa', cant: 1, ancho: hojaExtAncho, largo: hojaExtLargo, mat: matHoja },
+    { pieza: 'P.3', desc: 'Bandeja', cant: 1, ancho: hojaIntAncho, largo: hojaIntLargo, mat: matHoja },
+    { pieza: 'P.4', desc: 'Refuerzo vertical', cant: nRef, ancho: refAncho, largo: refLargo, mat: matHoja },
+    { pieza: 'P.5', desc: 'Perfil interior', cant: 1, ancho: p5Ancho, largo: p5Largo, mat: matHoja },
   ];
   if (panoFijo > 0) {
-    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — superior', cant: 1, ancho: cajonSup.dev, largo: cajonSup.largo });
-    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — inferior', cant: 1, ancho: cajonInf.dev, largo: cajonInf.largo });
+    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — superior', cant: 1, ancho: cajonSup.dev, largo: cajonSup.largo, mat: matHoja });
+    base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — inferior', cant: 1, ancho: cajonInf.dev, largo: cajonInf.largo, mat: matHoja });
   }
   var despiece = base.map(function (d) {
-    return { pieza: d.pieza, desc: d.desc, cantUno: d.cant, cant: d.cant * total, ancho: d.ancho, largo: d.largo };
+    return { pieza: d.pieza, desc: d.desc, cantUno: d.cant, cant: d.cant * total, ancho: d.ancho, largo: d.largo, mat: d.mat };
   });
   return {
-    W: W, H: H, chapa: chapa, cantIzq: cantIzq, cantDer: cantDer, total: total,
+    W: W, H: H, chapa: chapa, chapaMarco: chapaMarco, chapaHoja: chapaHoja, cantIzq: cantIzq, cantDer: cantDer, total: total,
     picaporte: p.picaporte == null ? 1020 : p.picaporte,
     muro: muro, tipoHoja: tipoHoja, marco: marco, pisoTerminado: pisoTerminado, enterrar: enterrar,
     luz: luz, caraExt: caraExt, caraInt: caraInt, caraAltoExt: caraAltoExt,
