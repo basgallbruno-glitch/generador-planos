@@ -531,6 +531,28 @@ function generarMarco(params, P, logo) {
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
 
+/* --- Hoja A4: CREADOR DE PLEGADOS (nivel 1) --- */
+function generarPlegado(params, P, logo) {
+  var r = calcularPlegado(params);
+  r.rotulo = params.rotulo; r.herrajes = [];
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var ty = 345;
+  if (r.nTramos >= 2) {
+    g += bloquePerfil(M, ty, full, 1000, (r.nombre || 'Plegado'),
+      'desarrollo ' + r.dev + ' · largo ' + (r.largoPerfil || '—') + ' · N°' + r.chapa + ' · ' + r.nTramos + ' tramos (dobleces 90°)',
+      r.segs, r.turns, r.h0, P);
+    ty += 1000 + 56;
+  } else {
+    g += tsans(M + 10, ty + 30, 'Agregá al menos 2 tramos para ver el plegado.', F.h2, 'start', P, 600, P.muted || P.text);
+    ty += 90;
+  }
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
+  g += dt.svg;
+  return [pagina(g, P, 'Creador de plegados (nivel 1). Dobleces a 90°; la deducción por ángulo es trabajo aparte. Desarrollo = chapa a cortar. Imprimir en A4.')];
+}
+
 /* ===========================================================================
    GABINETE CON TABLILLAS — dibujo
    =========================================================================== */
@@ -1187,6 +1209,20 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularCALF(p); },
     generar: function (p, P, logo) { return generarCALF(p, P, logo); }
+  },
+  {
+    id: 'plegado-libre', nombre: 'Plegado libre (creador)',
+    listo: function (p) { return (p.tramos || []).filter(function (t) { return +t.largo > 0; }).length >= 2; },
+    campos: [
+      { id: 'nombre', label: 'Nombre del plegado', type: 'text', value: 'Plegado 1', help: 'Aparece en el rótulo y el despiece.' },
+      { id: 'tramos', label: 'Tramos y dobleces', type: 'tramos', value: [[35, '-'], [30, 'izq'], [35, 'der']], help: 'Largo de cada tramo (mm) y hacia dónde dobla respecto al anterior. Dobleces a 90°.' },
+      { id: 'largoPerfil', label: 'Largo del perfil (mm)', type: 'number', value: 1000, step: 10, min: 0, max: 6000, help: 'Longitud de la pieza (la otra dimensión de la chapa).' },
+      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
+      { id: 'puntas', label: 'Puntas', type: 'seg', value: 'pestana', options: [['pestana', 'Pestaña (−)'], ['abiertas', 'Abiertas']], help: 'Pestaña: las puntas descuentan. Abiertas: no.' }
+    ],
+    calcular: function (p) { return calcularPlegado(p); },
+    generar: function (p, P, logo) { return generarPlegado(p, P, logo); }
   }
 ];
 

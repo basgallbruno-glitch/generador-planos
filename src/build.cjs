@@ -43,6 +43,16 @@ body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,
 .grid2 .wide{grid-column:1/-1}
 .grid2 .field{margin-bottom:12px}
 .grid2 .field>input,.grid2 .field>select,.grid2 .field>.seg{margin-top:auto}
+.tramos{display:flex;flex-direction:column;gap:6px}
+.tr-row{display:flex;align-items:center;gap:8px}
+.tr-n{flex:none;width:20px;text-align:right;font:600 12px var(--mono,monospace);color:var(--muted)}
+.tr-largo{flex:1 1 auto;min-width:0}
+.tr-giro{flex:0 0 96px}
+.tr-first{flex:0 0 96px;font-size:12px;color:var(--muted);text-align:center}
+.tr-del{flex:none;width:30px;padding:0;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1}
+.tr-del:hover{color:#e5484d;border-color:#e5484d}
+.tr-add{margin-top:8px;background:transparent;border:1px dashed var(--border);color:var(--fg);padding:8px;border-radius:8px;cursor:pointer;font-size:13px}
+.tr-add:hover{border-color:var(--accent);color:var(--accent)}
 h1{font-size:20px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:13px;margin:0}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
@@ -138,6 +148,17 @@ const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,
 const TIPOMAP={}; TIPOS.forEach(t=>TIPOMAP[t.id]=t);
 let tipoId=TIPOS[0].id;
 const segState={};
+const tramosState={};
+const GIRO_LBL={'-':'recto','izq':'↶ izq','der':'↷ der'};
+function tramosRows(id){
+  return tramosState[id].map((r,i)=>
+    '<div class="tr-row" data-i="'+i+'"><span class="tr-n">'+(i+1)+'</span>'+
+    '<input type="number" class="tr-largo" data-id="'+id+'" data-i="'+i+'" value="'+r.largo+'" step="1" min="0">'+
+    (i===0 ? '<span class="tr-first">1er tramo</span>'
+      : '<select class="tr-giro" data-id="'+id+'" data-i="'+i+'">'+['-','izq','der'].map(g=>'<option value="'+g+'"'+(g===r.giro?' selected':'')+'>'+GIRO_LBL[g]+'</option>').join('')+'</select>')+
+    '<button type="button" class="tr-del" data-id="'+id+'" data-i="'+i+'" title="quitar">×</button></div>'
+  ).join('');
+}
 function tipoActual(){ return TIPOMAP[tipoId]; }
 
 function renderCampos(){
@@ -155,6 +176,11 @@ function renderCampos(){
       h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="seg" data-seg="'+c.id+'">'+c.options.map(o=>'<button type="button" data-val="'+o[0]+'" aria-pressed="'+(o[0]===c.value)+'">'+escH(o[1])+'</button>').join('')+'</div></div>';
     } else if(c.type==='check'){
       h+='<div class="field wide" id="fld_'+c.id+'"><div style="display:flex;align-items:center;gap:8px"><input id="f_'+c.id+'" type="checkbox"'+(c.value?' checked':'')+' style="width:auto;flex:none"><label for="f_'+c.id+'" style="text-transform:none;font-size:13px;color:var(--fg)">'+escH(c.label)+'</label></div>'+hint+'</div>';
+    } else if(c.type==='text'){
+      h+='<div class="field wide" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label>'+hint+'<input id="f_'+c.id+'" type="text" value="'+escH(c.value||'')+'"></div>';
+    } else if(c.type==='tramos'){
+      tramosState[c.id]=(c.value||[]).map(r=>({largo:r[0],giro:r[1]||'-'}));
+      h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="tramos" id="tramos_'+c.id+'">'+tramosRows(c.id)+'</div><button type="button" class="tr-add" data-id="'+c.id+'">+ agregar tramo</button></div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
@@ -166,6 +192,12 @@ function renderCampos(){
         btns.forEach(x=>x.setAttribute('aria-pressed', x===b));
         dibujar();
       }));
+    } else if(c.type==='tramos'){
+      const cont=document.getElementById('tramos_'+c.id);
+      cont.addEventListener('input',e=>{ const el=e.target; if(el.classList.contains('tr-largo')){ tramosState[c.id][+el.dataset.i].largo=+el.value; dibujar(); } });
+      cont.addEventListener('change',e=>{ const el=e.target; if(el.classList.contains('tr-giro')){ tramosState[c.id][+el.dataset.i].giro=el.value; dibujar(); } });
+      cont.addEventListener('click',e=>{ const el=e.target.closest('.tr-del'); if(el){ tramosState[c.id].splice(+el.dataset.i,1); cont.innerHTML=tramosRows(c.id); dibujar(); } });
+      document.querySelector('.tr-add[data-id="'+c.id+'"]').addEventListener('click',()=>{ tramosState[c.id].push({largo:20,giro:'izq'}); cont.innerHTML=tramosRows(c.id); dibujar(); });
     } else {
       document.getElementById('f_'+c.id).addEventListener((c.type==='select'||c.type==='check')?'change':'input', dibujar);
     }
@@ -175,7 +207,11 @@ function renderCampos(){
 function getParams(){
   const t=tipoActual(), p={};
   t.campos.forEach(c=>{
-    let v = c.type==='seg' ? segState[c.id] : (c.type==='check' ? document.getElementById('f_'+c.id).checked : document.getElementById('f_'+c.id).value);
+    let v;
+    if(c.type==='seg') v=segState[c.id];
+    else if(c.type==='check') v=document.getElementById('f_'+c.id).checked;
+    else if(c.type==='tramos') v=(tramosState[c.id]||[]).map(r=>({largo:+r.largo,giro:r.giro}));
+    else v=document.getElementById('f_'+c.id).value;
     if(c.type==='number') v=+v;
     p[c.id]=v;
   });
@@ -188,6 +224,7 @@ function getParams(){
   return p;
 }
 function validarGen(p){
+  if(p.tramos) return (p.tramos.filter(t=>t.largo>0).length>=2)?'':'Agregá al menos 2 tramos.';
   if(!(p.W>0)||!(p.H>0)) return 'Completá ancho y alto.';
   // chequeos específicos de puertas/marco (tienen espesor de muro); el gabinete los omite
   if(p.espesorMuro!=null){
@@ -206,7 +243,8 @@ function dibujar(){
   t.campos.forEach(c=>{ if(c.cond){ const el=document.getElementById('fld_'+c.id); if(el) el.style.display=c.cond(p)?'':'none'; } });
   const w=document.getElementById('warn'), msg=validarGen(p);
   w.hidden=!msg; w.textContent=msg;
-  if(!(p.W>0)||!(p.H>0)||p.W-60<=0) return;
+  if(t.listo){ if(!t.listo(p)) return; }
+  else if(!(p.W>0)||!(p.H>0)||p.W-60<=0) return;
   let pags;
   try{ pags=t.generar(p,palette(),LOGO); }
   catch(e){ console.error(e); return; }

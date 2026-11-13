@@ -231,6 +231,37 @@ function calcularMarco(p) {
   };
 }
 
+/* ---- CREADOR DE PLEGADOS (nivel 1): lista de tramos + dobleces 90° -> desarrollo ----
+   tramos: [{largo, giro}] con giro 'izq'/'der' (el primero sin giro). Desarrollo por el
+   mismo criterio U/Z del resto, con el descuento por espesor de la chapa elegida.
+   Limitación: dobleces a 90° (la deducción por ángulo es trabajo aparte). */
+function calcularPlegado(p) {
+  var tramos = (p.tramos || []).filter(function (t) { return +t.largo > 0; });
+  var segs = tramos.map(function (t) { return +t.largo; });
+  var turns = [];
+  for (var i = 1; i < tramos.length; i++) turns.push(tramos[i].giro === 'der' ? 'R' : 'L');
+  var chapa = p.chapa || 18, bd = bdChapa(chapa);
+  var endVal = p.puntas === 'abiertas' ? 0 : 1;   // pestaña (descuenta) vs punta abierta (no)
+  var dev = 0, devTramos = segs.slice();
+  if (segs.length >= 2) {
+    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bd);
+    devTramos = restarDed(segs, ded);
+    dev = suma(devTramos);
+  } else if (segs.length === 1) { dev = segs[0]; }
+  var largo = Math.max(0, p.largoPerfil == null ? 0 : p.largoPerfil);
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var nombre = (p.nombre || 'Plegado').trim() || 'Plegado';
+  var mat = 'Chapa N°' + chapa;
+  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: cant, cant: cant, ancho: dev, largo: largo, mat: mat }];
+  return {
+    tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
+    segs: segs, turns: turns, h0: [0, -1], endVal: endVal,
+    dev: dev, devTramos: devTramos, largoPerfil: largo, nTramos: segs.length,
+    tipoTexto: 'Plegado libre · N°' + chapa, cantidadTexto: cant + ' u.',
+    despiece: despiece,
+  };
+}
+
 /* ---- Motor GABINETE con tablillas (una hoja): estructural + hoja (P1) + tablillas (P2) ----
    - Estructural y hoja comparten largos (mismo bastidor, uniones a 45°).
    - Largos: horizontales = ancho vano − 2·5 ; verticales = alto vano − 5 (abajo sin descuento).
