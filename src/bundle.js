@@ -262,6 +262,35 @@ function calcularPlegado(p) {
   };
 }
 
+/* ---- BANDEJA (tipo del creador): dos secciones libres (ancho y largo) ----
+   Cada sección es una lista de tramos (incluida la base como tramo central);
+   pueden ser distintas y tener más o menos pliegues. Chapa plana = devAncho × devLargo. */
+function seccionTramos(tramos, chapa, endVal) {
+  var t = (tramos || []).filter(function (x) { return +x.largo > 0; });
+  var segs = t.map(function (x) { return +x.largo; }), turns = [];
+  for (var i = 1; i < t.length; i++) turns.push(t[i].giro === 'der' ? 'R' : 'L');
+  var dev = 0, devTramos = segs.slice();
+  if (segs.length >= 2) {
+    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bdChapa(chapa));
+    devTramos = restarDed(segs, ded); dev = suma(devTramos);
+  } else if (segs.length === 1) { dev = segs[0]; }
+  return { segs: segs, turns: turns, h0: [0, -1], dev: dev, devTramos: devTramos, n: segs.length };
+}
+function calcularBandeja(p) {
+  var chapa = p.chapa || 18, endVal = p.puntas === 'abiertas' ? 0 : 1;
+  var A = seccionTramos(p.tramosAncho, chapa, endVal);   // sección en el ancho
+  var B = seccionTramos(p.tramosLargo, chapa, endVal);   // sección en el largo
+  var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
+  var nombre = (p.nombre || 'Bandeja').trim() || 'Bandeja';
+  var mat = 'Chapa N°' + chapa;
+  var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: cant, cant: cant, ancho: A.dev, largo: B.dev, mat: mat }];
+  return {
+    tipoPlano: 'bandeja', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
+    secAncho: A, secLargo: B, endVal: endVal,
+    tipoTexto: 'Bandeja · N°' + chapa, cantidadTexto: cant + ' u.', despiece: despiece,
+  };
+}
+
 /* ---- Motor GABINETE con tablillas (una hoja): estructural + hoja (P1) + tablillas (P2) ----
    - Estructural y hoja comparten largos (mismo bastidor, uniones a 45°).
    - Largos: horizontales = ancho vano − 2·5 ; verticales = alto vano − 5 (abajo sin descuento).

@@ -553,6 +553,33 @@ function generarPlegado(params, P, logo) {
   return [pagina(g, P, 'Creador de plegados (nivel 1). Dobleces a 90°; la deducción por ángulo es trabajo aparte. Desarrollo = chapa a cortar. Imprimir en A4.')];
 }
 
+/* --- Hoja A4: BANDEJA (tipo del creador): dos secciones --- */
+function generarBandeja(params, P, logo) {
+  var r = calcularBandeja(params);
+  r.rotulo = params.rotulo; r.herrajes = [];
+  var M = PG.m, full = PG.w - 2 * M, g = '';
+  g += cajetin(r, M, M, full, 185, P, logo);
+  var ty = 345;
+  if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
+    var half = (full - 40) / 2, bh = 900;
+    g += bloquePerfil(M, ty, half, bh, (r.nombre) + ' — sección ANCHO',
+      'desarrollo ' + r.secAncho.dev + ' · ' + r.secAncho.n + ' tramos',
+      r.secAncho.segs, r.secAncho.turns, r.secAncho.h0, P);
+    g += bloquePerfil(M + half + 40, ty, half, bh, (r.nombre) + ' — sección LARGO',
+      'desarrollo ' + r.secLargo.dev + ' · ' + r.secLargo.n + ' tramos',
+      r.secLargo.segs, r.secLargo.turns, r.secLargo.h0, P);
+    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
+    ty += bh + 120;
+  } else {
+    g += tsans(M + 10, ty + 30, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
+    ty += 90;
+  }
+  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  var dt = despieceTabla(r, M, ty, P, full, 40);
+  g += dt.svg;
+  return [pagina(g, P, 'Bandeja (creador). Chapa plana = ancho × largo (desarrollos de cada sección). Dobleces a 90°. Imprimir en A4.')];
+}
+
 /* ===========================================================================
    GABINETE CON TABLILLAS — dibujo
    =========================================================================== */
@@ -1223,6 +1250,23 @@ var TIPOS = [
     ],
     calcular: function (p) { return calcularPlegado(p); },
     generar: function (p, P, logo) { return generarPlegado(p, P, logo); }
+  },
+  {
+    id: 'bandeja-libre', nombre: 'Bandeja (creador)',
+    listo: function (p) {
+      function ok(t) { return (t || []).filter(function (x) { return +x.largo > 0; }).length >= 2; }
+      return ok(p.tramosAncho) && ok(p.tramosLargo);
+    },
+    campos: [
+      { id: 'nombre', label: 'Nombre de la bandeja', type: 'text', value: 'Bandeja 1', help: 'Aparece en el rótulo y el despiece.' },
+      { id: 'tramosAncho', label: 'Sección en el ANCHO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [300, 'der'], [40, 'der'], [15, 'izq']], help: 'Pestaña → pared → base → pared → pestaña. El tramo central es la base. Editá libremente: cada lado puede ser distinto.' },
+      { id: 'tramosLargo', label: 'Sección en el LARGO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [500, 'der'], [40, 'der'], [15, 'izq']], help: 'La otra dirección. Puede tener más o menos pliegues que el ancho.' },
+      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
+      { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
+      { id: 'puntas', label: 'Puntas', type: 'seg', value: 'pestana', options: [['pestana', 'Pestaña (−)'], ['abiertas', 'Abiertas']], help: 'Pestaña: las puntas descuentan. Abiertas: no.' }
+    ],
+    calcular: function (p) { return calcularBandeja(p); },
+    generar: function (p, P, logo) { return generarBandeja(p, P, logo); }
   }
 ];
 

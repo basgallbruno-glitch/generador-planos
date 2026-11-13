@@ -225,6 +225,7 @@ function getParams(){
 }
 function validarGen(p){
   if(p.tramos) return (p.tramos.filter(t=>t.largo>0).length>=2)?'':'Agregá al menos 2 tramos.';
+  if(p.tramosAncho) return (p.tramosAncho.filter(t=>t.largo>0).length>=2 && (p.tramosLargo||[]).filter(t=>t.largo>0).length>=2)?'':'Cargá al menos 2 tramos en cada sección (ancho y largo).';
   if(!(p.W>0)||!(p.H>0)) return 'Completá ancho y alto.';
   // chequeos específicos de puertas/marco (tienen espesor de muro); el gabinete los omite
   if(p.espesorMuro!=null){
