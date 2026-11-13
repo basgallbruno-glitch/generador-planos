@@ -90,17 +90,21 @@ function tabla(ox, oy, colW, filas, P, headers, opt) {
 
 /* --- Sección plegada (forma, fuera de escala). Cada medida sale con línea guía
        perpendicular al tramo, hacia afuera, para no pisar ninguna línea. --- */
-function seccion(segs, turns, h0, cx, cy, box, P) {
-  // Fuera de escala: achica los tramos chicos (el escalón) y deja que los largos manden,
-  // así el codo queda compacto y las cotas no se amontonan.
-  var vis = segs.map(function (s) { return 22 + Math.min(s, 230) * 0.92; });
+function visSeccion(s, prop) {
+  // prop: escala proporcional suave (da idea del tamaño real sin que lo chico desaparezca).
+  // sino: comprime los tramos chicos y topa los largos (codo compacto, cotas sueltas).
+  return prop ? (14 + Math.pow(s, 0.68) * 3.0) : (22 + Math.min(s, 230) * 0.92);
+}
+function seccion(segs, turns, h0, cx, cy, box, P, opts) {
+  opts = opts || {};
+  var vis = segs.map(function (s) { return visSeccion(s, opts.prop); });
   var pts = turtlePts(vis, turns, h0);
   var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
   var minX = Math.min.apply(null, xs), minY = Math.min.apply(null, ys);
   var bw = Math.max.apply(null, xs) - minX || 1, bh = Math.max.apply(null, ys) - minY || 1;
   // margen para los números (afuera del perfil) — pero el perfil se dibuja grande
   var MARG = 78;
-  var k = Math.min((box.w - 2 * MARG) / bw, (box.h - 2 * MARG) / bh);
+  var k = opts.k != null ? opts.k : Math.min((box.w - 2 * MARG) / bw, (box.h - 2 * MARG) / bh);
   var bx = cx - (bw * k) / 2 - minX * k, by = cy - (bh * k) / 2 - minY * k;
   var S = pts.map(function (p) { return { x: p.x * k + bx, y: p.y * k + by }; });
   var g = '<path d="' + S.map(function (p, i) { return (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' ') +
@@ -572,9 +576,18 @@ function generarBandeja(params, P, logo) {
     var cx = M + full / 2, cy = ty + bh / 2 + 40;
     var box = { w: full * 0.52, h: bh - 180 };
     var oA = orient(r.secAncho, params.sentidoAncho), oB = orient(r.secLargo, params.sentidoLargo);
-    g += seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, box, P);                                   // ancho (horizontal)
+    // escala compartida y proporcional: ambas secciones dibujadas al mismo k, para que el
+    // tamaño dé idea del largo real (500 se ve más que 300, las solapas chicas)
+    function fitK(segs, turns, h0, bx) {
+      var p = turtlePts(segs.map(function (s) { return visSeccion(s, true); }), turns, h0);
+      var xs = p.map(function (q) { return q.x; }), ys = p.map(function (q) { return q.y; });
+      var w = (Math.max.apply(null, xs) - Math.min.apply(null, xs)) || 1, hh = (Math.max.apply(null, ys) - Math.min.apply(null, ys)) || 1;
+      return Math.min((bx.w - 156) / w, (bx.h - 156) / hh);
+    }
+    var kShared = Math.min(fitK(r.secAncho.segs, oA.turns, oA.h0, box), fitK(r.secLargo.segs, oB.turns, oB.h0, { w: box.h, h: box.w }));
+    g += seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, box, P, { prop: true, k: kShared });        // ancho (horizontal)
     g += '<g transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
-      seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, { w: box.h, h: box.w }, P) + '</g>';           // largo girado 90° antihorario
+      seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, { w: box.h, h: box.w }, P, { prop: true, k: kShared }) + '</g>';   // largo girado 90°
     g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
     ty += bh + 120;
   } else {
