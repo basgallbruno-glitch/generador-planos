@@ -1541,22 +1541,23 @@ function generarBandeja(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   var ty = 345;
-  function dibSec(ox, titulo, sec, sentido) {
-    var turns = sec.turns, h0 = sec.h0;
-    if (sentido === 'abajo') {   // espejo vertical: invierte el sentido de arranque y los giros (el desarrollo no cambia)
-      h0 = [0, 1];
-      turns = sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; });
-    }
-    return bloquePerfil(ox, ty, (full - 40) / 2, 900, titulo,
-      'desarrollo ' + sec.dev + ' · ' + sec.n + ' tramos · ' + (sentido === 'abajo' ? 'solapas ↓' : 'solapas ↑'),
-      sec.segs, turns, h0, P);
+  function orient(sec, sentido) {
+    if (sentido === 'abajo') return { turns: sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; }), h0: [0, 1] };
+    return { turns: sec.turns, h0: sec.h0 };
   }
   if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
-    var half = (full - 40) / 2;
-    g += dibSec(M, (r.nombre) + ' — sección ANCHO', r.secAncho, params.sentidoAncho);
-    g += dibSec(M + half + 40, (r.nombre) + ' — sección LARGO', r.secLargo, params.sentidoLargo);
-    g += tsans(M, ty + 900 + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
-    ty += 900 + 120;
+    var bh = 1040;
+    g += rect(M, ty, full, bh, SW.thin, P);
+    g += tsans(M + 24, ty + 42, (r.nombre) + ' — conjunto (ancho + largo cruzados)', F.h2, 'start', P, 700, P.accent);
+    g += tsans(M + 24, ty + 72, 'ancho desarr. ' + r.secAncho.dev + ' · largo desarr. ' + r.secLargo.dev + ' · se cruzan en el fondo', F.ty, 'start', P, 400, P.muted || P.text);
+    var cx = M + full / 2, cy = ty + bh / 2 + 40;
+    var box = { w: full * 0.52, h: bh - 180 };
+    var oA = orient(r.secAncho, params.sentidoAncho), oB = orient(r.secLargo, params.sentidoLargo);
+    g += seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, box, P);                                   // ancho (horizontal)
+    g += '<g transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
+      seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, { w: box.h, h: box.w }, P) + '</g>';           // largo girado 90° antihorario
+    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
+    ty += bh + 120;
   } else {
     g += tsans(M + 10, ty + 30, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
     ty += 90;
