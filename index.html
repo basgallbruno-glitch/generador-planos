@@ -1544,40 +1544,38 @@ function generarBandeja(params, P, logo) {
   r.rotulo = params.rotulo; r.herrajes = [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
-  var ty = 345;
   function orient(sec, sentido) {
     if (sentido === 'abajo') return { turns: sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; }), h0: [0, 1] };
     return { turns: sec.turns, h0: sec.h0 };
   }
+  // Despiece anclado al pie; el conjunto se estira para llenar el resto de la hoja.
+  var despH = despieceTabla(r, M, 0, P, full, 40).h;
+  var tableTop = PG.h - M - 46 - despH, despTitleY = tableTop - 16, boxTop = M + 185 + 24;
   if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
-    var bh = 1040;
-    g += rect(M, ty, full, bh, SW.thin, P);
-    g += tsans(M + 24, ty + 42, (r.nombre) + ' — conjunto (ancho + largo cruzados)', F.h2, 'start', P, 700, P.accent);
-    g += tsans(M + 24, ty + 72, 'ancho desarr. ' + r.secAncho.dev + ' · largo desarr. ' + r.secLargo.dev + ' · se cruzan en el fondo', F.ty, 'start', P, 400, P.muted || P.text);
-    var cx = M + full / 2, cy = ty + bh / 2 + 40;
-    var box = { w: full * 0.52, h: bh - 180 };
+    var chapaLineY = despTitleY - 54, boxBottom = chapaLineY - 40, bh = boxBottom - boxTop;
+    g += rect(M, boxTop, full, bh, SW.thin, P);
+    g += tsans(M + 24, boxTop + 42, (r.nombre) + ' — conjunto (ancho + largo cruzados)', F.h2, 'start', P, 700, P.accent);
+    g += tsans(M + 24, boxTop + 72, 'ancho desarr. ' + r.secAncho.dev + ' · largo desarr. ' + r.secLargo.dev + ' · se cruzan en el fondo', F.ty, 'start', P, 400, P.muted || P.text);
+    var cx = M + full / 2, cy = boxTop + 110 + (bh - 110) / 2;
+    var box = { w: full - 140, h: bh - 200 };
     var oA = orient(r.secAncho, params.sentidoAncho), oB = orient(r.secLargo, params.sentidoLargo);
-    // escala compartida y proporcional: ambas secciones dibujadas al mismo k, para que el
-    // tamaño dé idea del largo real (500 se ve más que 300, las solapas chicas)
+    // escala compartida y proporcional: ambas secciones al mismo k, para que el tamaño dé idea del largo real
     function fitK(segs, turns, h0, bx) {
       var p = turtlePts(segs.map(function (s) { return visSeccion(s, true); }), turns, h0);
       var xs = p.map(function (q) { return q.x; }), ys = p.map(function (q) { return q.y; });
       var w = (Math.max.apply(null, xs) - Math.min.apply(null, xs)) || 1, hh = (Math.max.apply(null, ys) - Math.min.apply(null, ys)) || 1;
       return Math.min((bx.w - 156) / w, (bx.h - 156) / hh);
     }
-    var kShared = Math.min(fitK(r.secAncho.segs, oA.turns, oA.h0, box), fitK(r.secLargo.segs, oB.turns, oB.h0, { w: box.h, h: box.w }));
-    g += seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, box, P, { prop: true, k: kShared });        // ancho (horizontal)
+    var kShared = Math.min(fitK(r.secLargo.segs, oB.turns, oB.h0, box), fitK(r.secAncho.segs, oA.turns, oA.h0, { w: box.h, h: box.w }));
+    g += seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, box, P, { prop: true, k: kShared });         // largo (vertical)
     g += '<g transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
-      seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, { w: box.h, h: box.w }, P, { prop: true, k: kShared }) + '</g>';   // largo girado 90°
-    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
-    ty += bh + 120;
+      seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, { w: box.h, h: box.w }, P, { prop: true, k: kShared }) + '</g>';   // ancho girado 90° (horizontal)
+    g += tsans(M, chapaLineY, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
   } else {
-    g += tsans(M + 10, ty + 30, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
-    ty += 90;
+    g += tsans(M + 10, boxTop + 40, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
   }
-  g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
-  var dt = despieceTabla(r, M, ty, P, full, 40);
-  g += dt.svg;
+  g += tsans(M, despTitleY, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
+  g += despieceTabla(r, M, tableTop, P, full, 40).svg;
   return [pagina(g, P, 'Bandeja (creador). Chapa plana = ancho × largo (desarrollos de cada sección). Dobleces a 90°. Imprimir en A4.')];
 }
 
