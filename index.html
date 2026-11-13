@@ -1534,45 +1534,29 @@ function generarPlegado(params, P, logo) {
   return [pagina(g, P, 'Creador de plegados (nivel 1). Dobleces a 90°; la deducción por ángulo es trabajo aparte. Desarrollo = chapa a cortar. Imprimir en A4.')];
 }
 
-/* --- Bandeja: chapa plana en planta (fondo + solapas hacia afuera + esquinas en muesca) --- */
-function partesSeccion(segs) {
-  var idx = 0, i;
-  for (i = 1; i < segs.length; i++) if (segs[i] > segs[idx]) idx = i;   // base = tramo más largo
-  return { base: segs[idx], before: segs.slice(0, idx).reverse(), after: segs.slice(idx + 1) };
-}
-function bandejaPlano(ox, oy, w, h, r, P) {
-  var pa = partesSeccion(r.secAncho.segs), pb = partesSeccion(r.secLargo.segs);
-  var g = rect(ox, oy, w, h, SW.thin, P);
-  g += tsans(ox + 24, oy + 42, r.nombre + ' — chapa plana (planta)', F.h2, 'start', P, 700, P.accent);
-  g += tsans(ox + 24, oy + 70, 'fondo ' + pa.base + ' × ' + pb.base + ' mm · las solapas se doblan hacia afuera · esquinas en muesca', F.ty, 'start', P, 400, P.muted);
-  var cx = ox + w / 2, cy = oy + h / 2 + 24, hW = 300, vH = 210;
-  function wv(t) { return Math.max(28, Math.min(74, t * 0.55)); }
-  var off, i, s;
-  // solapas derecha (ancho.after) e izquierda (ancho.before): bandas verticales
-  off = 0; for (i = 0; i < pa.after.length; i++) { s = wv(pa.after[i]); g += rect(cx + hW + off, cy - vH, s, 2 * vH, SW.thin, P); g += txt(cx + hW + off + s / 2, cy, String(pa.after[i]), F.ty, 'middle', P, false, '500'); off += s; }
-  off = 0; for (i = 0; i < pa.before.length; i++) { s = wv(pa.before[i]); g += rect(cx - hW - off - s, cy - vH, s, 2 * vH, SW.thin, P); g += txt(cx - hW - off - s / 2, cy, String(pa.before[i]), F.ty, 'middle', P, false, '500'); off += s; }
-  // solapas arriba (largo.before) y abajo (largo.after): bandas horizontales
-  off = 0; for (i = 0; i < pb.before.length; i++) { s = wv(pb.before[i]); g += rect(cx - hW, cy - vH - off - s, 2 * hW, s, SW.thin, P); g += txt(cx, cy - vH - off - s / 2 + 5, String(pb.before[i]), F.ty, 'middle', P, false, '500'); off += s; }
-  off = 0; for (i = 0; i < pb.after.length; i++) { s = wv(pb.after[i]); g += rect(cx - hW, cy + vH + off, 2 * hW, s, SW.thin, P); g += txt(cx, cy + vH + off + s / 2 + 5, String(pb.after[i]), F.ty, 'middle', P, false, '500'); off += s; }
-  // fondo (encima de las bandas)
-  g += rect(cx - hW, cy - vH, 2 * hW, 2 * vH, SW.thick, P);
-  g += txt(cx, cy - 6, String(pa.base) + ' × ' + String(pb.base), F.num, 'middle', P, false, '700');
-  g += txt(cx, cy + 22, 'fondo', F.ty, 'middle', P, false, '400', P.muted || P.text);
-  return g;
-}
-
-/* --- Hoja A4: BANDEJA (tipo del creador): planta de la chapa --- */
+/* --- Hoja A4: BANDEJA (tipo del creador): dos secciones --- */
 function generarBandeja(params, P, logo) {
   var r = calcularBandeja(params);
   r.rotulo = params.rotulo; r.herrajes = [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   var ty = 345;
+  function dibSec(ox, titulo, sec, sentido) {
+    var turns = sec.turns, h0 = sec.h0;
+    if (sentido === 'abajo') {   // espejo vertical: invierte el sentido de arranque y los giros (el desarrollo no cambia)
+      h0 = [0, 1];
+      turns = sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; });
+    }
+    return bloquePerfil(ox, ty, (full - 40) / 2, 900, titulo,
+      'desarrollo ' + sec.dev + ' · ' + sec.n + ' tramos · ' + (sentido === 'abajo' ? 'solapas ↓' : 'solapas ↑'),
+      sec.segs, turns, h0, P);
+  }
   if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
-    var bh = 940;
-    g += bandejaPlano(M, ty, full, bh, r, P);
-    g += tsans(M, ty + bh + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas). Desarrollo ancho ' + r.secAncho.dev + ' · largo ' + r.secLargo.dev + '.', F.h2, 'start', P, 600, P.text);
-    ty += bh + 120;
+    var half = (full - 40) / 2;
+    g += dibSec(M, (r.nombre) + ' — sección ANCHO', r.secAncho, params.sentidoAncho);
+    g += dibSec(M + half + 40, (r.nombre) + ' — sección LARGO', r.secLargo, params.sentidoLargo);
+    g += tsans(M, ty + 900 + 34, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
+    ty += 900 + 120;
   } else {
     g += tsans(M + 10, ty + 30, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
     ty += 90;
@@ -2263,7 +2247,9 @@ var TIPOS = [
     campos: [
       { id: 'nombre', label: 'Nombre de la bandeja', type: 'text', value: 'Bandeja 1', help: 'Aparece en el rótulo y el despiece.' },
       { id: 'tramosAncho', label: 'Sección en el ANCHO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [300, 'der'], [40, 'der'], [15, 'izq']], help: 'Pestaña → pared → base → pared → pestaña. El tramo central es la base. Editá libremente: cada lado puede ser distinto.' },
+      { id: 'sentidoAncho', label: 'Sentido (ancho)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },
       { id: 'tramosLargo', label: 'Sección en el LARGO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [500, 'der'], [40, 'der'], [15, 'izq']], help: 'La otra dirección. Puede tener más o menos pliegues que el ancho.' },
+      { id: 'sentidoLargo', label: 'Sentido (largo)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
       { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
       { id: 'puntas', label: 'Puntas', type: 'seg', value: 'pestana', options: [['pestana', 'Pestaña (−)'], ['abiertas', 'Abiertas']], help: 'Pestaña: las puntas descuentan. Abiertas: no.' }
