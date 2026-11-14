@@ -1074,7 +1074,7 @@ function tabla(ox, oy, colW, filas, P, headers, opt) {
 function visSeccion(s, prop) {
   // prop: escala proporcional suave (da idea del tamaño real sin que lo chico desaparezca).
   // sino: comprime los tramos chicos y topa los largos (codo compacto, cotas sueltas).
-  return prop ? (14 + Math.pow(s, 0.68) * 3.0) : (22 + Math.min(s, 230) * 0.92);
+  return prop ? (12 + Math.pow(s, 0.85) * 0.9) : (22 + Math.min(s, 230) * 0.92);
 }
 function seccion(segs, turns, h0, cx, cy, box, P, opts) {
   opts = opts || {};
