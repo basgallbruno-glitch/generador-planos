@@ -129,9 +129,11 @@ function seccion(segs, turns, h0, cx, cy, box, P, opts) {
   }
   // Colocación: cota CENTRADA en su tramo (lado con más espacio libre). Solo si chocaría con
   // otra cota se la corre hacia el extremo libre del tramo; si aún así toca, se la empuja afuera.
+  var fsNum = opts.prop ? 30 : F.num;          // cotas más grandes en el conjunto de la bandeja
+  var hitR = opts.prop ? 48 : 42;
   var placed = [];
   function choca(tx, ty) {
-    for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < 42) return true; }
+    for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < hitR) return true; }
     return false;
   }
   for (var i = 0; i < segs.length; i++) {
@@ -151,7 +153,7 @@ function seccion(segs, turns, h0, cx, cy, box, P, opts) {
     var safe = 0;
     while (choca(tx, ty) && safe < 4) { off += 20; tx = mx + nx * off + ux * slide; ty = my + ny * off + uy * slide; safe++; }  // 3) empuja afuera
     placed.push({ x: tx, y: ty });
-    g += txt(tx, ty + 8, String(segs[i]), F.num, 'middle', P, false, '600');
+    g += txt(tx, ty + (opts.prop ? 11 : 8), String(segs[i]), fsNum, 'middle', P, false, '600');
   }
   return g;
 }
