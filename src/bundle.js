@@ -181,6 +181,7 @@ function calcularDespiece(p) {
   if (panoFijo > 0) {
     base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — superior', cant: 1, ancho: cajonSup.dev, largo: cajonSup.largo, mat: matHoja });
     base.push({ pieza: 'P.6', desc: 'Cajón paño fijo — inferior', cant: 1, ancho: cajonInf.dev, largo: cajonInf.largo, mat: matHoja });
+    if (p.panoFijoChapa) base.push({ pieza: 'P.7', desc: 'Paño fijo — chapa', cant: 1, ancho: luz - 6, largo: panoFijo - 36, mat: matMarco });
   }
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cant, cant: d.cant * total, ancho: d.ancho, largo: d.largo, mat: d.mat };
@@ -193,7 +194,7 @@ function calcularDespiece(p) {
     rebajeHoja: rebajeHoja, caraIntAncho: caraIntAncho, caraIntAlto: caraIntAlto,
     nRef: nRef, p5Largo: p5Largo, refAncho: refAncho, p5Ancho: p5Ancho,
     segIntAncho: segIntAncho, segIntAlto: segIntAlto,
-    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf,
+    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf, panoFijoChapa: !!p.panoFijoChapa,
     hojaExtAncho: hojaExtAncho, hojaExtLargo: hojaExtLargo, despiece: despiece,
   };
 }
@@ -217,6 +218,7 @@ function calcularMarco(p) {
   if (panoFijo > 0) {
     base.push({ pieza: 'P.2', desc: 'Cajón paño fijo — superior', cantUno: 1, ancho: cajonSup.dev, largo: cajonSup.largo });
     base.push({ pieza: 'P.2', desc: 'Cajón paño fijo — inferior', cantUno: 1, ancho: cajonInf.dev, largo: cajonInf.largo });
+    if (p.panoFijoChapa) base.push({ pieza: 'P.3', desc: 'Paño fijo — chapa', cantUno: 1, ancho: luz - 6, largo: panoFijo - 36 });
   }
   var despiece = base.map(function (d) {
     return { pieza: d.pieza, desc: d.desc, cantUno: d.cantUno, cant: d.cantUno * cantidad, ancho: d.ancho, largo: d.largo };
@@ -226,7 +228,7 @@ function calcularMarco(p) {
     picaporte: p.picaporte == null ? 1020 : p.picaporte,
     cantidadTexto: cantidad + ' marco' + (cantidad === 1 ? '' : 's'),
     muro: muro, tipoHoja: tipoHoja, marco: marco, pisoTerminado: pisoTerminado, enterrar: enterrar,
-    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf,
+    altoPanoFijo: panoFijo, cajonSup: cajonSup, cajonInf: cajonInf, panoFijoChapa: !!p.panoFijoChapa,
     luz: luz, despiece: despiece,
   };
 }

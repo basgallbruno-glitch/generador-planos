@@ -261,6 +261,17 @@ function parteEnterrada(x0, xr, y, ent, bw, P) {
   return g + line(x0, y + ent, xr, y + ent, SW.thick, P);
 }
 
+/* --- Panel del paño fijo: vidrio (X punteada) o chapa (lleno, sin X) --- */
+function panoFijoPanel(gx, gy, gw, gh, cx, esChapa, P) {
+  var g = rect(gx, gy, gw, gh, SW.thin, P, P.hatch);
+  if (!esChapa) {
+    g += line(gx, gy, gx + gw, gy + gh, SW.dim, P, '14 10', P.accent);
+    g += line(gx, gy + gh, gx + gw, gy, SW.dim, P, '14 10', P.accent);
+  }
+  g += tsans(cx, gy + 22, esChapa ? 'CHAPA' : 'VIDRIO', F.ty, 'middle', P, 600, P.muted || P.text);
+  return g;
+}
+
 /* --- Frente (factor k = unidades por mm), vano acotado --- */
 function frente(r, ox, oy, P, mano, k) {
   var W = r.W * k, H = r.H * k, pf = (r.altoPanoFijo || 0) * k, g = '';
@@ -269,10 +280,7 @@ function frente(r, ox, oy, P, mano, k) {
   if (pf > 0) {
     g += rect(x0, topY, W, pf, SW.thick, P);                               // marco del paño fijo
     var gx = x0 + 30 * k, gy = topY + 30 * k, gw = W - 60 * k, gh = pf - 30 * k;
-    g += rect(gx, gy, gw, gh, SW.thin, P, P.hatch);                        // vidrio
-    g += line(gx, gy, gx + gw, gy + gh, SW.dim, P, '14 10', P.accent);
-    g += line(gx, gy + gh, gx + gw, gy, SW.dim, P, '14 10', P.accent);
-    g += tsans(x0 + W / 2, gy + 22, 'VIDRIO', F.ty, 'middle', P, 600, P.muted || P.text);
+    g += panoFijoPanel(gx, gy, gw, gh, x0 + W / 2, r.panoFijoChapa, P);    // vidrio o chapa
     g += line(x0 + 30 * k, y0, x0 + W - 30 * k, y0, SW.thick, P);          // cajón (divisor paño/puerta)
     g += dimV(topY, y0, x0 - 60, String(r.altoPanoFijo), P, x0);           // cota del paño fijo (techo cajón → marco sup)
   }
@@ -490,10 +498,7 @@ function frenteMarco(r, ox, oy, P, k) {
   if (pf > 0) {
     g += rect(ox, topY, W, pf, SW.thick, P);
     var gx = ox + 30 * k, gy = topY + 30 * k, gw = W - 60 * k, gh = pf - 30 * k;
-    g += rect(gx, gy, gw, gh, SW.thin, P, P.hatch);
-    g += line(gx, gy, gx + gw, gy + gh, SW.dim, P, '14 10', P.accent);
-    g += line(gx, gy + gh, gx + gw, gy, SW.dim, P, '14 10', P.accent);
-    g += tsans(ox + W / 2, gy + 22, 'VIDRIO', F.ty, 'middle', P, 600, P.muted || P.text);
+    g += panoFijoPanel(gx, gy, gw, gh, ox + W / 2, r.panoFijoChapa, P);   // vidrio o chapa
     g += line(ox + 30 * k, y0, ox + W - 30 * k, y0, SW.thick, P);   // cajón
     g += dimV(topY, y0, ox - 60, String(r.altoPanoFijo), P, ox);
   }
@@ -1167,7 +1172,8 @@ var TIPOS = [
       { id: 'tipoHoja', label: 'Tipo de hoja (marco)', type: 'select', value: 'metalica', options: [['metalica', 'Metálica (t3=35)'], ['madera', 'Madera / placa (t3=31)']], help: 'Define el tramo del marco donde apoya la hoja.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de picaporte (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al picaporte. Normal 1020.' },
-      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio sobre la puerta + cajón divisor.' },
+      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio o chapa sobre la puerta + cajón divisor.' },
+      { id: 'panoFijoChapa', label: 'Paño fijo con chapa (en vez de vidrio)', type: 'check', value: false, cond: function (p) { return +p.altoPanoFijo > 0; }, help: 'Chapa = (luz − 6) × (alto paño − 36), 3 mm de luz por lado. Misma chapa que el marco.' },
       { id: 'mano', label: 'Mano a dibujar', type: 'seg', value: 'izq', options: [['izq', 'Izquierda'], ['der', 'Derecha']], help: 'Cuál de las dos se muestra en el frente.' },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],
@@ -1184,7 +1190,8 @@ var TIPOS = [
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']], help: 'Tipo de hoja que va a recibir el marco.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al cerradero. Normal 1020.' },
-      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio arriba + cajón divisor.' },
+      { id: 'altoPanoFijo', label: 'Alto paño fijo (mm)', type: 'number', value: 0, step: 10, min: 0, max: 1200, help: '0 = sin paño fijo. Panel de vidrio o chapa arriba + cajón divisor.' },
+      { id: 'panoFijoChapa', label: 'Paño fijo con chapa (en vez de vidrio)', type: 'check', value: false, cond: function (p) { return +p.altoPanoFijo > 0; }, help: 'Chapa = (luz − 6) × (alto paño − 36), 3 mm de luz por lado. Misma chapa que el marco.' },
       { id: 'piso', label: 'Piso (largo de jambas)', type: 'seg', value: 'term', options: [['term', 'Terminado'], ['sin', 'Para enterrar']], help: '"Para enterrar" agrega 30 mm bajo el piso.' }
     ],
     calcular: function (p) { return calcularMarco(p); },
