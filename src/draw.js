@@ -129,8 +129,8 @@ function seccion(segs, turns, h0, cx, cy, box, P, opts) {
   }
   // Colocación: cota CENTRADA en su tramo (lado con más espacio libre). Solo si chocaría con
   // otra cota se la corre hacia el extremo libre del tramo; si aún así toca, se la empuja afuera.
-  var fsNum = opts.prop ? 30 : F.num;          // cotas más grandes en el conjunto de la bandeja
-  var hitR = opts.prop ? 48 : 42;
+  var fsNum = opts.fs != null ? opts.fs : (opts.prop ? 30 : F.num);   // cotas más grandes en el conjunto de la bandeja / cajón
+  var hitR = opts.hitR != null ? opts.hitR : (opts.prop ? 48 : 42);
   var placed = [];
   function choca(tx, ty) {
     for (var j = 0; j < placed.length; j++) { if (Math.hypot(tx - placed[j].x, ty - placed[j].y) < hitR) return true; }
@@ -164,19 +164,19 @@ function cajonPanoFijoBloque(r, ox, oy, full, P, h) {
   var gap = 60, supW = 640, infW = full - supW - gap;
   var g = bloquePerfil(ox, oy, supW, h, '⑥ Cajón sup. (U invertida)',
     'desarr. ' + r.cajonSup.dev + ' · largo ' + r.cajonSup.largo,
-    r.cajonSup.segs, r.cajonSup.turns, r.cajonSup.h0, P);
+    r.cajonSup.segs, r.cajonSup.turns, r.cajonSup.h0, P, { fs: 28 });
   g += bloquePerfil(ox + supW + gap, oy, infW, h, '⑥ Cajón inf. (encastre)',
     'desarr. ' + r.cajonInf.dev + ' · largo ' + r.cajonInf.largo + ' · verticales ' + r.cajonInf.segs[4] + ' (hoja)',
-    r.cajonInf.segs, r.cajonInf.turns, r.cajonInf.h0, P);
+    r.cajonInf.segs, r.cajonInf.turns, r.cajonInf.h0, P, { fs: 27, hitR: 46 });
   return { svg: g, bottom: oy + h };
 }
 
 /* --- Bloque perfil: título + caption + sección con longitudes (sin tabla) --- */
-function bloquePerfil(ox, oy, w, h, titulo, caption, segs, turns, h0, P) {
+function bloquePerfil(ox, oy, w, h, titulo, caption, segs, turns, h0, P, so) {
   var g = rect(ox, oy, w, h, SW.thin, P, P.card || 'none');
   g += tituloNum(ox + 24, oy + 42, titulo, P);
   if (caption) g += tsans(ox + 24, oy + 76, caption, F.ty, 'start', P, 500, P.muted || P.text);
-  g += seccion(segs, turns, h0, ox + w / 2, oy + 115 + (h - 115) / 2, { w: w - 130, h: h - 150 }, P);
+  g += seccion(segs, turns, h0, ox + w / 2, oy + 115 + (h - 115) / 2, { w: w - 130, h: h - 150 }, P, so || {});
   return g;
 }
 
@@ -298,9 +298,10 @@ function frente(r, ox, oy, P, mano, k) {
 
 /* --- Lateral del marco (factor k) --- */
 function lateral(r, ox, oy, P, k) {
-  var w = r.marco.espesor * k, h = r.H * k, g = '';
+  var w = r.marco.espesor * k, pf = (r.altoPanoFijo || 0) * k, h = r.H * k + pf, g = '';
   g += tsans(ox, oy - 18, 'LATERAL', F.h2, 'start', P, 700, P.accent);
   g += rect(ox, oy, w, h, SW.thick, P);
+  if (pf > 0) g += line(ox, oy + pf, ox + w, oy + pf, SW.thin, P);   // división paño fijo / puerta (cajón)
   var bot = oy + h, ent = (r.enterrar || 0) * k, frameBot = bot + ent, cy = bot - r.picaporte * k, cx = ox + w * 0.5;
   // agujero de cerradura (en la jamba, a la altura de cerradero)
   g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="11" fill="none" stroke="' + P.line + '" stroke-width="' + SW.thin + '"/>';
@@ -532,7 +533,7 @@ function generarMarco(params, P, logo) {
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   // --- 3) cajón del paño fijo (si corresponde) + accesorios al final ---
   var ny2 = topY + bandH + 70;
-  if (r.altoPanoFijo > 0) { var cjb = cajonPanoFijoBloque(r, M, ny2, full, P, 470); g += cjb.svg; ny2 = cjb.bottom + 56; }
+  if (r.altoPanoFijo > 0) { var cjb = cajonPanoFijoBloque(r, M, ny2, full, P, 560); g += cjb.svg; ny2 = cjb.bottom + 56; }
   g += bloqueAccesorios(r, M, ny2, P, full);
   return [pagina(g, P, 'Perfil fuera de escala: las medidas son las longitudes de cada tramo (mm). Desarrollo = medida de la chapa a cortar. Imprimir en A4.')];
 }
@@ -1179,7 +1180,7 @@ var TIPOS = [
       { id: 'W', label: 'Ancho de vano (mm)', type: 'number', value: 900, step: 10, min: 400, max: 2000, help: 'Luz libre de pared a pared.' },
       { id: 'H', label: 'Alto de vano (mm)', type: 'number', value: 2050, step: 10, min: 1500, max: 2800, help: 'Luz libre del piso al dintel.' },
       { id: 'cantidad', label: 'Cantidad de marcos', type: 'number', value: 1, step: 1, min: 1, max: 99, help: 'Cuántos marcos iguales.' },
-      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)']] },
+      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,5 mm)']] },
       { id: 'tipoHoja', label: 'Para hoja', type: 'select', value: 'madera', options: [['madera', 'Madera / placa (t3=31)'], ['metalica', 'Metálica (t3=35)']], help: 'Tipo de hoja que va a recibir el marco.' },
       { id: 'muro', label: 'Espesor de muro terminado (mm)', type: 'number', value: 200, step: 5, min: 60, max: 400, help: 'Espesor del muro ya revocado.' },
       { id: 'picaporte', label: 'Altura de cerradero (mm)', type: 'number', value: 1020, step: 10, min: 600, max: 1400, help: 'Del piso terminado al cerradero. Normal 1020.' },

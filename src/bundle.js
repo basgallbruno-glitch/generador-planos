@@ -203,13 +203,13 @@ function calcularMarco(p) {
   var W = p.W, H = p.H, chapa = p.chapa || 18;
   var muro = p.espesorMuro == null ? 150 : p.espesorMuro;
   var tipoHoja = p.tipoHoja || 'madera';
-  var marco = perfilMarco(muro, tipoHoja);
+  var marco = perfilMarco(muro, tipoHoja, chapa);
   var pisoTerminado = p.pisoTerminado == null ? true : p.pisoTerminado;
   var enterrar = pisoTerminado ? 0 : 30;
   var cantidad = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var panoFijo = Math.max(0, p.altoPanoFijo == null ? 0 : p.altoPanoFijo);
   var luz = W - 2 * C.alaMarco;
-  var caj = cajonPanoFijo(marco.t3, luz), cajonSup = caj.sup, cajonInf = caj.inf;
+  var caj = cajonPanoFijo(marco.t3, luz, chapa), cajonSup = caj.sup, cajonInf = caj.inf;
   var base = [
     { pieza: 'P.1', desc: 'Marco — dintel', cantUno: 1, ancho: marco.desarrollo, largo: luz },
     { pieza: 'P.1', desc: 'Marco — jambas' + (enterrar ? ' (Para enterrar)' : ''), cantUno: 2, ancho: marco.desarrollo, largo: H + panoFijo + enterrar },
