@@ -78,18 +78,24 @@ var C = {
 // (vecinos del mismo lado de la recta del tramo → forma U), 1 mm si uno abre y otro
 // cierra (forma Z). Extremos (un solo pliegue): endVal (pestaña), a confirmar por perfil.
 // endVal: número (ambas pestañas igual) o [inicio, fin] (1 = cierra, 0 = pata abierta)
-function deduccionPliegues(lens, turns, h0, endVal, bd) {
+// Factor de descuento por ángulo de pliegue: <45° no descuenta; de 45° a 90° es lineal
+// (45°=½, 60°=⅔, 90°=completo). A 90° da 1 => los perfiles existentes no cambian.
+function anguloFactor(a) { a = +a; if (!(a > 0)) a = 90; return a < 45 ? 0 : a / 90; }
+
+function deduccionPliegues(lens, turns, h0, endVal, bd, angs) {
   bd = bd == null ? 1 : bd;   // mm descontados por pliegue (espesor redondeado); 1 = chapa 18/16, 2 = chapa 14
   var ev = Array.isArray(endVal) ? endVal : [endVal, endVal];
-  var p = turtlePts(lens.slice(), turns, h0), n = lens.length, d = [];
+  var p = turtlePts(lens.slice(), turns, h0, angs), n = lens.length, d = [];
+  function ff(j) { return angs && angs[j] != null ? anguloFactor(angs[j]) : 1; }   // factor del pliegue j (90° => 1)
   for (var i = 0; i < n; i++) {
-    if (i === 0) { d.push(ev[0] * bd); continue; }
-    if (i === n - 1) { d.push(ev[1] * bd); continue; }
+    if (i === 0) { d.push(ev[0] * bd * ff(0)); continue; }
+    if (i === n - 1) { d.push(ev[1] * bd * ff(n - 2)); continue; }
     var ax = p[i + 1].x - p[i].x, ay = p[i + 1].y - p[i].y;
     var pvx = p[i - 1].x - p[i].x, pvy = p[i - 1].y - p[i].y;
     var nvx = p[i + 2].x - p[i + 1].x, nvy = p[i + 2].y - p[i + 1].y;
     var sPrev = Math.sign(ax * pvy - ay * pvx), sNext = Math.sign(ax * nvy - ay * nvx);
-    d.push((sPrev === sNext ? 2 : 1) * bd);
+    // tramo interior: descuento base (U=2·bd / Z=1·bd) escalado por el factor promedio de sus dos pliegues
+    d.push((sPrev === sNext ? 2 : 1) * bd * ((ff(i - 1) + ff(i)) / 2));
   }
   return d;
 }
@@ -240,13 +246,13 @@ function calcularMarco(p) {
 function calcularPlegado(p) {
   var tramos = (p.tramos || []).filter(function (t) { return +t.largo > 0; });
   var segs = tramos.map(function (t) { return +t.largo; });
-  var turns = [];
-  for (var i = 1; i < tramos.length; i++) turns.push(tramos[i].giro === 'der' ? 'R' : 'L');
+  var turns = [], angs = [];
+  for (var i = 1; i < tramos.length; i++) { turns.push(tramos[i].giro === 'der' ? 'R' : 'L'); angs.push(+tramos[i].angulo || 90); }
   var chapa = p.chapa || 18, bd = bdChapa(chapa);
   var endVal = p.puntas === 'abiertas' ? 0 : 1;   // pestaña (descuenta) vs punta abierta (no)
   var dev = 0, devTramos = segs.slice();
   if (segs.length >= 2) {
-    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bd);
+    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bd, angs);
     devTramos = restarDed(segs, ded);
     dev = suma(devTramos);
   } else if (segs.length === 1) { dev = segs[0]; }
@@ -257,7 +263,7 @@ function calcularPlegado(p) {
   var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: dev, largo: largo, mat: mat }];
   return {
     tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
-    segs: segs, turns: turns, h0: [0, -1], endVal: endVal,
+    segs: segs, turns: turns, angs: angs, h0: [0, -1], endVal: endVal,
     dev: dev, devTramos: devTramos, largoPerfil: largo, nTramos: segs.length,
     tipoTexto: 'Plegado libre · N°' + chapa, cantidadTexto: cant + ' u.',
     despiece: despiece,
@@ -269,14 +275,14 @@ function calcularPlegado(p) {
    pueden ser distintas y tener más o menos pliegues. Chapa plana = devAncho × devLargo. */
 function seccionTramos(tramos, chapa, endVal) {
   var t = (tramos || []).filter(function (x) { return +x.largo > 0; });
-  var segs = t.map(function (x) { return +x.largo; }), turns = [];
-  for (var i = 1; i < t.length; i++) turns.push(t[i].giro === 'der' ? 'R' : 'L');
+  var segs = t.map(function (x) { return +x.largo; }), turns = [], angs = [];
+  for (var i = 1; i < t.length; i++) { turns.push(t[i].giro === 'der' ? 'R' : 'L'); angs.push(+t[i].angulo || 90); }
   var dev = 0, devTramos = segs.slice();
   if (segs.length >= 2) {
-    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bdChapa(chapa));
+    var ded = deduccionPliegues(segs, turns, [0, -1], endVal, bdChapa(chapa), angs);
     devTramos = restarDed(segs, ded); dev = suma(devTramos);
   } else if (segs.length === 1) { dev = segs[0]; }
-  return { segs: segs, turns: turns, h0: [0, -1], dev: dev, devTramos: devTramos, n: segs.length };
+  return { segs: segs, turns: turns, angs: angs, h0: [0, -1], dev: dev, devTramos: devTramos, n: segs.length };
 }
 function calcularBandeja(p) {
   var chapa = p.chapa || 18, endVal = p.puntas === 'abiertas' ? 0 : 1;
@@ -680,11 +686,20 @@ function desarrolloColumna(lens, faceIdx) {
 }
 
 /* turtle: longitudes (ya escaladas) + giros -> puntos */
-function turtlePts(lensK, turns, h0) {
+function turtlePts(lensK, turns, h0, angs) {
   var x = 0, y = 0, hx = h0 ? h0[0] : 1, hy = h0 ? h0[1] : 0, pts = [{ x: x, y: y }];
   for (var i = 0; i < lensK.length; i++) {
     x += hx * lensK[i]; y += hy * lensK[i]; pts.push({ x: x, y: y });
-    if (i < turns.length) { var t = turns[i]; if (t === 'R') { var a = hx; hx = -hy; hy = a; } else { var b = hx; hx = hy; hy = -b; } }
+    if (i < turns.length) {
+      var t = turns[i], deg = angs && angs[i] != null ? +angs[i] : 90;
+      if (deg === 90) {                                   // caso exacto: idéntico a antes (sin error de punto flotante)
+        if (t === 'R') { var a = hx; hx = -hy; hy = a; } else { var b = hx; hx = hy; hy = -b; }
+      } else {                                            // rotación general: R = +ángulo, L = −ángulo
+        var th = deg * Math.PI / 180; if (t !== 'R') th = -th;
+        var c = Math.cos(th), s = Math.sin(th), nhx = hx * c - hy * s, nhy = hx * s + hy * c;
+        hx = nhx; hy = nhy;
+      }
+    }
   }
   return pts;
 }

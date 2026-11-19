@@ -98,7 +98,7 @@ function visSeccion(s, prop) {
 function seccion(segs, turns, h0, cx, cy, box, P, opts) {
   opts = opts || {};
   var vis = segs.map(function (s) { return visSeccion(s, opts.prop); });
-  var pts = turtlePts(vis, turns, h0);
+  var pts = turtlePts(vis, turns, h0, opts.angs);
   var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
   var minX = Math.min.apply(null, xs), minY = Math.min.apply(null, ys);
   var bw = Math.max.apply(null, xs) - minX || 1, bh = Math.max.apply(null, ys) - minY || 1;
@@ -551,9 +551,10 @@ function generarPlegado(params, P, logo) {
   g += cajetin(r, M, M, full, 185, P, logo);
   var ty = 345;
   if (r.nTramos >= 2) {
+    var angTxt = (r.angs || []).every(function (a) { return +a === 90; }) ? 'dobleces 90°' : 'ángulos variables';
     g += bloquePerfil(M, ty, full, 1000, (r.nombre || 'Plegado'),
-      'desarrollo ' + r.dev + ' · largo ' + (r.largoPerfil || '—') + ' · N°' + r.chapa + ' · ' + r.nTramos + ' tramos (dobleces 90°)',
-      r.segs, r.turns, r.h0, P);
+      'desarrollo ' + r.dev + ' · largo ' + (r.largoPerfil || '—') + ' · N°' + r.chapa + ' · ' + r.nTramos + ' tramos (' + angTxt + ')',
+      r.segs, r.turns, r.h0, P, { angs: r.angs });
     ty += 1000 + 56;
   } else {
     g += tsans(M + 10, ty + 30, 'Agregá al menos 2 tramos para ver el plegado.', F.h2, 'start', P, 600, P.muted || P.text);
@@ -562,7 +563,7 @@ function generarPlegado(params, P, logo) {
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
-  return [pagina(g, P, 'Creador de plegados (nivel 1). Dobleces a 90°; la deducción por ángulo es trabajo aparte. Desarrollo = chapa a cortar. Imprimir en A4.')];
+  return [pagina(g, P, 'Creador de plegados. Ángulo por pliegue (45°–90° descuenta proporcional; <45° no descuenta). Desarrollo = chapa a cortar. Imprimir en A4.')];
 }
 
 /* --- Hoja A4: BANDEJA (tipo del creador): dos secciones --- */
@@ -572,8 +573,8 @@ function generarBandeja(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   function orient(sec, sentido) {
-    if (sentido === 'abajo') return { turns: sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; }), h0: [0, 1] };
-    return { turns: sec.turns, h0: sec.h0 };
+    if (sentido === 'abajo') return { turns: sec.turns.map(function (t) { return t === 'L' ? 'R' : 'L'; }), h0: [0, 1], angs: sec.angs };
+    return { turns: sec.turns, h0: sec.h0, angs: sec.angs };
   }
   // Despiece anclado al pie; el conjunto se estira para llenar el resto de la hoja.
   var despH = despieceTabla(r, M, 0, P, full, 40).h;
@@ -587,23 +588,23 @@ function generarBandeja(params, P, logo) {
     var box = { w: full - 140, h: bh - 200 };
     var oA = orient(r.secAncho, params.sentidoAncho), oB = orient(r.secLargo, params.sentidoLargo);
     // escala compartida y proporcional: ambas secciones al mismo k, para que el tamaño dé idea del largo real
-    function fitK(segs, turns, h0, bx) {
-      var p = turtlePts(segs.map(function (s) { return visSeccion(s, true); }), turns, h0);
+    function fitK(segs, turns, h0, bx, angs) {
+      var p = turtlePts(segs.map(function (s) { return visSeccion(s, true); }), turns, h0, angs);
       var xs = p.map(function (q) { return q.x; }), ys = p.map(function (q) { return q.y; });
       var w = (Math.max.apply(null, xs) - Math.min.apply(null, xs)) || 1, hh = (Math.max.apply(null, ys) - Math.min.apply(null, ys)) || 1;
       return Math.min((bx.w - 156) / w, (bx.h - 156) / hh);
     }
-    var kShared = Math.min(fitK(r.secLargo.segs, oB.turns, oB.h0, box), fitK(r.secAncho.segs, oA.turns, oA.h0, { w: box.h, h: box.w }));
-    g += seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, box, P, { prop: true, k: kShared });         // largo (vertical)
+    var kShared = Math.min(fitK(r.secLargo.segs, oB.turns, oB.h0, box, oB.angs), fitK(r.secAncho.segs, oA.turns, oA.h0, { w: box.h, h: box.w }, oA.angs));
+    g += seccion(r.secLargo.segs, oB.turns, oB.h0, cx, cy, box, P, { prop: true, k: kShared, angs: oB.angs });         // largo (vertical)
     g += '<g transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
-      seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, { w: box.h, h: box.w }, P, { prop: true, k: kShared }) + '</g>';   // ancho girado 90° (horizontal)
+      seccion(r.secAncho.segs, oA.turns, oA.h0, cx, cy, { w: box.h, h: box.w }, P, { prop: true, k: kShared, angs: oA.angs }) + '</g>';   // ancho girado 90° (horizontal)
     g += tsans(M, chapaLineY, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
   } else {
     g += tsans(M + 10, boxTop + 40, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
   }
   g += tsans(M, despTitleY, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   g += despieceTabla(r, M, tableTop, P, full, 40).svg;
-  return [pagina(g, P, 'Bandeja (creador). Chapa plana = ancho × largo (desarrollos de cada sección). Dobleces a 90°. Imprimir en A4.')];
+  return [pagina(g, P, 'Bandeja (creador). Chapa plana = ancho × largo (desarrollos de cada sección). Ángulo por pliegue. Imprimir en A4.')];
 }
 
 /* ===========================================================================
@@ -1270,7 +1271,7 @@ var TIPOS = [
     listo: function (p) { return (p.tramos || []).filter(function (t) { return +t.largo > 0; }).length >= 2; },
     campos: [
       { id: 'nombre', label: 'Nombre del plegado', type: 'text', value: 'Plegado 1', help: 'Aparece en el rótulo y el despiece.' },
-      { id: 'tramos', label: 'Tramos y dobleces', type: 'tramos', value: [[35, '-'], [30, 'izq'], [35, 'der']], help: 'Largo de cada tramo (mm) y hacia dónde dobla respecto al anterior. Dobleces a 90°.' },
+      { id: 'tramos', label: 'Tramos y dobleces', type: 'tramos', value: [[35, '-'], [30, 'izq'], [35, 'der']], help: 'Doblá con las flechas de la punta (↰/↱) o los botones. Por cada tramo: largo (mm) y ángulo del pliegue (90° por defecto; <45° no descuenta).' },
       { id: 'largoPerfil', label: 'Largo del perfil (mm)', type: 'number', value: 1000, step: 10, min: 0, max: 6000, help: 'Longitud de la pieza (la otra dimensión de la chapa).' },
       { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
       { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
@@ -1287,7 +1288,7 @@ var TIPOS = [
     },
     campos: [
       { id: 'nombre', label: 'Nombre de la bandeja', type: 'text', value: 'Bandeja 1', help: 'Aparece en el rótulo y el despiece.' },
-      { id: 'tramosAncho', label: 'Sección en el ANCHO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [300, 'der'], [40, 'der'], [15, 'izq']], help: 'Pestaña → pared → base → pared → pestaña. El tramo central es la base. Editá libremente: cada lado puede ser distinto.' },
+      { id: 'tramosAncho', label: 'Sección en el ANCHO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [300, 'der'], [40, 'der'], [15, 'izq']], help: 'Pestaña → pared → base → pared → pestaña. El tramo central es la base. Doblá con las flechas; cada pliegue puede tener su ángulo.' },
       { id: 'sentidoAncho', label: 'Sentido (ancho)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },
       { id: 'tramosLargo', label: 'Sección en el LARGO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [500, 'der'], [40, 'der'], [15, 'izq']], help: 'La otra dirección. Puede tener más o menos pliegues que el ancho.' },
       { id: 'sentidoLargo', label: 'Sentido (largo)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },

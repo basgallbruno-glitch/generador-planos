@@ -53,6 +53,16 @@ body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,
 .tr-del:hover{color:#e5484d;border-color:#e5484d}
 .tr-add{margin-top:8px;background:transparent;border:1px dashed var(--border);color:var(--fg);padding:8px;border-radius:8px;cursor:pointer;font-size:13px}
 .tr-add:hover{border-color:var(--accent);color:var(--accent)}
+.cvwrap{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.cvbox{border:1px solid var(--border);border-radius:10px;background:rgba(127,127,127,.04);color:var(--muted);overflow:hidden}
+.cvbox svg{display:block;width:100%;height:240px}
+.cvadd{display:flex;gap:8px}
+.cvadd button{flex:1;background:transparent;border:1px dashed var(--border);color:var(--fg);padding:9px;border-radius:8px;cursor:pointer;font-size:13px}
+.cvadd button:hover{border-color:var(--accent);color:var(--accent)}
+.tr-ang{flex:0 0 58px}
+.tr-dir{flex:0 0 92px;display:flex;gap:3px}
+.tr-dir button{flex:1;padding:5px 0;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;border-radius:6px}
+.tr-dir button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(10,63,133,.08)}
 h1{font-size:20px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:13px;margin:0}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
@@ -149,13 +159,55 @@ const TIPOMAP={}; TIPOS.forEach(t=>TIPOMAP[t.id]=t);
 let tipoId=TIPOS[0].id;
 const segState={};
 const tramosState={};
-const GIRO_LBL={'-':'recto','izq':'↶ izq','der':'↷ der'};
+const GIRO_LBL={'izq':'↶ izq','der':'der ↷'};
+
+// Dibuja el perfil en vivo dentro del canvas SVG (reusa turtlePts del motor incluido).
+function drawCanvas(id){
+  const box=document.getElementById('cv_'+id); if(!box) return;
+  const arr=tramosState[id]||[];
+  const W=Math.max(220,box.clientWidth||320), H=240, M=44;
+  const real=arr.filter(t=>+t.largo>0);
+  if(real.length===0){ box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'"><text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" fill="currentColor" opacity=".6" font-size="13">Agregá el primer tramo abajo ↓</text></svg>'; return; }
+  const segs=arr.map(t=>Math.max(0,+t.largo||0));
+  const turns=[],angs=[];
+  for(let i=1;i<arr.length;i++){ turns.push(arr[i].giro==='der'?'R':'L'); angs.push(+arr[i].angulo||90); }
+  const pts=turtlePts(segs,turns,[1,0],angs);
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const bw=(maxX-minX)||1,bh=(maxY-minY)||1;
+  const k=Math.min((W-2*M)/bw,(H-2*M)/bh);
+  const bx=(W-bw*k)/2-minX*k, by=(H-bh*k)/2-minY*k;
+  const S=pts.map(p=>({x:p.x*k+bx,y:p.y*k+by}));
+  let g='<svg viewBox="0 0 '+W+' '+H+'">';
+  g+='<path d="'+S.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+  S.forEach((p,i)=>{ g+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(i===0?4:2.6)+'" fill="var(--accent)"/>'; });
+  for(let i=0;i<segs.length;i++){ if(!(segs[i]>0))continue; const a=S[i],b=S[i+1];
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,dl=Math.hypot(dx,dy)||1,nx=-dy/dl,ny=dx/dl;
+    g+='<text x="'+(mx+nx*13).toFixed(1)+'" y="'+(my+ny*13+4).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">'+segs[i]+'</text>';
+    if(i>=1 && (+angs[i-1])!==90){ g+='<text x="'+a.x.toFixed(1)+'" y="'+(a.y-7).toFixed(1)+'" text-anchor="middle" font-size="10" fill="var(--accent)">'+angs[i-1]+'°</text>'; }
+  }
+  // flechas en la punta para agregar el próximo tramo (izq/der)
+  const tip=S[S.length-1]; let hx=1,hy=0;
+  if(S.length>=2){ const q=S[S.length-2]; hx=tip.x-q.x; hy=tip.y-q.y; const hl=Math.hypot(hx,hy)||1; hx/=hl; hy/=hl; }
+  [['izq',-1],['der',1]].forEach(([dir,sgn])=>{
+    let ax,ay; if(sgn>0){ ax=-hy; ay=hx; } else { ax=hy; ay=-hx; }   // der=+90, izq=-90 (como el turtle)
+    const L=32,ex=tip.x+ax*L,ey=tip.y+ay*L;
+    g+='<g class="cvarrow" data-id="'+id+'" data-dir="'+dir+'" style="cursor:pointer">';
+    g+='<line x1="'+tip.x.toFixed(1)+'" y1="'+tip.y.toFixed(1)+'" x2="'+ex.toFixed(1)+'" y2="'+ey.toFixed(1)+'" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3" opacity=".8"/>';
+    g+='<circle cx="'+ex.toFixed(1)+'" cy="'+ey.toFixed(1)+'" r="12" fill="var(--accent)"/>';
+    g+='<text x="'+ex.toFixed(1)+'" y="'+(ey+4.5).toFixed(1)+'" text-anchor="middle" font-size="14" fill="#fff" font-weight="700">'+(dir==='izq'?'↰':'↱')+'</text>';
+    g+='</g>';
+  });
+  g+='</svg>'; box.innerHTML=g;
+}
+
 function tramosRows(id){
   return tramosState[id].map((r,i)=>
     '<div class="tr-row" data-i="'+i+'"><span class="tr-n">'+(i+1)+'</span>'+
-    '<input type="number" class="tr-largo" data-id="'+id+'" data-i="'+i+'" value="'+r.largo+'" step="1" min="0">'+
-    (i===0 ? '<span class="tr-first">1er tramo</span>'
-      : '<select class="tr-giro" data-id="'+id+'" data-i="'+i+'">'+['-','izq','der'].map(g=>'<option value="'+g+'"'+(g===r.giro?' selected':'')+'>'+GIRO_LBL[g]+'</option>').join('')+'</select>')+
+    '<input type="number" class="tr-largo" data-id="'+id+'" data-i="'+i+'" value="'+(r.largo||'')+'" step="1" min="0" placeholder="mm">'+
+    (i===0 ? '<span class="tr-first">inicio</span>'
+      : '<span class="tr-dir" data-id="'+id+'" data-i="'+i+'">'+['izq','der'].map(gg=>'<button type="button" data-g="'+gg+'" aria-pressed="'+(gg===r.giro)+'">'+GIRO_LBL[gg]+'</button>').join('')+'</span>'+
+        '<input type="number" class="tr-ang" data-id="'+id+'" data-i="'+i+'" value="'+(r.angulo||90)+'" step="5" min="1" max="179" title="ángulo del pliegue (°)">')+
     '<button type="button" class="tr-del" data-id="'+id+'" data-i="'+i+'" title="quitar">×</button></div>'
   ).join('');
 }
@@ -179,8 +231,11 @@ function renderCampos(){
     } else if(c.type==='text'){
       h+='<div class="field wide" id="fld_'+c.id+'"><label for="f_'+c.id+'">'+escH(c.label)+'</label>'+hint+'<input id="f_'+c.id+'" type="text" value="'+escH(c.value||'')+'"></div>';
     } else if(c.type==='tramos'){
-      tramosState[c.id]=(c.value||[]).map(r=>({largo:r[0],giro:r[1]||'-'}));
-      h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+'<div class="tramos" id="tramos_'+c.id+'">'+tramosRows(c.id)+'</div><button type="button" class="tr-add" data-id="'+c.id+'">+ agregar tramo</button></div>';
+      tramosState[c.id]=(c.value||[]).map(r=>({largo:r[0],giro:r[1]||'izq',angulo:r[2]||90}));
+      h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+
+         '<div class="cvwrap"><div class="cvbox" id="cv_'+c.id+'"></div>'+
+         '<div class="cvadd"><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="izq">↰ Doblar izq.</button><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="der">Doblar der. ↱</button></div>'+
+         '<div class="tramos" id="tramos_'+c.id+'">'+tramosRows(c.id)+'</div></div></div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
@@ -194,10 +249,18 @@ function renderCampos(){
       }));
     } else if(c.type==='tramos'){
       const cont=document.getElementById('tramos_'+c.id);
-      cont.addEventListener('input',e=>{ const el=e.target; if(el.classList.contains('tr-largo')){ tramosState[c.id][+el.dataset.i].largo=+el.value; dibujar(); } });
-      cont.addEventListener('change',e=>{ const el=e.target; if(el.classList.contains('tr-giro')){ tramosState[c.id][+el.dataset.i].giro=el.value; dibujar(); } });
-      cont.addEventListener('click',e=>{ const el=e.target.closest('.tr-del'); if(el){ tramosState[c.id].splice(+el.dataset.i,1); cont.innerHTML=tramosRows(c.id); dibujar(); } });
-      document.querySelector('.tr-add[data-id="'+c.id+'"]').addEventListener('click',()=>{ tramosState[c.id].push({largo:20,giro:'izq'}); cont.innerHTML=tramosRows(c.id); dibujar(); });
+      const addTramo=(g)=>{ const a=tramosState[c.id]; a.push({largo:(a.length?30:40),giro:g||'izq',angulo:90});
+        cont.innerHTML=tramosRows(c.id); drawCanvas(c.id); dibujar();
+        const inp=cont.querySelector('.tr-largo[data-i="'+(a.length-1)+'"]'); if(inp){inp.focus();inp.select();} };
+      cont.addEventListener('input',e=>{ const el=e.target,i=+el.dataset.i;
+        if(el.classList.contains('tr-largo')){ tramosState[c.id][i].largo=+el.value; drawCanvas(c.id); dibujar(); }
+        else if(el.classList.contains('tr-ang')){ tramosState[c.id][i].angulo=+el.value; drawCanvas(c.id); dibujar(); } });
+      cont.addEventListener('click',e=>{
+        const del=e.target.closest('.tr-del'); if(del){ tramosState[c.id].splice(+del.dataset.i,1); cont.innerHTML=tramosRows(c.id); drawCanvas(c.id); dibujar(); return; }
+        const db=e.target.closest('.tr-dir button'); if(db){ tramosState[c.id][+db.parentNode.dataset.i].giro=db.dataset.g; cont.innerHTML=tramosRows(c.id); drawCanvas(c.id); dibujar(); } });
+      document.querySelectorAll('.tr-add2[data-id="'+c.id+'"]').forEach(b=>b.addEventListener('click',()=>addTramo(b.dataset.g)));
+      document.getElementById('cv_'+c.id).addEventListener('click',e=>{ const ar=e.target.closest('.cvarrow'); if(ar) addTramo(ar.dataset.dir); });
+      drawCanvas(c.id);
     } else {
       document.getElementById('f_'+c.id).addEventListener((c.type==='select'||c.type==='check')?'change':'input', dibujar);
     }
@@ -210,7 +273,7 @@ function getParams(){
     let v;
     if(c.type==='seg') v=segState[c.id];
     else if(c.type==='check') v=document.getElementById('f_'+c.id).checked;
-    else if(c.type==='tramos') v=(tramosState[c.id]||[]).map(r=>({largo:+r.largo,giro:r.giro}));
+    else if(c.type==='tramos') v=(tramosState[c.id]||[]).map(r=>({largo:+r.largo,giro:r.giro,angulo:+r.angulo||90}));
     else v=document.getElementById('f_'+c.id).value;
     if(c.type==='number') v=+v;
     p[c.id]=v;
