@@ -54,7 +54,8 @@ body{background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',system-ui,
 .tr-add{margin-top:8px;background:transparent;border:1px dashed var(--border);color:var(--fg);padding:8px;border-radius:8px;cursor:pointer;font-size:13px}
 .tr-add:hover{border-color:var(--accent);color:var(--accent)}
 .cvwrap{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.cvbox{border:1px solid var(--border);border-radius:10px;background:rgba(127,127,127,.04);color:var(--muted);overflow:hidden}
+.cvstick{position:sticky;top:var(--stick-top,100px);z-index:5;background:var(--bg);display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+.cvbox{border:1px solid var(--border);border-radius:10px;background:var(--panel,var(--bg));color:var(--muted);overflow:hidden}
 .cvbox svg{display:block;width:100%;height:240px}
 .cvadd{display:flex;gap:8px}
 .cvadd button{flex:1;background:transparent;border:1px dashed var(--border);color:var(--fg);padding:9px;border-radius:8px;cursor:pointer;font-size:13px}
@@ -233,12 +234,13 @@ function renderCampos(){
     } else if(c.type==='tramos'){
       tramosState[c.id]=(c.value||[]).map(r=>({largo:r[0],giro:r[1]||'izq',angulo:r[2]||90}));
       h+='<div class="field wide" id="fld_'+c.id+'"><label>'+escH(c.label)+'</label>'+hint+
-         '<div class="cvwrap"><div class="cvbox" id="cv_'+c.id+'"></div>'+
-         '<div class="cvadd"><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="izq">↰ Doblar izq.</button><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="der">Doblar der. ↱</button></div>'+
+         '<div class="cvwrap"><div class="cvstick"><div class="cvbox" id="cv_'+c.id+'"></div>'+
+         '<div class="cvadd"><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="izq">↰ Doblar izq.</button><button type="button" class="tr-add2" data-id="'+c.id+'" data-g="der">Doblar der. ↱</button></div></div>'+
          '<div class="tramos" id="tramos_'+c.id+'">'+tramosRows(c.id)+'</div></div></div>';
     }
   });
   document.getElementById('campos').innerHTML=h;
+  const ph=document.querySelector('.phead'); if(ph) document.documentElement.style.setProperty('--stick-top',(ph.offsetHeight-8)+'px');
   t.campos.forEach(c=>{
     if(c.type==='seg'){
       const btns=document.querySelectorAll('[data-seg="'+c.id+'"] button');
