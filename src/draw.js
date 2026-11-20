@@ -334,7 +334,12 @@ function cajetin(r, ox, oy, w, h, P, logo) {
   g += cell(ox, oy + 1 * rh, 'Obra', rt.obra || '—');
   g += cell(ox, oy + 2 * rh, 'OT', rt.ot || '—');
   g += cell(ox + col1, oy + 0 * rh, 'Fecha', rt.fecha || '—');
-  g += cell(ox + col1, oy + 1 * rh, 'Cantidad', r.cantidadTexto || (r.total + ' (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)'));
+  // Cantidad destacada: celda con fondo de acento y número grande en blanco (visible en todas las tipologías)
+  var qx = ox + col1, qy = oy + 1 * rh;
+  var qtxt = r.cantidadTexto || (r.cantIzq != null ? r.total + ' (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)' : (r.total || r.cantidad || 1) + ' u.');
+  g += rect(qx, qy, col2, rh, SW.thin, P, P.accent);
+  g += tsans(qx + 14, qy + 24, 'CANTIDAD', F.ty, 'start', P, 700, '#ffffff');
+  g += tsans(qx + 14, qy + rh - 13, qtxt, F.h2, 'start', P, 800, '#ffffff');
   g += cell(ox + col1, oy + 2 * rh, 'Tipo', r.tipoTexto || ('Doble faz · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica')));
   var lx = ox + col1 + col2, lw = w - col1 - col2;
   if (logo) { var iw = lw - 40, ih = iw * 344 / 1229, iy = oy + (h - ih) / 2 - 14; g += '<image x="' + (lx + 20).toFixed(1) + '" y="' + iy.toFixed(1) + '" width="' + iw.toFixed(1) + '" height="' + ih.toFixed(1) + '" href="' + logo + '"/>'; }
