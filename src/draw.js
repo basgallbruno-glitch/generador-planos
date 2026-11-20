@@ -547,7 +547,7 @@ function generarMarco(params, P, logo) {
 /* --- Hoja A4: CREADOR DE PLEGADOS (nivel 1) --- */
 function generarPlegado(params, P, logo) {
   var r = calcularPlegado(params);
-  r.rotulo = params.rotulo; r.herrajes = [];
+  r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   var ty = 345;
@@ -564,13 +564,14 @@ function generarPlegado(params, P, logo) {
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
+  g += bloqueAccesorios(r, M, ty + dt.h + 80, P, full);
   return [pagina(g, P, 'Creador de plegados. Ángulo por pliegue (45°–90° descuenta proporcional; <45° no descuenta). Desarrollo = chapa a cortar. Imprimir en A4.')];
 }
 
 /* --- Hoja A4: BANDEJA (tipo del creador): dos secciones --- */
 function generarBandeja(params, P, logo) {
   var r = calcularBandeja(params);
-  r.rotulo = params.rotulo; r.herrajes = [];
+  r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   function orient(sec, sentido) {
@@ -580,8 +581,12 @@ function generarBandeja(params, P, logo) {
   // Despiece anclado al pie; el conjunto se estira para llenar el resto de la hoja.
   var despH = despieceTabla(r, M, 0, P, full, 40).h;
   var tableTop = PG.h - M - 46 - despH, despTitleY = tableTop - 16, boxTop = M + 185 + 24;
+  // Reservo lugar para el bloque de accesorios (si hay), arriba del despiece
+  var accItems = (r.herrajes || []).filter(function (s) { return s && s.trim(); });
+  var accTblH = accItems.length ? herrajesTabla(r, 0, 0, P, full).h : 0;
+  var accH = accItems.length ? accTblH + 46 : 0;
   if (r.secAncho.n >= 2 && r.secLargo.n >= 2) {
-    var chapaLineY = despTitleY - 54, boxBottom = chapaLineY - 40, bh = boxBottom - boxTop;
+    var chapaLineY = despTitleY - 54 - accH, boxBottom = chapaLineY - 40, bh = boxBottom - boxTop;
     g += rect(M, boxTop, full, bh, SW.thin, P);
     g += tsans(M + 24, boxTop + 42, (r.nombre) + ' — conjunto (ancho + largo cruzados)', F.h2, 'start', P, 700, P.accent);
     g += tsans(M + 24, boxTop + 72, 'ancho desarr. ' + r.secAncho.dev + ' · largo desarr. ' + r.secLargo.dev + ' · se cruzan en el fondo', F.ty, 'start', P, 400, P.muted || P.text);
@@ -602,6 +607,10 @@ function generarBandeja(params, P, logo) {
     g += tsans(M, chapaLineY, 'Chapa plana a cortar: ' + r.secAncho.dev + ' × ' + r.secLargo.dev + ' mm (ancho × largo, con muescas en las esquinas).', F.h2, 'start', P, 600, P.text);
   } else {
     g += tsans(M + 10, boxTop + 40, 'Cargá al menos 2 tramos en cada sección.', F.h2, 'start', P, 600, P.muted || P.text);
+  }
+  if (accItems.length) {
+    var accHy = (r.secAncho.n >= 2 && r.secLargo.n >= 2) ? chapaLineY + 40 : despTitleY - accTblH - 56;
+    g += bloqueAccesorios(r, M, accHy, P, full);
   }
   g += tsans(M, despTitleY, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   g += despieceTabla(r, M, tableTop, P, full, 40).svg;
