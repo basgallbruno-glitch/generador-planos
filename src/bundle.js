@@ -7,7 +7,16 @@
 /* ---- Tabla de deducción por plegado (editable) ----
    mm descontados por doblez = espesor de la chapa redondeado al entero menor
    (N°18≈1,2→1 · N°16≈1,6→1 · N°14≈2,0→2). Mismo criterio U/Z para todos los plegados. */
-var TABLA_DEDUCCION = { 18: { 90: 1 }, 16: { 90: 1 }, 14: { 90: 2 } };   // mm/pliegue (chapa N° : ángulo)
+var TABLA_DEDUCCION = {
+  18: { 90: 1 }, 16: { 90: 1 }, 14: { 90: 2 },          // chapa N° (acero) : espesor redondeado al entero menor
+  antidesl: { 90: 3 },   // antideslizante 1/8" ≈ 3,17 mm → 3
+  inox08: { 90: 0 },     // inoxidable 0,8 mm → 0 (por la regla, no descuenta)
+  inox12: { 90: 1 }      // inoxidable 1,2 mm → 1 (igual que N°18)
+};   // mm/pliegue (material : ángulo)
+// Etiqueta de material para rótulo/despiece (debe coincidir con las claves de PESO_SUP)
+var MAT_LBL = { antidesl: 'Chapa antidesl. 1/8"', inox08: 'Inoxidable 0,8mm', inox12: 'Inoxidable 1,2mm' };
+function matLabel(chapa) { return MAT_LBL[chapa] || ('Chapa N°' + chapa); }
+function matTag(chapa) { return MAT_LBL[chapa] ? MAT_LBL[chapa] : ('N°' + chapa); }   // compacto para rótulo/caption
 
 function desarrollar(tramos, nPliegues, chapa, ang) {
   var BD = TABLA_DEDUCCION[chapa][ang || 90];
@@ -99,7 +108,7 @@ function deduccionPliegues(lens, turns, h0, endVal, bd, angs) {
   }
   return d;
 }
-function bdChapa(chapa) { var t = TABLA_DEDUCCION[chapa]; return (t && t[90]) || 1; }
+function bdChapa(chapa) { var t = TABLA_DEDUCCION[chapa]; return t && t[90] != null ? t[90] : 1; }
 function perfilMarco(muro, tipoHoja, chapa) {
   var t3 = tipoHoja === 'madera' ? C.t3Madera : C.t3Metalica;
   var espesor = muro + C.margenMuro;        // = muro terminado (margenMuro provisorio = 0)
@@ -259,13 +268,13 @@ function calcularPlegado(p) {
   var largo = Math.max(0, p.largoPerfil == null ? 0 : p.largoPerfil);
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Plegado').trim() || 'Plegado';
-  var mat = 'Chapa N°' + chapa;
+  var mat = matLabel(chapa);
   var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: dev, largo: largo, mat: mat }];
   return {
     tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     segs: segs, turns: turns, angs: angs, h0: [0, -1], endVal: endVal,
     dev: dev, devTramos: devTramos, largoPerfil: largo, nTramos: segs.length,
-    tipoTexto: 'Plegado libre · N°' + chapa, cantidadTexto: cant + ' u.',
+    tipoTexto: 'Plegado libre · ' + matTag(chapa), cantidadTexto: cant + ' u.',
     despiece: despiece,
   };
 }
@@ -290,12 +299,12 @@ function calcularBandeja(p) {
   var B = seccionTramos(p.tramosLargo, chapa, endVal);   // sección en el largo
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Bandeja').trim() || 'Bandeja';
-  var mat = 'Chapa N°' + chapa;
+  var mat = matLabel(chapa);
   var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: A.dev, largo: B.dev, mat: mat }];
   return {
     tipoPlano: 'bandeja', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     secAncho: A, secLargo: B, endVal: endVal,
-    tipoTexto: 'Bandeja · N°' + chapa, cantidadTexto: cant + ' u.', despiece: despiece,
+    tipoTexto: 'Bandeja · ' + matTag(chapa), cantidadTexto: cant + ' u.', despiece: despiece,
   };
 }
 

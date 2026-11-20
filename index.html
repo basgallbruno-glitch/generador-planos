@@ -144,7 +144,16 @@ const LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDAAIBAQIBAQICA
 /* ---- Tabla de deducción por plegado (editable) ----
    mm descontados por doblez = espesor de la chapa redondeado al entero menor
    (N°18≈1,2→1 · N°16≈1,6→1 · N°14≈2,0→2). Mismo criterio U/Z para todos los plegados. */
-var TABLA_DEDUCCION = { 18: { 90: 1 }, 16: { 90: 1 }, 14: { 90: 2 } };   // mm/pliegue (chapa N° : ángulo)
+var TABLA_DEDUCCION = {
+  18: { 90: 1 }, 16: { 90: 1 }, 14: { 90: 2 },          // chapa N° (acero) : espesor redondeado al entero menor
+  antidesl: { 90: 3 },   // antideslizante 1/8" ≈ 3,17 mm → 3
+  inox08: { 90: 0 },     // inoxidable 0,8 mm → 0 (por la regla, no descuenta)
+  inox12: { 90: 1 }      // inoxidable 1,2 mm → 1 (igual que N°18)
+};   // mm/pliegue (material : ángulo)
+// Etiqueta de material para rótulo/despiece (debe coincidir con las claves de PESO_SUP)
+var MAT_LBL = { antidesl: 'Chapa antidesl. 1/8"', inox08: 'Inoxidable 0,8mm', inox12: 'Inoxidable 1,2mm' };
+function matLabel(chapa) { return MAT_LBL[chapa] || ('Chapa N°' + chapa); }
+function matTag(chapa) { return MAT_LBL[chapa] ? MAT_LBL[chapa] : ('N°' + chapa); }   // compacto para rótulo/caption
 
 function desarrollar(tramos, nPliegues, chapa, ang) {
   var BD = TABLA_DEDUCCION[chapa][ang || 90];
@@ -236,7 +245,7 @@ function deduccionPliegues(lens, turns, h0, endVal, bd, angs) {
   }
   return d;
 }
-function bdChapa(chapa) { var t = TABLA_DEDUCCION[chapa]; return (t && t[90]) || 1; }
+function bdChapa(chapa) { var t = TABLA_DEDUCCION[chapa]; return t && t[90] != null ? t[90] : 1; }
 function perfilMarco(muro, tipoHoja, chapa) {
   var t3 = tipoHoja === 'madera' ? C.t3Madera : C.t3Metalica;
   var espesor = muro + C.margenMuro;        // = muro terminado (margenMuro provisorio = 0)
@@ -396,13 +405,13 @@ function calcularPlegado(p) {
   var largo = Math.max(0, p.largoPerfil == null ? 0 : p.largoPerfil);
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Plegado').trim() || 'Plegado';
-  var mat = 'Chapa N°' + chapa;
+  var mat = matLabel(chapa);
   var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: dev, largo: largo, mat: mat }];
   return {
     tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     segs: segs, turns: turns, angs: angs, h0: [0, -1], endVal: endVal,
     dev: dev, devTramos: devTramos, largoPerfil: largo, nTramos: segs.length,
-    tipoTexto: 'Plegado libre · N°' + chapa, cantidadTexto: cant + ' u.',
+    tipoTexto: 'Plegado libre · ' + matTag(chapa), cantidadTexto: cant + ' u.',
     despiece: despiece,
   };
 }
@@ -427,12 +436,12 @@ function calcularBandeja(p) {
   var B = seccionTramos(p.tramosLargo, chapa, endVal);   // sección en el largo
   var cant = Math.max(1, p.cantidad == null ? 1 : p.cantidad);
   var nombre = (p.nombre || 'Bandeja').trim() || 'Bandeja';
-  var mat = 'Chapa N°' + chapa;
+  var mat = matLabel(chapa);
   var despiece = [{ pieza: 'P.1', desc: nombre, cantUno: 1, cant: cant, ancho: A.dev, largo: B.dev, mat: mat }];
   return {
     tipoPlano: 'bandeja', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     secAncho: A, secLargo: B, endVal: endVal,
-    tipoTexto: 'Bandeja · N°' + chapa, cantidadTexto: cant + ' u.', despiece: despiece,
+    tipoTexto: 'Bandeja · ' + matTag(chapa), cantidadTexto: cant + ' u.', despiece: despiece,
   };
 }
 
@@ -1352,7 +1361,8 @@ function cajetin(r, ox, oy, w, h, P, logo) {
 
 /* --- Despiece (tabla) con material --- */
 /* --- Pesos: chapa por peso superficial [kg/m²] · perfiles por peso lineal de catálogo [kg/m] --- */
-var PESO_SUP = { 'Chapa N°18': 9.86, 'Chapa N°16': 12.60, 'Chapa N°14': 15.80, 'Chapa 1/8"': 25.1, 'Chapa 3/16"': 37.8 };
+var PESO_SUP = { 'Chapa N°18': 9.86, 'Chapa N°16': 12.60, 'Chapa N°14': 15.80, 'Chapa 1/8"': 25.1, 'Chapa 3/16"': 37.8,
+  'Chapa antidesl. 1/8"': 27.4, 'Inoxidable 0,8mm': 6.4, 'Inoxidable 1,2mm': 9.6 };
 var PESO_LIN = { 'Áng. 2"×3/16"': 3.7, 'Planch. 1½"×3/16"': 1.5, 'Planch. 1/2"×1/8"': 0.32 };
 function fmt1(x) { return x.toFixed(1).replace('.', ','); }
 function ceil1(x) { return Math.ceil(x * 10) / 10; }
@@ -1562,7 +1572,7 @@ function generarPlegado(params, P, logo) {
   if (r.nTramos >= 2) {
     var angTxt = (r.angs || []).every(function (a) { return +a === 90; }) ? 'dobleces 90°' : 'ángulos variables';
     g += bloquePerfil(M, ty, full, 1000, (r.nombre || 'Plegado'),
-      'desarrollo ' + r.dev + ' · largo ' + (r.largoPerfil || '—') + ' · N°' + r.chapa + ' · ' + r.nTramos + ' tramos (' + angTxt + ')',
+      'desarrollo ' + r.dev + ' · largo ' + (r.largoPerfil || '—') + ' · ' + matTag(r.chapa) + ' · ' + r.nTramos + ' tramos (' + angTxt + ')',
       r.segs, r.turns, r.h0, P, { angs: r.angs });
     ty += 1000 + 56;
   } else {
@@ -2282,7 +2292,7 @@ var TIPOS = [
       { id: 'nombre', label: 'Nombre del plegado', type: 'text', value: 'Plegado 1', help: 'Aparece en el rótulo y el despiece.' },
       { id: 'tramos', label: 'Tramos y dobleces', type: 'tramos', value: [[35, '-'], [30, 'izq'], [35, 'der']], help: 'Doblá con las flechas de la punta (↰/↱) o los botones. Por cada tramo: largo (mm) y ángulo del pliegue (90° por defecto; <45° no descuenta).' },
       { id: 'largoPerfil', label: 'Largo del perfil (mm)', type: 'number', value: 1000, step: 10, min: 0, max: 6000, help: 'Longitud de la pieza (la otra dimensión de la chapa).' },
-      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
+      { id: 'chapa', label: 'Material / espesor', type: 'select', value: '18', options: [['18', 'Acero N° 18 (≈1,2 mm)'], ['16', 'Acero N° 16 (≈1,6 mm)'], ['14', 'Acero N° 14 (≈2,0 mm)'], ['antidesl', 'Antideslizante 1/8" (≈3,2 mm)'], ['inox08', 'Inoxidable 0,8 mm'], ['inox12', 'Inoxidable 1,2 mm']], help: 'Define el descuento por pliegue (espesor redondeado al entero menor).' },
       { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
       { id: 'puntas', label: 'Puntas', type: 'seg', value: 'pestana', options: [['pestana', 'Pestaña (−)'], ['abiertas', 'Abiertas']], help: 'Pestaña: las puntas descuentan. Abiertas: no.' }
     ],
@@ -2301,7 +2311,7 @@ var TIPOS = [
       { id: 'sentidoAncho', label: 'Sentido (ancho)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },
       { id: 'tramosLargo', label: 'Sección en el LARGO', type: 'tramos', value: [[15, '-'], [40, 'izq'], [500, 'der'], [40, 'der'], [15, 'izq']], help: 'La otra dirección. Puede tener más o menos pliegues que el ancho.' },
       { id: 'sentidoLargo', label: 'Sentido (largo)', type: 'seg', value: 'arriba', options: [['arriba', 'Solapas ↑'], ['abajo', 'Solapas ↓']], help: 'Hacia dónde se doblan las solapas en el dibujo. No cambia el desarrollo.' },
-      { id: 'chapa', label: 'Chapa (N°)', type: 'select', value: '18', options: [['18', 'N° 18 (≈1,2 mm)'], ['16', 'N° 16 (≈1,6 mm)'], ['14', 'N° 14 (≈2,0 mm)']], help: 'Define el descuento por pliegue.' },
+      { id: 'chapa', label: 'Material / espesor', type: 'select', value: '18', options: [['18', 'Acero N° 18 (≈1,2 mm)'], ['16', 'Acero N° 16 (≈1,6 mm)'], ['14', 'Acero N° 14 (≈2,0 mm)'], ['antidesl', 'Antideslizante 1/8" (≈3,2 mm)'], ['inox08', 'Inoxidable 0,8 mm'], ['inox12', 'Inoxidable 1,2 mm']], help: 'Define el descuento por pliegue (espesor redondeado al entero menor).' },
       { id: 'cantidad', label: 'Cantidad', type: 'number', value: 1, step: 1, min: 1, max: 999, help: 'Cuántas piezas iguales.' },
       { id: 'puntas', label: 'Puntas', type: 'seg', value: 'pestana', options: [['pestana', 'Pestaña (−)'], ['abiertas', 'Abiertas']], help: 'Pestaña: las puntas descuentan. Abiertas: no.' }
     ],
