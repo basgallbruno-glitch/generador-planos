@@ -337,9 +337,10 @@ function cajetin(r, ox, oy, w, h, P, logo) {
   // Cantidad destacada: celda con fondo de acento y número grande en blanco (visible en todas las tipologías)
   var qx = ox + col1, qy = oy + 1 * rh;
   var qtxt = r.cantidadTexto || (r.cantIzq != null ? r.total + ' (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)' : (r.total || r.cantidad || 1) + ' u.');
+  _cantSello = (r.total != null ? r.total : (r.cantidad != null ? r.cantidad : 1));   // número para el sello sobre el dibujo
   g += rect(qx, qy, col2, rh, SW.thin, P, P.accent);
-  g += tsans(qx + 14, qy + 24, 'CANTIDAD', F.ty, 'start', P, 700, '#ffffff');
-  g += tsans(qx + 14, qy + rh - 13, qtxt, F.h2, 'start', P, 800, '#ffffff');
+  g += tsans(qx + 14, qy + 22, 'CANTIDAD', F.ty, 'start', P, 700, '#ffffff');
+  g += tsans(qx + 14, qy + rh - 12, qtxt, 36, 'start', P, 800, '#ffffff');
   g += cell(ox + col1, oy + 2 * rh, 'Tipo', r.tipoTexto || ('Doble faz · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica')));
   var lx = ox + col1 + col2, lw = w - col1 - col2;
   if (logo) { var iw = lw - 40, ih = iw * 344 / 1229, iy = oy + (h - ih) / 2 - 14; g += '<image x="' + (lx + 20).toFixed(1) + '" y="' + iy.toFixed(1) + '" width="' + iw.toFixed(1) + '" height="' + ih.toFixed(1) + '" href="' + logo + '"/>'; }
@@ -437,11 +438,31 @@ function bloqueAccesorios(r, dx, hy, P, TW) {
   return tsans(dx, hy - 12, 'ACCESORIOS', F.h2, 'start', P, 700, P.accent) + herrajesTabla(r, dx, hy, P, TW).svg;
 }
 
+/* --- Sello de cantidad: estampa translúcida sobre el dibujo. Posición por defecto
+   abajo-derecha (zona vacía en los tipos con despiece arriba); cada generador puede
+   reubicarlo con _selloXY (centro) si ahí tiene el despiece. --- */
+var _cantSello = null, _selloXY = null;
+function selloCantidad(P) {
+  if (_cantSello == null) return '';
+  var w = 360, h = 150;
+  var pos = _selloXY || { x: PG.w - PG.m - 20 - w / 2, y: PG.h - PG.m - 34 - h / 2 };
+  var cx = pos.x, cy = pos.y, x = cx - w / 2, y = cy - h / 2;
+  var g = '<g transform="rotate(-5 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')">';
+  g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w + '" height="' + h + '" rx="18" fill="' + P.paper + '" fill-opacity="0.72" stroke="' + P.accent + '" stroke-width="7"/>';
+  g += '<rect x="' + (x + 10).toFixed(1) + '" y="' + (y + 10).toFixed(1) + '" width="' + (w - 20) + '" height="' + (h - 20) + '" rx="12" fill="none" stroke="' + P.accent + '" stroke-width="2"/>';
+  g += tsans(cx, y + 52, 'CANTIDAD', F.lbl, 'middle', P, 700, P.accent);
+  g += tsans(cx, y + h - 32, _cantSello + ' u.', 62, 'middle', P, 800, P.accent);
+  g += '</g>';
+  return g;
+}
+
 /* --- Envoltura de página A4 --- */
 function pagina(inner, P, nota) {
+  var sello = selloCantidad(P);
+  _selloXY = null;   // reset para la próxima página
   return '<svg width="210mm" height="297mm" viewBox="0 0 ' + PG.w + ' ' + PG.h + '" xmlns="http://www.w3.org/2000/svg">' +
     '<rect x="0" y="0" width="' + PG.w + '" height="' + PG.h + '" fill="' + P.paper + '"/>' +
-    rect(PG.m * 0.5, PG.m * 0.5, PG.w - PG.m, PG.h - PG.m, SW.thin, P) + inner +
+    rect(PG.m * 0.5, PG.m * 0.5, PG.w - PG.m, PG.h - PG.m, SW.thin, P) + inner + sello +
     (nota ? tsans(PG.m, PG.h - PG.m * 0.5 - 10, nota, F.ty, 'start', P, 500, P.muted || P.text) : '') + '</svg>';
 }
 
@@ -577,6 +598,7 @@ function generarPlegado(params, P, logo) {
 function generarBandeja(params, P, logo) {
   var r = calcularBandeja(params);
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
+  _selloXY = { x: PG.w - PG.m - 200, y: PG.m + 185 + 120 };   // el pie lo ocupa el despiece: sello arriba-derecha
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   function orient(sec, sentido) {
