@@ -283,7 +283,7 @@ function getParams(){
   if('muro' in p) p.espesorMuro=p.muro;
   if('mano' in p) p.drawMano=p.mano;
   if('piso' in p) p.pisoTerminado=(p.piso==='term');
-  if('chapa' in p) p.chapa=+p.chapa;
+  if('chapa' in p && /^\\d+$/.test(p.chapa)) p.chapa=+p.chapa;   // solo calibres numéricos; materiales (antidesl/inox) quedan string
   p.rotulo={ plano:val('rPlano'), obra:val('rObra'), ot:val('rOt'), fecha:val('rFecha') };
   p.herrajes=(val('herrajes')||'').split('\\n').map(s=>s.trim()).filter(Boolean);
   return p;
