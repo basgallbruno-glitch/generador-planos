@@ -444,15 +444,14 @@ function bloqueAccesorios(r, dx, hy, P, TW) {
 var _cantSello = null, _selloXY = null;
 function selloCantidad(P) {
   if (_cantSello == null) return '';
-  var w = 360, h = 150;
-  var pos = _selloXY || { x: PG.w - PG.m - 20 - w / 2, y: PG.h - PG.m - 34 - h / 2 };
+  var w = 330, h = 130, hd = 40;
+  var pos = _selloXY || { x: PG.w - PG.m - 16 - w / 2, y: PG.h - PG.m - 30 - h / 2 };
   var cx = pos.x, cy = pos.y, x = cx - w / 2, y = cy - h / 2;
-  var g = '<g transform="rotate(-5 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')">';
-  g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w + '" height="' + h + '" rx="18" fill="' + P.paper + '" fill-opacity="0.72" stroke="' + P.accent + '" stroke-width="7"/>';
-  g += '<rect x="' + (x + 10).toFixed(1) + '" y="' + (y + 10).toFixed(1) + '" width="' + (w - 20) + '" height="' + (h - 20) + '" rx="12" fill="none" stroke="' + P.accent + '" stroke-width="2"/>';
-  g += tsans(cx, y + 52, 'CANTIDAD', F.lbl, 'middle', P, 700, P.accent);
-  g += tsans(cx, y + h - 32, _cantSello + ' u.', 62, 'middle', P, 800, P.accent);
-  g += '</g>';
+  var g = '';
+  g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w + '" height="' + h + '" fill="' + P.paper + '" stroke="' + P.accent + '" stroke-width="3"/>';
+  g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w + '" height="' + hd + '" fill="' + P.accent + '"/>';
+  g += tsans(cx, y + 28, 'CANTIDAD', F.lbl, 'middle', P, 700, '#ffffff');
+  g += tsans(cx, y + h - 26, _cantSello + ' u.', 56, 'middle', P, 800, P.accent);
   return g;
 }
 
