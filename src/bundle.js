@@ -274,7 +274,7 @@ function calcularPlegado(p) {
     tipoPlano: 'plegado', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     segs: segs, turns: turns, angs: angs, h0: [0, -1], endVal: endVal,
     dev: dev, devTramos: devTramos, largoPerfil: largo, nTramos: segs.length,
-    tipoTexto: 'Plegado libre · ' + matTag(chapa), cantidadTexto: cant + ' u.',
+    tipoTexto: 'Plegado', cantidadTexto: cant + ' u.',
     despiece: despiece,
   };
 }
@@ -304,7 +304,7 @@ function calcularBandeja(p) {
   return {
     tipoPlano: 'bandeja', nombre: nombre, chapa: chapa, total: cant, cantidad: cant,
     secAncho: A, secLargo: B, endVal: endVal,
-    tipoTexto: 'Bandeja · ' + matTag(chapa), cantidadTexto: cant + ' u.', despiece: despiece,
+    tipoTexto: 'Bandeja', cantidadTexto: cant + ' u.', despiece: despiece,
   };
 }
 
@@ -352,7 +352,7 @@ function calcularGabinete(p) {
     tipoPlano: 'gabinete', W: W, H: H, chapa: chapa, nHojas: nHojas,
     cantIzq: cantIzq, cantDer: cantDer, total: total,
     cantidadTexto: nHojas === 2 ? (total + ' gabinete' + (total === 1 ? '' : 's')) : undefined,
-    tipoTexto: (nHojas === 2 ? 'Gabinete doble hoja · caño ' : 'Gabinete tablillas · caño ') + cano,
+    tipoTexto: (nHojas === 2 ? 'Gabinete - Dos hojas' : 'Gabinete - Una hoja'),
     estrA: ea, estrB: eb, estrEsp: ee, cano: cano,
     canoKgm: cano === '50×20×1,6' ? 1.7 : Math.round((2 * (ea + eb) - 4 * ee) * ee * 7.85e-3 * 100) / 100,
     anchoMarco: anchoMarco, altoMarco: altoMarco, aberturaInt: aberturaInt,
@@ -400,7 +400,7 @@ function calcularCamara(p) {
   return {
     tipoPlano: 'camara', W: A, H: B, modo: modo, cantidad: cant, total: cant,
     cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
-    tipoTexto: 'Cámara cloacal · áng. 2"×3/16"',
+    tipoTexto: 'Cámara cloacal',
     extA: extA, extB: extB, intA: intA, intB: intB,
     bandA: Math.round(bandA), bandB: Math.round(bandB),
     h: h, chapa: chapa, ded: ded, devA: devA, devB: devB, leg: leg, t: t, nTir: nTir, agarre: agarre,
@@ -462,7 +462,7 @@ function calcularCALF(p) {
   return {
     tipoPlano: 'calf', W: A, H: B, modo: 'int', cantidad: cant, total: cant,
     cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
-    tipoTexto: 'Cámara CALF · ' + (regla ? 'reglamentaria (plegado grande)' : (usaNuevo ? 'plegado grande (>800)' : 'plegado chico')),
+    tipoTexto: (regla ? 'Cámara CALF' : 'Cámara tipo CALF'),
     intA: intA, intB: intB, marcoA: marcoA, marcoB: marcoB,
     tapaA: tapaA, tapaB: tapaB, chapaA: chapaA, chapaB: chapaB,
     esp: esp, espTxt: espTxt, chapa: chapa, nMan: nMan, agarre: agarre, proy: C.calfProyPest,
@@ -519,7 +519,7 @@ function calcularPluvial(p) {
   return {
     tipoPlano: 'pluvial', W: A, H: B, modo: modo, cantidad: cant, total: cant, refuerzo: refuerzo,
     cantidadTexto: cant + ' cámara' + (cant === 1 ? '' : 's'),
-    tipoTexto: 'Cámara pluvial · marco L ' + leg + '×' + leg,
+    tipoTexto: 'Cámara pluvial',
     extA: extA, extB: extB, intA: intA, intB: intB, rejA: rejA, rejB: rejB,
     lado: lado, corto: corto, nBarras: nBarras, largoBarra: largoBarra,
     nRef: nRef, largoRef: largoRef, leg: leg, esp: esp, espTxt: espTxt, dev: dev, legFlat: legFlat, sep: sep,

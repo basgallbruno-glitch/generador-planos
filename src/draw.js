@@ -445,7 +445,7 @@ var _cantSello = null, _selloXY = null;
 function selloCantidad(P) {
   if (_cantSello == null) return '';
   var w = 330, h = 130, hd = 40;
-  var pos = _selloXY || { x: PG.w - PG.m - 16 - w / 2, y: PG.h - PG.m - 30 - h / 2 };
+  var pos = _selloXY || { x: PG.w - PG.m - 14 - w / 2, y: PG.m + 185 + 30 + h / 2 };   // arriba a la derecha, bajo el rótulo
   var cx = pos.x, cy = pos.y, x = cx - w / 2, y = cy - h / 2;
   var g = '';
   g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w + '" height="' + h + '" fill="' + P.paper + '" stroke="' + P.accent + '" stroke-width="3"/>';
@@ -470,8 +470,7 @@ function generarPaginas(params, P, logo) {
   var r = calcularDespiece(params);
   r.rotulo = params.rotulo;
   r.herrajes = params.herrajes || [];
-  r.tipoTexto = 'Doble faz · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') +
-    (r.chapaMarco === r.chapaHoja ? ' · N°' + r.chapaHoja : ' · marco N°' + r.chapaMarco + ' / hoja N°' + r.chapaHoja);
+  r.tipoTexto = 'Doble faz';
   var mano = params.drawMano || 'izq';
   var M = PG.m, full = PG.w - 2 * M;
 
@@ -482,7 +481,7 @@ function generarPaginas(params, P, logo) {
   // --- fila superior: frente (izq) + ① Marco (der) ---
   var kf = Math.min(520 / r.W, 880 / (r.H + (r.altoPanoFijo || 0)));
   g1 += frente(r, M + 150, 330, P, mano, kf);
-  g1 += bloquePerfil(M + 950, 320, 760, 960, '① Marco',
+  g1 += bloquePerfil(M + 760, 320, 760, 960, '① Marco',
     'muro ' + r.muro + ' = esp. ' + r.marco.espesor + ' · ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica') + ' · N°' + (r.chapaMarco || r.chapa) + ' · desarr. ' + r.marco.desarrollo,
     r.marco.segs, r.marco.turns, r.marco.h0, P);
   // --- cuadrícula inferior (② ③ ④ ⑤), centrada, sin agrandar ---
@@ -502,7 +501,7 @@ function generarPaginas(params, P, logo) {
   // ===================== HOJA 2: despiece (letra grande) =====================
   var g2 = '';
   g2 += cajetin(r, M, M, full, 185, P, logo);
-  var ty = 345;
+  var ty = 470;
   g2 += tsans(M, ty - 24, 'DESPIECE — ' + r.total + ' puertas (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)', F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g2 += dt.svg;
@@ -543,11 +542,11 @@ function generarMarco(params, P, logo) {
   var r = calcularMarco(params);
   r.rotulo = params.rotulo;
   r.herrajes = params.herrajes || [];
-  r.tipoTexto = 'Marco · hoja ' + (r.tipoHoja === 'madera' ? 'madera' : 'metálica');
+  r.tipoTexto = 'Marco - Puerta ' + (r.tipoHoja === 'madera' ? 'placa' : 'metálica');
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
-  var ty = 345;
+  var ty = 470;
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
@@ -597,7 +596,6 @@ function generarPlegado(params, P, logo) {
 function generarBandeja(params, P, logo) {
   var r = calcularBandeja(params);
   r.rotulo = params.rotulo; r.herrajes = params.herrajes || [];
-  _selloXY = { x: PG.w - PG.m - 200, y: PG.m + 185 + 120 };   // el pie lo ocupa el despiece: sello arriba-derecha
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   function orient(sec, sentido) {
@@ -746,7 +744,7 @@ function generarGabinete(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
-  var ty = 345;
+  var ty = 470;
   g += tsans(M, ty - 24, (r.nHojas === 2 ? 'DESPIECE — ' + r.total + ' gabinetes (doble hoja)' : 'DESPIECE — ' + r.total + ' gabinetes (' + r.cantIzq + ' izq · ' + r.cantDer + ' der)'), F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
@@ -880,7 +878,7 @@ function generarCamara(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
-  var ty = 345;
+  var ty = 470;
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40);
   g += dt.svg;
@@ -1066,7 +1064,7 @@ function generarCALF(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
-  var ty = 345;
+  var ty = 470;
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40); g += dt.svg;
   var ny = ty + dt.h + 40;
@@ -1177,7 +1175,7 @@ function generarPluvial(params, P, logo) {
   var M = PG.m, full = PG.w - 2 * M, cxp = PG.w / 2, g = '';
   g += cajetin(r, M, M, full, 185, P, logo);
   // --- 1) despiece a ANCHO COMPLETO arriba (letra grande) ---
-  var ty = 345;
+  var ty = 470;
   g += tsans(M, ty - 24, 'DESPIECE — ' + r.cantidadTexto, F.h2, 'start', P, 700, P.accent);
   var dt = despieceTabla(r, M, ty, P, full, 40); g += dt.svg;
   var ny = ty + dt.h + 56;
